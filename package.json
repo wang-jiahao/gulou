@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,7 +18,10 @@
     "test:campus": "node scripts/phase3-check.mjs",
     "test:environment": "node --experimental-strip-types scripts/environment-check.mjs",
     "build:pages": "tsc --noEmit && vite build --base=/gulou/",
-    "test:audio": "node --experimental-strip-types scripts/audio-check.mjs"
+    "test:audio": "node --experimental-strip-types scripts/audio-check.mjs",
+    "test:mobile": "node scripts/phase4-check.mjs",
+    "assets:students": "node scripts/build-student.mjs && node scripts/build-student.mjs --female",
+    "test:scenic": "node scripts/scenic-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

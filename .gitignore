@@ -26,3 +26,5 @@ docs/*
 docs/sources/*
 !docs/sources/makehuman-license.md
 !docs/sources/plan-registration.json
+
+AGENTS.md

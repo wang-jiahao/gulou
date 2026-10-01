@@ -24,7 +24,7 @@ async function navigate(x,z,name){
 }
 try{
  await page.goto((process.env.TEST_URL??'http://localhost:4173/')+'?debug=1');await page.waitForFunction(()=>!document.querySelector('#enter').disabled,{}, {timeout:90000});await page.click('#enter');await page.waitForFunction(()=>window.__GULOU__.stats().sectors===3&&window.__GULOU__.stats().environment.heightReady,{}, {timeout:60000});await page.waitForTimeout(3000);
- assert.equal((await state()).map.buildings,129);assert.equal((await state()).map.roads,36);checks.push('129 building footprints + 36 road regions loaded');
+ assert.ok((await state()).map.buildings>=129);assert.equal((await state()).map.roads,36);checks.push('campus footprints, skyline additions and 36 road regions loaded');
  if ((await state()).music.tracks > 0) {
  await page.waitForFunction(()=>window.__GULOU__.stats().music.currentTime>1);const previousTitle=(await state()).music.title;
  await page.keyboard.press('Escape');if(!await page.locator('#settings').isVisible())await page.click('#settings-open');await page.click('#music-next');

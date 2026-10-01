@@ -2,16 +2,20 @@ import * as T from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
+export type CharacterKind = 'male' | 'female';
+
 /** CC0 MakeHuman base, original clothing and rig; meter-scale articulated student. */
-export async function createAvatar() {
-  const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(`${import.meta.env.BASE_URL}assets/characters/student-natural.glb`);
+export async function createAvatar(kind: CharacterKind = 'male') {
+  const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(`${import.meta.env.BASE_URL}assets/characters/student-${kind}.glb`);
   const cloth=await new T.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}assets/textures/fabric-bump.webp`);cloth.wrapS=cloth.wrapT=T.RepeatWrapping;cloth.repeat.set(16,16);
+  const materials = new Set<T.Material>(), geometries = new Set<T.BufferGeometry>(), skeletons = new Set<T.Skeleton>();
   const root = new T.Group(); root.name = 'student'; const model = gltf.scene; root.add(model);
   model.updateMatrixWorld(true);
   const bones: Record<string, T.Bone> = {};
   model.traverse(node => {
     if (node instanceof T.Bone) bones[node.name.replace(/^mixamorig:?/, '')] = node;
-    if (node instanceof T.Mesh) { node.castShadow = node.receiveShadow = true; node.frustumCulled = false;const m=node.material as T.MeshStandardMaterial;if(['student-cotton','student-denim','student-backpack','student-shoes'].includes(m.name)){m.bumpMap=cloth;m.bumpScale=.0016;m.roughness=.94;} }
+    if (node instanceof T.SkinnedMesh) skeletons.add(node.skeleton);
+    if (node instanceof T.Mesh) { geometries.add(node.geometry); for (const mat of Array.isArray(node.material) ? node.material : [node.material]) materials.add(mat); node.castShadow = node.receiveShadow = true; node.frustumCulled = false;const m=node.material as T.MeshStandardMaterial;if(['student-cotton','student-denim','student-backpack','student-shoes'].includes(m.name)){m.bumpMap=cloth;m.bumpScale=.0016;m.roughness=.94;} }
   });
   // Bring T-pose arms down using the skeleton's actual world-space directions.
   for (const side of ['Left', 'Right']) {
@@ -24,7 +28,8 @@ export async function createAvatar() {
     const legDelta=new T.Quaternion().setFromUnitVectors(knee.getWorldPosition(new T.Vector3()).sub(thigh.getWorldPosition(new T.Vector3())).normalize(),new T.Vector3(side==='Left'?.018:-.018,-1,.012).normalize());
     const legParent=thigh.parent!.getWorldQuaternion(new T.Quaternion());thigh.quaternion.premultiply(legParent.clone().invert().multiply(legDelta).multiply(legParent));model.updateMatrixWorld(true);
   }
-  const extent = new T.Box3().setFromObject(model), scale = 1.72 / extent.getSize(new T.Vector3()).y;
+  const height = kind === 'female' ? 1.67 : 1.77;
+  const extent = new T.Box3().setFromObject(model), scale = height / extent.getSize(new T.Vector3()).y;
   model.scale.multiplyScalar(scale); model.position.y = -extent.min.y * scale; const baseY = model.position.y;
   const rest = new Map<T.Bone, T.Quaternion>(), axes = new Map<T.Bone, T.Vector3>();
   for (const bone of Object.values(bones)) {
@@ -63,7 +68,8 @@ export async function createAvatar() {
     bone.quaternion.copy(bone.parent!.getWorldQuaternion(new T.Quaternion()).invert().multiply(world));bone.updateWorldMatrix(false,true);
   };
   return {
-    root, head: bones.Head,
+    root, head: bones.Head, kind, height, materials,
+    dispose() { mixer.stopAllAction(); mixer.uncacheRoot(model); geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); skeletons.forEach(s => s.dispose()); cloth.dispose(); },
     setGroundSampler(sampler:(x:number,z:number)=>number){groundSampler=sampler;},
     get gaitPhase(){return phase;},
     update(dt: number, speed: number, seated: boolean, flying=false) {

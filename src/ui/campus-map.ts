@@ -2,6 +2,8 @@ import type { CampusMap, MapPolygon } from '../world/campus-map.ts';
 import { bounds, insidePolygon } from '../world/campus-map.ts';
 
 export class CampusMapView {
+  onSelect: (x: number, z: number, name: string) => void = () => {};
+  private destination: [number, number] | null = null;
   private ctx: CanvasRenderingContext2D;
   private region = { ...bounds };
   private size = { scale: 1, x: 0, z: 0 };
@@ -13,7 +15,9 @@ export class CampusMapView {
       const rect = canvas.getBoundingClientRect(), px = (event.clientX - rect.left) / rect.width * canvas.width, py = (event.clientY - rect.top) / rect.height * canvas.height;
       const x = (px - this.size.x) / this.size.scale, z = (py - this.size.z) / this.size.scale;
       const feature = map.features.find(f => insidePolygon(x, z, f));
-      selection.textContent = feature?.tags.name ?? '沿着道路，慢慢逛校园';
+      if (x < bounds.minX || x > bounds.maxX || z < bounds.minZ || z > bounds.maxZ) return;
+      const name = feature?.tags.name ?? '地图上的位置';
+      selection.textContent = `已选择：${name}`; this.destination = [x, z]; this.onSelect(x, z, name);
     });
   }
   setRegion(region: string) {
@@ -40,11 +44,13 @@ export class CampusMapView {
       c.fillStyle = '#f8f6edec'; c.fillRect(q[0] - width / 2, q[1] - 12, width, 24); c.fillStyle = '#334c43'; c.fillText(text, ...q);
     }
     c.fillStyle = '#4c6057'; c.textAlign = 'left'; c.fillText('↑ 北', 26, 28);
-    this.selection.textContent = '点击建筑查看名称 · 虚线为重点漫步路线';
+    this.selection.textContent = '点击地图选择位置，再点传送；虚线是重点路线';
   }
   private project(x: number, z: number): [number, number] { return [this.size.x + x * this.size.scale, this.size.z + z * this.size.scale]; }
   update(x: number, z: number, yaw: number) {
-    const c = this.ctx; c.drawImage(this.background, 0, 0); const p = this.project(x, z);
+    const c = this.ctx; c.drawImage(this.background, 0, 0);
+    if (this.destination) { const q = this.project(...this.destination); c.beginPath(); c.arc(...q, 9, 0, Math.PI * 2); c.strokeStyle = '#bf8149'; c.lineWidth = 4; c.stroke(); }
+    const p = this.project(x, z);
     c.save(); c.translate(...p); c.rotate(-yaw); c.fillStyle = '#b84f37'; c.strokeStyle = '#fff'; c.lineWidth = 3;
     c.beginPath(); c.moveTo(0, -13); c.lineTo(9, 10); c.lineTo(0, 6); c.lineTo(-9, 10); c.closePath(); c.fill(); c.stroke(); c.restore();
   }

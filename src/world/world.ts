@@ -2,19 +2,22 @@ import * as T from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { Builder, rng, type Solid } from './geometry.ts';
-import { createGroundPlants, createIvy, createTrees, type TreeSpot } from './vegetation.ts';
+import { createGroundPlants, createIvy, createJunipers, type TreeSpot } from './vegetation.ts';
 import type { Materials } from './materials.ts';
 import { createModelTrees } from './model-trees.ts';
 import { collisionMesh, type CollisionMesh } from './collision-mesh.ts';
 import { buildOrdinaryBuildings } from './ordinary-buildings.ts';
-import { planShape, insidePolygon, type CampusMap } from './campus-map.ts';
-import { createPriorityDetails, createSkyline } from './priority-details.ts';
+import { planShape, insidePolygon, insideRing, type CampusMap } from './campus-map.ts';
+import { createPriorityDetails, createSkyline, createFireTower } from './priority-details.ts';
+import { createCampusSign, photoSpot } from './campus-sign.ts';
+import { fireTowerFootprint } from './surroundings.ts';
 export { bounds } from './campus-map.ts';
 
 export const maxFlightAltitude = 180;
 export const spawn = new T.Vector3(0, .03, 68);
 export const benchLocations = [new T.Vector3(-30, 0, 39), new T.Vector3(30, 0, 52),new T.Vector3(-12,0,115),new T.Vector3(75,0,47)];
 export const campusPlaces=[
+  {name:'I ❤️ NJU',x:-24,z:46,description:'在草坪前留一张合影。沿西侧稍稍后退，可以把北大楼与紫峰大厦一同收入画面。'},
   {name:'北大楼',x:0,z:18,description:'中央塔楼、十字脊与爬藤，是许多南大学生和校友记忆中的校园风景。'},
   {name:'东大楼',x:37,z:48,description:'抬高的中央屋顶、灰砖与深色木窗，共同构成庭院东侧的建筑轮廓。'},
   {name:'西大楼',x:-37,z:46,description:'沿着庭院西侧慢慢走，可以看到起伏的瓦顶、分层的窗带和掩映其间的树木。'},
@@ -24,14 +27,31 @@ export const campusPlaces=[
   {name:'广州路校门',x:-35,z:715,description:'南园南端的校园出入口，沿校园道路可以回到宿舍区与汉口路。'},
   {name:'大礼堂',x:-27,z:99,description:'大礼堂于 1920 年投入使用，是金陵大学旧址的组成部分。中式屋顶、三樘入口和两侧耳房，记录着校园公共生活的记忆。'},
 ];
+export type TravelPlace = { name: string; x: number; z: number; yaw: number; pitch?: number; firstPerson?: boolean; photoFov?: number };
+export const travelPlaces: TravelPlace[] = [
+  { name: '北大楼', x: 0, z: 60, yaw: 0 },
+  { name: '东大楼', x: 35, z: 48, yaw: -Math.PI / 2 },
+  { name: '西大楼', x: -35, z: 46, yaw: Math.PI / 2 },
+  { name: '大礼堂', x: -24, z: 99, yaw: Math.PI / 2 },
+  { name: '教学楼／郑钢楼', x: -85, z: 153, yaw: 0 },
+  { name: '中大路', x: -86, z: 255, yaw: 0 },
+  { name: '汉口路校门', x: -91, z: 365, yaw: 0 },
+  { name: '苏浙运动场', x: -193, z: 24, yaw: 0 },
+  { name: '南园北门', x: -89, z: 392, yaw: Math.PI },
+  { name: '南园喷泉', x: -70, z: 452, yaw: 0 },
+  { name: '南园宿舍区', x: -41, z: 526, yaw: 0 },
+  { name: '广州路校门', x: -35, z: 715, yaw: 0 },
+  photoSpot,
+];
 export type CampusWorld = Awaited<ReturnType<typeof createWorld>>;
 
-export async function createWorld(scene: T.Scene, mats: Materials) {
+export async function createWorld(scene: T.Scene, mats: Materials, quality = 'medium') {
   const root = new T.Group(); root.name = 'core-campus'; scene.add(root);
   const solids: Solid[] = [], cameraSolids: T.Object3D[] = [], fixedMeshes: CollisionMesh[] = [], lampPositions:T.Vector3[]=[], vegetationUpdates: ((position: T.Vector3, quality: string, flying: boolean) => void)[] = [];
   const mapResponse = await fetch(`${import.meta.env.BASE_URL}data/campus-layout.json`);
   if (!mapResponse.ok) throw new Error('校园地图加载失败');
   const map: CampusMap = await mapResponse.json();
+  map.features.push(fireTowerFootprint);
   const b = new Builder();
   // Surfaces and courtyards share the supplied plan, including polygon holes.
   const base = new T.MeshStandardMaterial({ color: 0xa5aa96, roughness: 1 });
@@ -39,6 +59,13 @@ export async function createWorld(scene: T.Scene, mats: Materials) {
   // Modest collider tiles avoid the contact tolerance of a kilometre-wide convex box.
   for (let x = -640; x < 192; x += 64) for (let z = -320; z < 768; z += 64) solids.push({ x: x + 32, y: -.2, z: z + 32, w: 64, h: .4, d: 64 });
   const asphalt = new T.MeshStandardMaterial({ name: 'paving', color: 0x9a9e9a, map: mats.textures.get('stone-grain.webp'), roughness: .95, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+  asphalt.onBeforeCompile = shader => {
+    shader.uniforms.uCourtyardPavers = { value: mats.textures.get('pavers.webp') };
+    shader.vertexShader = 'varying vec2 vRoadWorld;\n' + shader.vertexShader;
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvRoadWorld=(modelMatrix*vec4(transformed,1.)).xz;');
+    shader.fragmentShader = 'varying vec2 vRoadWorld;uniform sampler2D uCourtyardPavers;\n' + shader.fragmentShader;
+    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\nfloat courtyard=(1.-smoothstep(35.,39.,abs(vRoadWorld.x)))*smoothstep(15.,18.,vRoadWorld.y)*(1.-smoothstep(80.,84.,vRoadWorld.y));diffuseColor.rgb=mix(diffuseColor.rgb,texture2D(uCourtyardPavers,vRoadWorld/3.6).rgb*vec3(.86,.87,.83),courtyard);');
+  };
   const addSurface = (polygon: Parameters<typeof planShape>[0], material: T.Material, y: number) => {
     const geometry = new T.ShapeGeometry(planShape(polygon)).rotateX(-Math.PI / 2);
     const uv = geometry.getAttribute('uv'); for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 3.6, uv.getY(i) / 3.6);
@@ -65,6 +92,7 @@ export async function createWorld(scene: T.Scene, mats: Materials) {
   const priority = createPriorityDetails(map, mats); root.add(priority.group); solids.push(...priority.solids);
   cameraSolids.push(...priority.group.children);
   root.add(createSkyline());
+  const tower = createFireTower(), sign = createCampusSign(); root.add(tower.group, sign.group); solids.push(...tower.solids, ...sign.solids); cameraSolids.push(...tower.group.children, ...sign.group.children);
 
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   const gltf = await loader.loadAsync(`${import.meta.env.BASE_URL}assets/buildings/beidalou.glb`);
@@ -87,19 +115,20 @@ export async function createWorld(scene: T.Scene, mats: Materials) {
   const landmarkCollision=await fetch(`${import.meta.env.BASE_URL}data/landmarks-collision.json`);if(!landmarkCollision.ok)throw new Error('扩展区域碰撞数据未加载');
   solids.push(...await landmarkCollision.json() as Solid[]);
   const ordinary=buildOrdinaryBuildings(map.features,mats);fixedMeshes.push(...ordinary.fixedMeshes);
-  root.add(createIvy(mats));
+  root.add(createIvy(mats, quality));
 
   const nearTrees: TreeSpot[] = [
     { x: -16, z: 21, height: 14, kind: 'cedar' }, { x: 17, z: 19, height: 16, kind: 'cedar' },
     { x: -28, z: 30, height: 15 }, { x: 29, z: 31, height: 17 },
-    { x: -29, z: 48, height: 17 }, { x: 31, z: 57, height: 16 },
+    { x: -32, z: 46, height: 17 }, { x: 31, z: 57, height: 16 },
     { x: -31, z: 68, height: 18 }, { x: 27, z: 76, height: 16 },
     { x: -13, z: 63, height: 19 }, { x: 15, z: 83, height: 18 },
+    { x: -24, z: 14, height: 8 }, { x: -8.5, z: 17, height: 7.8 }, { x: 8, z: 17, height: 8.4 }, { x: 25, z: 13, height: 9 },
     { x: -35, z: 6, height: 17 }, { x: 38, z: 3, height: 15 },
     { x: -19, z: -22, height: 17 }, { x: 23, z: -24, height: 18 },
   ];
-  const trees = createTrees(nearTrees.filter(t => t.kind === 'cedar'), mats); root.add(trees.group); solids.push(...trees.solids);
-  const broadleaf = await createModelTrees(nearTrees.filter(t => t.kind !== 'cedar'), 'near', mats.leaves); root.add(broadleaf.group); solids.push(...broadleaf.solids);
+  const trees = createJunipers(nearTrees.filter(t => t.kind === 'cedar'), mats, quality); root.add(trees.group); solids.push(...trees.solids);
+  const broadleaf = await createModelTrees(nearTrees.filter(t => t.kind !== 'cedar'), quality === 'low' ? 'far' : 'near', mats.leaves); root.add(broadleaf.group); solids.push(...broadleaf.solids);
   const plants = createGroundPlants(mats); root.add(plants.group);
   let sectors = 1;
 
@@ -139,7 +168,7 @@ export async function createWorld(scene: T.Scene, mats: Materials) {
       if (farTrees.some(t => Math.hypot(t.x - x, t.z - z) < 11)) continue;
       farTrees.push({ x, z, height: 12 + rand() * 8 });
     }
-    const far = await createModelTrees(farTrees, 'far', mats.leaves); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);
+    const far = await createModelTrees(farTrees.filter(t => !map.features.some(f => f.tags.leisure === 'track' && insideRing(t.x, t.z, f.points))), 'far', mats.leaves); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);
     const props = new Builder();
     for (const p of benchLocations) {
       for (let k = 0; k < 5; k++) props.box(2.25, .075, .105, p.x, .52, p.z + k * .12, mats.wood);

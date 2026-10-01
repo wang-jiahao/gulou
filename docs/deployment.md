@@ -1,3 +1,7 @@
+# 当前发布状态：暂停对外发布
+
+2026-10-02：用户要求仓库私有、撤下个人网站游戏子页，先在本地开发成熟后再决定开源。不得自动推送源码或恢复网站。以下步骤仅保留为未来获得明确发布授权后的参考。
+
 # Publishing Gulou
 
 - Source repository: https://github.com/wang-jiahao/gulou

@@ -29,6 +29,10 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
     }
     geometry.applyMatrix4(node.matrixWorld);
     const material = node.material as T.MeshStandardMaterial; material.roughness = .9;
+    if (material.name.includes('leaves')) {
+      material.onBeforeCompile = shader => { shader.uniforms.uFoliageLight = foliage.userData.foliageLight; shader.fragmentShader = 'uniform float uFoliageLight;\n' + shader.fragmentShader; shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\nreflectedLight.indirectDiffuse += diffuseColor.rgb * .085 * uFoliageLight;'); };
+      material.customProgramCacheKey = () => 'gulou-canopy-translucency';
+    }
     if (material.map) material.map.anisotropy = 8;
     if (lod === 'far' && material.name.includes('trunk')) {
       // Preserve a rounded trunk instead of the single-point base in the reduced scan.

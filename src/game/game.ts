@@ -5,7 +5,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { loadMaterials } from '../world/materials.ts';
 import { createWorld, spawn, type CampusWorld } from '../world/world.ts';
 import { Player } from '../player/controller.ts';
-import { createAvatar } from '../player/avatar.ts';
+import { createAvatar, type CharacterKind } from '../player/avatar.ts';
 import { WalkCamera } from '../player/camera.ts';
 import { Music } from '../audio/music.ts';
 import { Ambience } from '../audio/ambience.ts';
@@ -26,6 +26,8 @@ export class Game {
   atmosphere!: Atmosphere;
   mode: Mode = 'loading';
   quality: Quality = 'medium';
+  character: CharacterKind = 'male';
+  private characterRequest = 0;
   photoFov = 58;
   photoHideAvatar = false;
   frameMs = 16.7;
@@ -45,6 +47,7 @@ export class Game {
   private csm?: CSM;
   private shadowMaterials = new Set<T.Material>();
   private shadowFov = 0;
+  private foliageLight?: { value: number };
   private windTime?: {value:number};
   private updateStatsAt = 0;
 
@@ -61,7 +64,7 @@ export class Game {
     this.csm.fade=true;
     this.csm.lights.forEach(light=>{light.color.set(0xfff0d9);light.shadow.normalBias=.025;light.shadow.bias=-.00003;});
     this.setTime(15);
-    this.setQuality('medium'); window.addEventListener('resize', () => this.resize());
+    this.setQuality(matchMedia('(pointer: coarse)').matches ? 'low' : 'medium'); window.addEventListener('resize', () => this.resize());
     this.renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); this.mode = 'paused'; this.onNotice('图形上下文已中断，请重新加载页面。'); });
   }
   async init(progress: (p: number, label: string) => void) {
@@ -75,10 +78,10 @@ export class Game {
     hdr.mapping=T.EquirectangularReflectionMapping;
     const pmrem=new T.PMREMGenerator(this.renderer);this.scene.environment=pmrem.fromEquirectangular(hdr).texture;pmrem.dispose();this.scene.environmentIntensity=.28;
     this.atmosphere=new Atmosphere(this.scene,hdr);this.atmosphere.setQuality(this.quality);
-    this.windTime=materials.windTime;
+    this.windTime=materials.windTime; this.foliageLight=materials.foliageLight;
     progress(.5, '搭建北大楼与树荫步道');
-    this.world = await createWorld(this.scene, materials);
-    this.player = new Player(this.scene, this.world.solids, await createAvatar(),this.world.fixedMeshes);
+    this.world = await createWorld(this.scene, materials, this.quality);
+    this.player = new Player(this.scene, this.world.solids, await createAvatar(this.character),this.world.fixedMeshes);
     const initialMeshes=this.world.fixedMeshes.length;
     this.shadow = this.createContactShadow(); this.scene.add(this.shadow);
     this.setupShadowMaterials();
@@ -120,6 +123,15 @@ export class Game {
     this.resize();
     this.atmosphere?.setQuality(quality);
   }
+  async setCharacter(kind: CharacterKind) {
+    const request = ++this.characterRequest;
+    if (kind === this.character) return;
+    const next = await createAvatar(kind);
+    if (request !== this.characterRequest) { next.dispose(); return; }
+    const previous = this.player.replaceAvatar(next);
+    for (const material of previous.materials) { this.shadowMaterials.delete(material); this.csm?.shaders.delete(material); }
+    previous.dispose(); this.character = kind; this.setupShadowMaterials();
+  }
   toggleFlight(){
     if(this.player.flying){this.player.land();this.onNotice('正在降落，可用 WASD 微调位置。');return;}
     if(this.world.sectors<3){this.onNotice('正在准备空中视野，请稍候再起飞。');return;}
@@ -142,8 +154,9 @@ export class Game {
     if(this.windTime)this.windTime.value+=dt*(1+(this.atmosphere?.state.rain??0)*1.5);
     this.frameMs = T.MathUtils.lerp(this.frameMs, Math.min(rawDt * 1000, 200), .03);
     this.player.update(dt, this.cameraRig.yaw, this.mode === 'playing');
-    this.cameraRig.update(this.player.position, dt, this.world.cameraSolids, this.player.seated,this.player.flying);
+    this.cameraRig.update(this.player.position, dt, this.world.cameraSolids, this.player.seated,this.player.flying,this.player.avatar.height);
     this.atmosphere.update(dt,this.mode==='playing',this.camera.position);
+    if(this.foliageLight)this.foliageLight.value=this.atmosphere.daylight;
     this.world.updateVegetation(this.player.position, this.quality, this.player.flying);
     this.csm!.lightDirection.copy(this.atmosphere.sunDirection).negate();this.csm!.lights.forEach(light=>{light.intensity=this.atmosphere.sunIntensity;light.color.copy(this.atmosphere.lightColor);});
     this.renderer.toneMappingExposure=1.05+this.atmosphere.night*.12;
@@ -167,7 +180,7 @@ export class Game {
     this.onTick();
   }
   stats() {
-    return { mode: this.mode, fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,environment:this.atmosphere.snapshot,music:this.music.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
+    return { mode: this.mode, fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,environment:this.atmosphere.snapshot,music:this.music.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
   }
   async savePhoto() {
     this.renderer.render(this.scene, this.camera);

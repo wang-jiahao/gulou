@@ -13,7 +13,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials) 
   const warm = new T.MeshStandardMaterial({ name: 'window-glass-warm', color: 0x35464b, roughness: .3, metalness: .35 });
   const cool = new T.MeshStandardMaterial({ name: 'window-glass-cool', color: 0x4c5b61, roughness: .3, metalness: .35 });
   for (const f of features) {
-    if (!f.tags.building || heroIds.includes(f.id) || f.points.length < 3) continue;
+    if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
     const teaching = f.id === 'teaching-priority', points = f.points;
     const shape = planShape(f), levels = Number(f.tags['building:levels']);
     const height = teaching ? 16.6 : Number.isFinite(levels) && levels > 0 ? Math.min(55, levels * 3.3) : 12;

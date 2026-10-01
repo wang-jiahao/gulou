@@ -43,7 +43,7 @@ export class Atmosphere {
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       void main(){
         vec3 d=normalize(vDirection);vec2 uv=vec2(atan(d.z,d.x)/6.2831853+.5,asin(clamp(d.y,-1.,1.))/3.14159265+.5);
-        vec3 day=texture2D(uHDR,vec2(fract(uv.x+.207),uv.y)).rgb*.62;
+        vec3 day=texture2D(uHDR,vec2(fract(uv.x-.11),uv.y)).rgb*.62;
         float horizon=pow(1.-abs(d.y),4.);vec3 dusk=mix(vec3(.14,.18,.31),vec3(1.4,.43,.12),horizon);
         day=mix(day,dusk,uTwilight*.72);
         vec3 night=mix(vec3(.004,.008,.022),vec3(.027,.043,.08),pow(1.-max(d.y,0.),3.));

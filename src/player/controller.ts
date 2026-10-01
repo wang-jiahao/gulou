@@ -7,13 +7,15 @@ import type { CollisionMesh } from '../world/collision-mesh.ts';
 import { createGlider } from './glider.ts';
 
 export class Player {
-  readonly avatar: Awaited<ReturnType<typeof createAvatar>>;
+  avatar: Awaited<ReturnType<typeof createAvatar>>;
   readonly physics = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
   readonly body = this.physics.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(spawn.x, 1, spawn.z));
   readonly collider = this.physics.createCollider(RAPIER.ColliderDesc.capsule(.57, .27), this.body);
   readonly motor = this.physics.createCharacterController(.02);
   readonly position = spawn.clone();
   keys = new Set<string>();
+  readonly moveInput = new T.Vector2();
+  clearInput() { this.keys.clear(); this.moveInput.set(0, 0); }
   velocityY = 0;
   speed = 0;
   yaw = 0;
@@ -29,16 +31,25 @@ export class Player {
   private accumulated = 0;
   private direction = new T.Vector3();
 
-  constructor(scene: T.Scene, solids: Solid[], avatar: Awaited<ReturnType<typeof createAvatar>>, meshes: CollisionMesh[] = []) {
+  constructor(private scene: T.Scene, solids: Solid[], avatar: Awaited<ReturnType<typeof createAvatar>>, meshes: CollisionMesh[] = []) {
     this.avatar = avatar;
     this.motor.enableAutostep(.3, .2, true); this.motor.enableSnapToGround(.4);
     this.motor.setMaxSlopeClimbAngle(Math.PI / 4); this.motor.setMinSlopeSlideAngle(Math.PI / 3);
     this.addSolids(solids);this.addMeshes(meshes);this.avatar.root.add(this.glider);scene.add(this.avatar.root);this.reset();
+    this.connectGroundSampler();
+  }
+  private connectGroundSampler() {
     this.avatar.setGroundSampler((x,z)=>{
       const top=this.position.y+1.1;
       const hit=this.physics.castRay(new RAPIER.Ray({x,y:top,z},{x:0,y:-1,z:0}),2.5,true,undefined,undefined,this.collider,this.body);
       return hit&&hit.timeOfImpact>.08?top-hit.timeOfImpact:this.position.y;
     });
+  }
+  replaceAvatar(next: Awaited<ReturnType<typeof createAvatar>>) {
+    const previous = this.avatar;
+    previous.root.remove(this.glider); this.scene.remove(previous.root);
+    next.root.position.copy(this.position); next.root.rotation.copy(previous.root.rotation); next.root.add(this.glider);
+    this.avatar = next; this.connectGroundSampler(); this.scene.add(next.root); return previous;
   }
   addSolids(solids: Solid[]) {
     for (const s of solids) {
@@ -50,6 +61,28 @@ export class Player {
   addMeshes(meshes:CollisionMesh[]){for(const mesh of meshes)this.physics.createCollider(RAPIER.ColliderDesc.trimesh(mesh.vertices,mesh.indices));this.physics.step();}
   get flying(){return this.flightState!=='walking';}
   groundHeightAt(x:number,z:number){const hit=this.physics.castRay(new RAPIER.Ray({x,y:160,z},{x:0,y:-1,z:0}),200,true,undefined,undefined,this.collider,this.body);return hit?160-hit.timeOfImpact:0;}
+  travelTo(x: number, z: number) {
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
+    const cx = T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), cz = T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1);
+    for (const radius of [0, .8, 1.6, 3, 5, 8, 13, 21, 34]) for (let i = 0; i < (radius ? 16 : 1); i++) {
+      const px = cx + Math.cos(i * Math.PI / 8) * radius, pz = cz + Math.sin(i * Math.PI / 8) * radius;
+      if (px < bounds.minX + 1 || px > bounds.maxX - 1 || pz < bounds.minZ + 1 || pz > bounds.maxZ - 1) continue;
+      const hit = this.physics.castRayAndGetNormal(new RAPIER.Ray({ x: px, y: 220, z: pz }, { x: 0, y: -1, z: 0 }), 230, true, undefined, undefined, this.collider, this.body);
+      if (!hit || hit.normal.y < .68) continue;
+      const y = 220 - hit.timeOfImpact + .06;
+      // A capsule must have support across its footprint, not balance on a letter or lamp.
+      const supported = [[.28, 0], [-.28, 0], [0, .28], [0, -.28]].every(([dx, dz]) => {
+        const support = this.physics.castRayAndGetNormal(new RAPIER.Ray({ x: px + dx, y: y + .25, z: pz + dz }, { x: 0, y: -1, z: 0 }), .6, true, undefined, undefined, this.collider, this.body);
+        return support && support.normal.y > .65 && Math.abs(y + .25 - support.timeOfImpact - (y - .06)) < .21;
+      });
+      if (!supported) continue;
+      const obstacle = this.physics.intersectionWithShape({ x: px, y: y + .86, z: pz }, { x: 0, y: 0, z: 0, w: 1 }, this.collider.shape, undefined, undefined, this.collider, this.body);
+      if (obstacle) continue;
+      this.finishFlight(); this.seated = false; this.noclip = false; this.clearInput(); this.accumulated = 0;
+      this.teleport(px, y, pz); return { x: px, y, z: pz, adjusted: radius > 0 };
+    }
+    return null;
+  }
   startFlight(){
     const overhead=this.physics.castRay(new RAPIER.Ray({x:this.position.x,y:this.position.y+1.85,z:this.position.z},{x:0,y:1,z:0}),30,true,undefined,undefined,this.collider,this.body);
     if(overhead)return false;
@@ -57,7 +90,7 @@ export class Player {
   }
   land(){if(this.flying)this.flightState='landing';}
   private finishFlight(){this.flightState='walking';this.flightVelocity.set(0,0,0);this.velocityY=0;this.motor.enableAutostep(.3,.2,true);this.motor.enableSnapToGround(.4);this.glider.visible=false;this.avatar.root.rotation.z=0;}
-  reset() { this.finishFlight();this.teleport(spawn.x, spawn.y, spawn.z); this.seated = false; this.keys.clear(); this.avatar.root.rotation.y = 0; }
+  reset() { this.finishFlight();this.teleport(spawn.x, spawn.y, spawn.z); this.seated = false; this.clearInput(); this.avatar.root.rotation.y = 0; }
   teleport(x: number, y: number, z: number) {
     this.position.set(T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), Math.max(.03, y), T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1));
     this.body.setTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }, true);
@@ -65,10 +98,10 @@ export class Player {
   }
   update(dt: number, yaw: number, active: boolean) {
     this.yaw = yaw;
-    const forward = active ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : 0;
-    const right = active ? Number(this.keys.has('KeyD') || this.keys.has('ArrowRight')) - Number(this.keys.has('KeyA') || this.keys.has('ArrowLeft')) : 0;
+    const forward = active ? T.MathUtils.clamp(Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) + this.moveInput.y, -1, 1) : 0;
+    const right = active ? T.MathUtils.clamp(Number(this.keys.has('KeyD') || this.keys.has('ArrowRight')) - Number(this.keys.has('KeyA') || this.keys.has('ArrowLeft')) + this.moveInput.x, -1, 1) : 0;
     this.direction.set(right * Math.cos(yaw) - forward * Math.sin(yaw), 0, -forward * Math.cos(yaw) - right * Math.sin(yaw));
-    if (this.direction.lengthSq() > 0) this.direction.normalize();
+    if (this.direction.lengthSq() > 1) this.direction.normalize();
     const desired = (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) ? 4.2 : 1.65;
     if (this.seated) this.direction.set(0, 0, 0);
     if(this.flying&&active){

@@ -52,27 +52,82 @@ export function createTrees(spots: TreeSpot[], mats: Materials, seed = 1917) {
   return { group, solids: b.solids };
 }
 
-export function createIvy(mats: Materials) {
-  const rand = rng(1902), obj = new T.Object3D(), matrices: T.Matrix4[] = [], colors: T.Color[] = [];
-  const addLeaf = (x: number, y: number, z: number, angle: number) => { obj.position.set(x, y, z); obj.rotation.set((rand() - .5) * .4, angle + (rand() - .5) * .4, (rand() - .5) * 1.6); const s = .13 + rand() * .15; obj.scale.setScalar(s); obj.updateMatrix(); matrices.push(obj.matrix.clone()); colors.push(new T.Color().setHSL(.16 + rand() * .07, .18, .7 + rand() * .25)); };
-  for (const side of [-1, 1]) for (let x = -30.9; x < 31; x += .13) for (let y = 1.35; y < 8.5; y += .13) {
-    if (side === 1 && Math.abs(x) < 4.8) continue;
-    const nearWindow = ((x + 28) % 3.7 + 3.7) % 3.7; const inWindowX = nearWindow < 1 || nearWindow > 2.7;
-    const inWindowY = (y > 1.7 && y < 4.45) || (y > 5.2 && y < 8.1);
-    if (inWindowX && inWindowY) continue;
-    if (rand() > .7 + .25 * Math.sin(x * .6 + y * .7)) continue;
-    addLeaf(x + rand() * .13, y, side * (11.055 + rand() * .065), side === 1 ? 0 : Math.PI);
+export function createIvy(mats: Materials, quality = 'medium') {
+  const rand = rng(1902), obj = new T.Object3D(), matrices: T.Matrix4[] = [], colors: T.Color[] = [], stems = new Builder();
+  const stemMaterial = new T.MeshStandardMaterial({ color: 0x4e4734, roughness: 1 });
+  const field = (x: number, y: number) => .5 + .22 * Math.sin(x * 1.3 + Math.sin(y * .53) * 2) + .17 * Math.sin(y * .82 - x * .45) + .11 * Math.sin(x * 3.1 + y * 2.4);
+  const grid = quality === 'low' ? .18 : .115;
+  const leaf = (x: number, y: number, z: number, angle: number, mass: number) => {
+    obj.position.set(x + Math.sin(angle) * mass, y, z + Math.cos(angle) * mass);
+    obj.rotation.set((rand() - .5) * .45, angle + (rand() - .5) * .55, (rand() - .5) * 2.3);
+    const size = .21 + rand() * .10; obj.scale.set(size * (.85 + rand() * .25), size, size); obj.updateMatrix(); matrices.push(obj.matrix.clone());
+    const shade = .67 + rand() * .32; colors.push(new T.Color().setRGB(shade * (.86 + rand() * .13), shade, shade * (.76 + rand() * .16)));
+  };
+  const surface = (width: number, bottom: number, top: number, origin: T.Vector3, angle: number, hole: (u: number, y: number) => boolean, coverage: number) => {
+    const tangent = new T.Vector3(Math.cos(angle), 0, -Math.sin(angle));
+    for (let u = -width / 2; u < width / 2; u += grid) for (let y = bottom; y < top; y += grid) {
+      const ju = u + (rand() - .5) * grid * 1.3, jy = y + (rand() - .5) * grid;
+      if (hole(ju, jy)) continue;
+      const growth = field(ju, jy), density = coverage * (.4 + growth * .8);
+      if (rand() > density) continue;
+      const p = origin.clone().addScaledVector(tangent, ju); const thickness = .025 + Math.max(0, growth - .35) * .22;
+      leaf(p.x, jy, p.z, angle, thickness);
+      if (quality !== 'low' && growth > .68 && rand() < .45) leaf(p.x + tangent.x * .07, jy - .06, p.z + tangent.z * .07, angle, thickness + .09);
+    }
+    for (let u = -width / 2 + .5; u < width / 2; u += 2.7) {
+      const points: T.Vector3[] = [];
+      for (let y = bottom; y < top; y += .45) {
+        const along = u + Math.sin(y * .5 + u) * .18;
+        if (hole(along, y)) { if (points.length > 2) stems.line(points, .014, stemMaterial, 4); points.length = 0; continue; }
+        const p = origin.clone().addScaledVector(tangent, along); p.y = y; points.push(p);
+      }
+      if (points.length > 2) stems.line(points, .014, stemMaterial, 4);
+    }
+  };
+  for (const side of [-1, 1]) surface(61.8, 1.35, 8.65, new T.Vector3(0, 0, side * 11.075), side === 1 ? 0 : Math.PI, (u, y) => {
+    const x = u * side;
+    if (side === 1 && Math.abs(x) < 4.8) return true;
+    const windowX = Array.from({ length: 16 }, (_, i) => -28 + i * 3.7).some(cx => Math.abs(x - cx) < .8 + .06 * Math.sin(y * 5));
+    return windowX && ((y > 1.68 && y < 4.4) || (y > 5.18 && y < 8.02));
+  }, .9);
+  surface(8.8, 1.5, 23.8, new T.Vector3(0, 0, 12.2), 0, (x, y) =>
+    (Math.abs(x) < 1.55 && y < 5) || (Math.abs(x) < .87 && [7, 11.5, 16.1].some(level => Math.abs(y - level) < 1.33)) || (y > 21 && y < 23 && [-2.65, 0, 2.65].some(cx => Math.abs(x - cx) < .8)), 1.15);
+  for (const side of [-1, 1]) surface(10.1, 2, 23.8, new T.Vector3(side * 4.58, 0, 7), side * Math.PI / 2, (u, y) =>
+    (Math.abs(u) < .76 && [4.25, 8.55, 12.9, 17.1].some(level => Math.abs(y - level) < 1.33)) || (y > 21 && y < 23 && [-3.2, 0, 3.2].some(cx => Math.abs(u - cx) < .8)), 1.1);
+  const geometry = new T.PlaneGeometry(1, 1); const position = geometry.getAttribute('position');
+  for (let i = 0; i < position.count; i++) position.setZ(i, [0, .09, -.035, .035][i]); geometry.computeVertexNormals();
+  const mesh = new T.InstancedMesh(geometry, mats.ivy, matrices.length);
+  matrices.forEach((m, i) => { mesh.setMatrixAt(i, m); mesh.setColorAt(i, colors[i]); }); mesh.receiveShadow = mesh.castShadow = true; mesh.name = 'clustered ivy leaves'; mesh.computeBoundingSphere();
+  const group = stems.finish('climbing ivy stems and irregular leaf masses'); group.add(mesh); group.userData.leaves = matrices.length; return group;
+}
+
+/** Upright evergreen clusters, approximating the juniper-like forms in the courtyard photographs. */
+export function createJunipers(spots: TreeSpot[], mats: Materials, quality = 'medium') {
+  const b = new Builder(), rand = rng(9182), matrices: T.Matrix4[] = [], colors: T.Color[] = [], obj = new T.Object3D();
+  for (const tree of spots) {
+    const h = tree.height;
+    b.cylinder(new T.Vector3(tree.x, 0, tree.z), new T.Vector3(tree.x, h * .75, tree.z), .3, .06, mats.coniferBark, 9);
+    b.solids.push({ x: tree.x, y: h * .25, z: tree.z, w: .65, h: h * .5, d: .65 });
+    for (let shoot = 0; shoot < 7; shoot++) {
+      const a = shoot * 2.4, reach = shoot ? h * (.07 + rand() * .1) : 0, top = h * (shoot ? .69 + rand() * .29 : 1);
+      const sx = tree.x + Math.cos(a) * reach, sz = tree.z + Math.sin(a) * reach;
+      b.cylinder(new T.Vector3(tree.x, h * .16, tree.z), new T.Vector3(sx, top * .91, sz), .105, .015, mats.coniferBark, 6);
+      for (let layer = 0; layer < 17; layer++) {
+        const t = layer / 16, y = h * .22 + t * (top - h * .22), radius = (h * .105 * Math.pow(1 - t, .65) + .14) * (.76 + rand() * .3);
+        const count = quality === 'low' ? 20 : 35;
+        for (let k = 0; k < count; k++) {
+          const phi = rand() * Math.PI * 2, r = Math.sqrt(rand()) * radius;
+          obj.position.set(sx + Math.cos(phi) * r, y + (rand() - .5) * .9, sz + Math.sin(phi) * r);
+          obj.rotation.set((rand() - .5) * 1.7, rand() * Math.PI * 2, (rand() - .5) * 2.8);
+          const size = .5 + rand() * .35; obj.scale.set(size, size * 1.4, size); obj.updateMatrix(); matrices.push(obj.matrix.clone());
+          colors.push(new T.Color().setRGB(.69 + rand() * .23, .81 + rand() * .18, .57 + rand() * .23));
+        }
+      }
+    }
   }
-  for (let y = 1.5; y < 23.7; y += .12) for (let x = -4.4; x < 4.5; x += .12) {
-    if ((Math.abs(x)<1.55&&y<4.95)||(Math.abs(x) < 1.1 && [7,11.5,16.1].some(level => Math.abs(y-level)<1.6)) || (y > 20.3 && y < 23.5)) continue;
-    if (rand() < .87 + Math.sin(x*2+y)*.12) addLeaf(x+rand()*.07, y, 12.19 + rand() * .08, 0);
-  }
-  for (const s of [-1, 1]) for (let y = 2; y < 23.8; y += .14) for (let z = 2; z < 12; z += .14) {
-    if ((Math.abs(z - 7)<1.0&&[4.25,8.55,12.9,17.1].some(level=>Math.abs(y-level)<1.5)) || y > 20.5) continue;
-    if (rand() < .76) addLeaf(s * (4.56 + rand() * .06), y, z, s * Math.PI / 2);
-  }
-  const mesh = new T.InstancedMesh(new T.PlaneGeometry(1, 1), mats.ivy, matrices.length);
-  matrices.forEach((m, i) => { mesh.setMatrixAt(i, m); mesh.setColorAt(i, colors[i]); }); mesh.receiveShadow = true; mesh.castShadow = true; mesh.name = 'individual ivy leaves'; mesh.computeBoundingSphere(); return mesh;
+  const group = b.finish('courtyard upright evergreen trunks'), leaves = new T.InstancedMesh(new T.PlaneGeometry(1, 1), mats.conifer, matrices.length);
+  matrices.forEach((m, i) => { leaves.setMatrixAt(i, m); leaves.setColorAt(i, colors[i]); }); leaves.castShadow = leaves.receiveShadow = true; leaves.computeBoundingSphere(); group.add(leaves);
+  return { group, solids: b.solids };
 }
 
 export function createGroundPlants(mats: Materials) {
@@ -80,7 +135,7 @@ export function createGroundPlants(mats: Materials) {
   const shrubs: T.Matrix4[] = [], grass: T.Matrix4[] = [];
   for (const side of [-1, 1]) {
     for (let z = 24; z < 70; z += 1.8) for (let i = 0; i < 15; i++) {
-      obj.position.set(side * (24 + r() * 2), .5 + r() * .7, z + r()); obj.rotation.set(r() * 2, r() * 6, r()); obj.scale.setScalar(.65 + r() * .55); obj.updateMatrix(); shrubs.push(obj.matrix.clone());
+      obj.position.set(side * (37.5 + r()), .28 + r() * .28, z + r()); obj.rotation.set(r() * 2, r() * 6, r()); obj.scale.setScalar(.65 + r() * .55); obj.updateMatrix(); shrubs.push(obj.matrix.clone());
     }
     for (let x = 6; x < 31; x += 1.1) for (let i = 0; i < 11; i++) { obj.position.set(side * (x + r()), .4 + r() * .9, 13.7 + r() * 1.1); obj.rotation.set(r(), r() * 6, r()); obj.scale.setScalar(.7 + r() * .5); obj.updateMatrix(); shrubs.push(obj.matrix.clone()); }
   }
