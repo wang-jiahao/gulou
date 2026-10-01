@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#283f34" />
+    <meta name="description" content="重返南京大学鼓楼校区。在北大楼的树影里，重新走一段熟悉的路。无需安装的 3D 校园漫步。" />
+    <title>鼓楼 Gulou · 南京大学校园漫步</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%233d5144'/%3E%3Ctext x='32' y='44' font-size='38' text-anchor='middle' fill='%23f3ead8'%3E鼓%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="viewport" aria-label="南京大学鼓楼校区三维漫步场景"></div>
+      <section id="welcome" aria-label="欢迎重返鼓楼">
+        <header class="masthead"><div class="wordmark"><span class="seal">鼓</span><span>鼓楼<small>GULOU</small></span></div><span class="edition">南京大学 · 校园漫步</span></header>
+        <div class="welcome-copy">
+          <div class="eyebrow"><span></span> 久别，也可以重逢</div>
+          <h1>在树影里，<br>再走一程。</h1>
+          <p>从北大楼出发，让脚步慢下来。<br>那些熟悉的风景，一直在这里。</p>
+          <button id="enter" class="enter" disabled><span id="enter-label">正在准备校园</span><span aria-hidden="true">↗</span></button>
+          <div class="loading-line"><span id="loading-text" role="status">准备场景与光照</span><span id="loading-percent">0%</span></div>
+          <div class="loading-track"><div id="loading-bar"></div></div>
+        </div>
+        <footer class="welcome-footer"><span id="welcome-atmosphere">北大楼 · 晴日下午</span><span>建议电脑浏览器 · 戴上耳机，听见校园</span></footer>
+      </section>
+      <div id="hud" hidden>
+        <div class="location"><span class="location-line"></span><div><span id="location-name">北大楼</span><small>南京大学 · 鼓楼校区</small></div></div>
+        <nav class="hud-actions" aria-label="游戏操作"><button id="map-open" aria-label="校园地图">⌖<span>地图 M</span></button><button id="flight-toggle" aria-label="起飞或降落">↗<span id="flight-label">起飞 F</span></button><button id="world-open" aria-label="时间与天气" title="时间与天气 T">◷<span id="clock-chip">15:00 · 晴</span></button><button id="photo-open" title="拍照模式 P" aria-label="拍照模式">▣<span>拍照</span></button><button id="settings-open" aria-label="打开设置">☷<span>设置</span></button></nav>
+        <div class="compass" aria-label="方向"><span id="compass-arrow">↑</span><small>N</small></div>
+        <div id="hint" class="hint"><kbd>W A S D</kbd> 行走 <span>·</span> <kbd>Shift</kbd> 慢跑 <span>·</span> <kbd>V</kbd> 视角 <span>·</span> <kbd>P</kbd> 拍照</div>
+        <div id="flight-hud" class="flight-hud" hidden><span id="flight-state">滑翔中</span><strong id="flight-altitude">26 m</strong><small>空格上升 · Ctrl 下降 · F 降落</small></div>
+        <div id="boundary-hint" class="boundary-hint" hidden>已接近当前开放区域边缘，请转向校园</div>
+        <button id="interact" class="interact" hidden><kbd>E</kbd> <span>坐一会儿</span></button>
+        <button id="resume" class="resume" hidden>点击画面，继续漫步</button>
+        <div class="attribution"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a></div>
+      </div>
+      <dialog id="settings" aria-labelledby="settings-title">
+        <form method="dialog"><div class="dialog-heading"><div><small>TAKE YOUR TIME</small><h2 id="settings-title">慢慢走，随心看。</h2></div><button class="close" aria-label="关闭设置">×</button></div></form>
+        <label class="setting-row" for="quality"><span>画面质量<small>根据设备调整阴影与分辨率</small></span><select id="quality"><option value="high">高 · 细腻</option><option value="medium" selected>中 · 均衡</option><option value="low">低 · 流畅</option></select></label>
+        <label class="setting-row" for="volume"><span>校园声音</span><input id="volume" type="range" min="0" max="100" value="30"></label>
+        <div class="music-panel"><label for="music-track">校园音乐 · 随机轮播</label><select id="music-track" aria-label="选择音乐"></select><div class="music-actions"><button id="music-toggle" class="subtle">播放</button><button id="music-next" class="subtle">下一首</button><label class="subtle import-music">导入音乐<input id="music-files" type="file" accept="audio/*,.ogg,.mp3,.wav,.flac" multiple></label></div><label class="setting-row" for="music-volume"><span>音乐音量</span><input id="music-volume" type="range" min="0" max="100" value="28"></label></div>
+        <label class="setting-row" for="sensitivity"><span>视角灵敏度</span><input id="sensitivity" type="range" min="1" max="10" value="5"></label>
+        <div class="setting-row"><span>当前视角</span><button id="view-toggle" class="subtle">第三人称 ⇄</button></div>
+        <div class="dialog-actions"><button id="reset" class="subtle">回到起点</button><button id="settings-resume" class="primary">继续漫步 →</button></div>
+        <details><summary>关于这片校园</summary><p>北大楼与周边空间依据开放地图和公开照片近似重建，细部持续完善。地图 © OpenStreetMap contributors（ODbL），部分材质来自 Poly Haven（CC0）。本项目为校园漫步创作。</p><a href="./credits.html" target="_blank">查看资料与资产来源 ↗</a></details>
+      </dialog>
+      <dialog id="world-settings" aria-labelledby="world-title">
+        <form method="dialog"><div class="dialog-heading"><div><small>SKY OVER GULOU</small><h2 id="world-title">此刻的校园</h2></div><button class="close" aria-label="关闭时间与天气">×</button></div></form>
+        <div class="time-heading"><span>校园时间</span><output id="time-value">15:00</output></div>
+        <input id="time-slider" class="time-slider" aria-label="手动调整校园时间" type="range" min="0" max="23.99" step=".05" value="15">
+        <div class="world-presets" aria-label="时间预设"><button data-hour="14">白天</button><button data-hour="18.2">黄昏</button><button data-hour="22">夜晚</button></div>
+        <label class="setting-row" for="auto-time"><span>自动昼夜变化<small>游玩时自动流逝，菜单中暂停</small></span><input id="auto-time" type="checkbox" checked></label>
+        <label class="setting-row" for="cycle-speed"><span>一天的长度</span><select id="cycle-speed"><option value="6">6 分钟</option><option value="12" selected>12 分钟</option><option value="24">24 分钟</option></select></label>
+        <div class="time-heading weather-heading"><span>天气</span><output id="weather-value">晴</output></div>
+        <div class="world-presets" aria-label="选择天气"><button data-weather="clear" aria-pressed="false">晴天</button><button data-weather="rain" aria-pressed="false">下雨</button><button data-weather="random" aria-pressed="true">随机天气</button></div>
+        <p class="world-note">天气会逐渐过渡；雨停后，路面会慢慢变干。</p>
+        <div class="dialog-actions"><button id="world-reset" class="subtle">恢复默认</button><button id="world-resume" class="primary">回到校园 →</button></div>
+      </dialog>
+      <dialog id="campus-map" aria-labelledby="map-title"><form method="dialog"><div class="dialog-heading"><div><small>WALK A LITTLE FURTHER</small><h2 id="map-title">一张校园地图</h2></div><button class="close" aria-label="关闭校园地图">×</button></div></form><div class="world-presets"><button data-map-region="all">全校</button><button data-map-region="core" aria-pressed="true">重点漫步路线</button><button data-map-region="south">南园</button></div><canvas id="map-canvas" aria-label="校园建筑道路与当前位置"></canvas><p id="map-selection"></p><button id="map-resume" class="primary">继续漫步 →</button></dialog>
+      <dialog id="info" aria-labelledby="info-title"><form method="dialog"><button class="close" aria-label="关闭介绍">×</button></form><small>一处熟悉的风景</small><h2 id="info-title">北大楼</h2><p>长长的灰瓦屋面，在中央塔楼处向天空升起。中式屋顶与西式楼体在这里相遇，爬藤沿着砖墙舒展。</p><p>北大楼是金陵大学旧址的组成部分，也是南大学生与校友记忆中的校园地标。</p><a href="https://zh.wikipedia.org/wiki/北大楼" target="_blank" rel="noreferrer">阅读建筑资料 ↗</a></dialog>
+      <section id="photo-panel" hidden aria-label="拍照模式">
+        <div class="photo-top"><span>留住这一刻 <small>PHOTO MODE</small></span><button id="photo-close">返回漫步 ×</button></div>
+        <div class="photo-frame" aria-hidden="true"></div>
+        <div class="photo-controls"><label><input id="hide-avatar" type="checkbox"> 隐藏人物</label><label>焦距 <input id="photo-fov" type="range" min="30" max="80" value="58"></label><button id="save-photo" class="primary">保存照片 ↓</button><small>拖动画面调整视角 · 照片不含界面</small></div>
+      </section>
+      <aside id="debug" hidden aria-label="开发调试"><strong>SCENE INSPECTOR</strong><pre id="debug-stats"></pre><button id="debug-reset">Reset</button><button id="debug-noclip">Noclip: off</button><button id="debug-front">Teleport: front</button><label>Time <input id="debug-time" type="range" min="0" max="23.99" step=".1" value="15"></label></aside>
+      <div id="toast" role="status" hidden></div>
+      <div id="fatal" role="alert" hidden><h2>校园暂时没能加载完成</h2><p id="fatal-message"></p><button onclick="location.reload()">重新加载</button></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

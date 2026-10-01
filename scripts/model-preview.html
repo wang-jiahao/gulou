@@ -1,0 +1,16 @@
+<!doctype html><html><body style="margin:0"><script type="module">
+import * as T from 'three';
+import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+const scene=new T.Scene();scene.background=new T.Color(0x929f95);
+const camera=new T.PerspectiveCamera(40,innerWidth/innerHeight,.01,100);camera.position.set(2,1.4,3);camera.lookAt(0,1,0);
+const renderer=new T.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.toneMapping=T.ACESFilmicToneMapping;document.body.appendChild(renderer.domElement);
+scene.add(new T.HemisphereLight(0xffffff,0x505050,2));const sun=new T.DirectionalLight(0xfff0d0,3);sun.position.set(2,4,2);scene.add(sun);
+const type=new URLSearchParams(location.search).get('type');
+const model=type==='natural'?(await import('/src/player/avatar.ts')).createAvatar():type==='girl'?(await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('/assets/source-models/character/hvgirl.glb')).scene:type==='human'?await new OBJLoader().loadAsync('/assets/source-models/character/makehuman-base.obj'):await new FBXLoader().loadAsync('/assets/source-models/character/samba.fbx');
+const resolved=await model;const object=resolved.root??resolved;object.rotation.y=Math.PI;const box=new T.Box3().setFromObject(object);const scale=1.75/box.getSize(new T.Vector3()).y;object.scale.setScalar(scale);object.position.y=-box.min.y*scale;scene.add(object);
+window.MODEL=object;window.READY=true;
+renderer.setAnimationLoop(()=>renderer.render(scene,camera));
+</script></body></html>

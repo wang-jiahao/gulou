@@ -1,0 +1,28 @@
+node_modules/
+dist/
+test-results/
+.DS_Store
+*.log
+assets/source-models/
+.tools/
+
+.local-media/
+# Local reference images, archived conversations and machine-specific reports
+references/
+PLAN.md
+docs/development-requirements.md
+docs/history/
+docs/screenshots/
+docs/validation/
+docs/sources/*
+!docs/sources/makehuman-license.md
+!docs/sources/plan-registration.json
+# Publish curated documentation; keep development journals local.
+docs/*
+!docs/images/
+!docs/asset_sources.md
+!docs/deployment.md
+!docs/sources/
+docs/sources/*
+!docs/sources/makehuman-license.md
+!docs/sources/plan-registration.json
