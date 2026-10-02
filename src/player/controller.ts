@@ -20,6 +20,8 @@ export class Player {
   speed = 0;
   yaw = 0;
   seated = false;
+  // World-space seat surface; the avatar converts it relative to its grounded root.
+  seatHeight = .5575;
   noclip = false;
   flightState: 'walking'|'launching'|'gliding'|'landing' = 'walking';
   readonly glider = createGlider();
@@ -139,6 +141,6 @@ export class Player {
       this.avatar.root.rotation.y += delta * Math.min(1, dt * 12);
     }
     this.avatar.root.rotation.z=this.flying?this.flightBank:0;
-    this.avatar.update(dt, this.speed, this.seated,this.flying);
+    this.avatar.update(dt, this.speed, this.seated,this.flying,this.seatHeight-this.position.y);
   }
 }

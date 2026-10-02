@@ -8,7 +8,7 @@ type Edge = { x: number; z: number; nx: number; nz: number; length: number; angl
 /** Low kerbs and yellow margins seen in official VR gl-1-06 / gl-1-17.
  * Fit them to existing road/lawn boundaries; widths and heights are estimates.
  * Do not turn schematic white gaps into invented metre-wide pavements. */
-export function createSouthRoadDetails(map: CampusMap, mats: Materials) {
+export function createSouthRoadDetails(map: CampusMap, mats: Materials, openings: {minX:number;maxX:number;minZ:number;maxZ:number}[] = []) {
   const b = new Builder(), edges: Edge[] = [];
   const bounded = (polygons: MapPolygon[]) => polygons.map(p => ({
     p, minX: Math.min(...p.points.map(q => q[0])), maxX: Math.max(...p.points.map(q => q[0])),
@@ -41,6 +41,8 @@ export function createSouthRoadDetails(map: CampusMap, mats: Materials) {
             && !within(px - nx * .2, pz - nz * .2, buildingBounds);
         });
         if (!clear) continue;
+        const hx=Math.abs((bx-ax)/length)*span/2+.12,hz=Math.abs((bz-az)/length)*span/2+.12;
+        if(openings.some(o=>x+hx>=o.minX&&x-hx<=o.maxX&&z+hz>=o.minZ&&z-hz<=o.maxZ))continue;
         const angle = Math.atan2(bx - ax, bz - az);
         b.box(.18, .14, span + .006, x - nx * .095, .07, z - nz * .095, mats.stone, true, angle);
         b.box(.10, .004, span - .02, x + nx * .30, .040, z + nz * .30, marking, false, angle);

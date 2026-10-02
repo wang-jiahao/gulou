@@ -28,9 +28,9 @@ try{
   assert.deepEqual(before.records.filter(r=>r.id!=='plan-86'),final.records.filter(r=>r.id!=='plan-86'),'all other building records unchanged');
   assert.equal(old.height,songlin.height);assert.deepEqual(old.frontage,songlin.frontage);assert.equal(before.colliders,final.colliders);
   assert.equal(before.upperVertices,final.upperVertices);assert.equal(before.upperHash,final.upperHash,'upper-storey positions, normals, UVs and material colors remain exact');
-  assert.deepEqual(final.destinations.slice(0,-1),before.destinations,'preserve existing map destination indices');
+  assert.deepEqual(final.destinations.slice(0,before.destinations.length),before.destinations,'preserve existing map destination indices');
  }
- assert.equal(final.destinations.at(-1),'松林楼');assert.ok(final.glazing.length>0&&final.glazing.every(([x,y,z])=>x> -61.8&&x< -43.7&&z>405.8&&z<417.7&&y>=.87&&y<=3.1),'new glazing is confined to the ground floor');
+ assert.ok(final.destinations.includes('松林楼'));assert.ok(final.glazing.length>0&&final.glazing.every(([x,y,z])=>x> -61.8&&x< -43.7&&z>405.8&&z<417.7&&y>=.87&&y<=3.1),'new glazing is confined to the ground floor');
  await page.keyboard.press('KeyM');const value=await page.locator('#travel-place option').evaluateAll(options=>options.find(o=>o.textContent==='松林楼')?.value);await page.selectOption('#travel-place',value);await page.click('#travel-place-go');
  const arrival=await page.evaluate(()=>window.__GULOU__.stats().position);assert.ok(arrival[1]<.2);await page.waitForFunction(()=>document.querySelector('#location-name').textContent==='松林楼');
  await page.keyboard.press('KeyE');assert.ok(await page.locator('#info').isVisible());assert.equal(await page.locator('#info-title').innerText(),'松林楼');await page.click('#info .close');await page.click('#resume');

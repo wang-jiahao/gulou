@@ -18,6 +18,7 @@ import { createDormitoryAmenities } from './dormitory-amenities.ts';
 import { createSouthRoadDetails } from './south-road-details.ts';
 import { createSouthTreeDetails } from './south-tree-details.ts';
 import { createCampusDirectory } from './campus-directory.ts';
+import { createSonglinGarden, songlinPathOpening } from './songlin-garden.ts';
 export { bounds } from './campus-map.ts';
 
 export const maxFlightAltitude = 180;
@@ -35,6 +36,7 @@ export const campusPlaces=[
   {name:'广州路校门',x:-35,z:715,description:'南园南端的校园出入口，沿校园道路可以回到宿舍区与汉口路。'},
   {name:'大礼堂',x:-27,z:99,description:'大礼堂于 1920 年投入使用，是金陵大学旧址的组成部分。中式屋顶、三樘入口和两侧耳房，记录着校园公共生活的记忆。'},
   {name:'松林楼',x:-65.8,z:411.8,description:'松林楼邻近南园的林下休憩空间。沿楼侧可以看到蓝灰色立面、浅色窗框和底层玻璃窗。'},
+  {name:'松林休憩点',x:-70,z:420,description:'松林楼旁的石桌和矮凳，可走近坐一会儿，再沿小径回到校园道路。'},
 ];
 export type TravelPlace = { name: string; x: number; z: number; yaw: number; pitch?: number; firstPerson?: boolean; photoFov?: number };
 export const travelPlaces: TravelPlace[] = [
@@ -116,7 +118,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   b.box(12, .06, 5, 0, .025, 16.4, mats.path);
   b.box(8.5, .06, 6.5, -31, .025, 99, mats.path);
   const ground = b.finish('registered campus roads lawns and playing fields'); root.add(ground); solids.push(...b.solids);
-  const southRoads = createSouthRoadDetails(map, mats); root.add(southRoads.group); solids.push(...southRoads.solids);
+  const southRoads = createSouthRoadDetails(map, mats,[songlinPathOpening]); root.add(southRoads.group); solids.push(...southRoads.solids);
+  const garden = createSonglinGarden(mats); root.add(garden.group); solids.push(...garden.solids); fixedMeshes.push(...garden.fixedMeshes);cameraSolids.push(...garden.group.children);
   const directory = createCampusDirectory(map, mats); root.add(directory.group); solids.push(...directory.solids); cameraSolids.push(...directory.group.children);
   const gateFont = await new FontLoader().loadAsync(`${import.meta.env.BASE_URL}assets/fonts/gate-lettering.typeface.json`);
   const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);
@@ -159,6 +162,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   }
   travelPlaces.push(directory.arrival);
   travelPlaces.push({name:'松林楼',x:-65.8,z:411.8,yaw:-Math.PI/2,firstPerson:true});
+  travelPlaces.push(garden.arrival);
   root.add(createIvy(mats, quality));
 
   const nearTrees: TreeSpot[] = [
@@ -256,5 +260,5 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     return moreSolids;
   }
   const updateVegetation = (position: T.Vector3, quality: string, flying: boolean) => vegetationUpdates.forEach(update => update(position, quality, flying));
-  return { root, map, access, directory, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
+  return { root, map, access, directory, garden, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
 }

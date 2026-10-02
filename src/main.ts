@@ -125,6 +125,7 @@ async function boot() {
   el<HTMLInputElement>('music-volume').oninput = e => { game.music.setVolume(Number((e.target as HTMLInputElement).value) / 100); saveSettings(); };
   el<HTMLInputElement>('music-files').onchange = e => game.music.import(Array.from((e.target as HTMLInputElement).files ?? []));
   const { benchLocations,campusPlaces,bounds,travelPlaces } = await import('./world/world.ts');
+  let seatExit: {x:number;z:number}|null=null;
   travelPlaces.forEach((place, i) => el<HTMLSelectElement>('travel-place').add(new Option(place.name, String(i))));
   const travel = (x: number, z: number, name: string, yaw = game.cameraRig.yaw, pitch?: number, firstPerson?: boolean, photoFov?: number) => {
     if (game.world.sectors < 3) { el('map-selection').textContent = '校园区域正在加载，请稍候再传送。'; return; }
@@ -142,12 +143,14 @@ async function boot() {
   function interact() {
     if(game.mode !== 'playing' || game.player.flying)return;
     if (game.football.inReach) { game.football.kick(game.cameraRig.yaw, game.player.keys.has('ShiftLeft') || game.player.keys.has('ShiftRight')); return; }
-    if (game.player.seated) { game.player.seated = false; game.player.teleport(game.player.position.x, .03, game.player.position.z - 1); return; }
+    if (game.player.seated) { const exit=seatExit??{x:game.player.position.x,z:game.player.position.z-1};if(game.player.travelTo(exit.x,exit.z))seatExit=null;else toast('这里暂时无法起身，可以从地图选择附近位置。');return; }
     if(game.world.directory.nearby(game.player.position)){
       el('map-open').click();document.querySelector<HTMLButtonElement>('[data-map-region="south"]')!.click();return;
     }
+    const gardenSeat=game.world.garden.nearby(game.player.position);
+    if(gardenSeat&&game.world.sectors>=3){game.player.teleport(gardenSeat.x,gardenSeat.y,gardenSeat.z);game.player.seatHeight=gardenSeat.height;game.player.seated=true;game.player.clearInput();game.player.avatar.root.rotation.y=gardenSeat.yaw;seatExit=gardenSeat.exit;return;}
     const bench = benchLocations.find(p => p.distanceTo(game.player.position) < 2.4);
-    if (bench && game.world.sectors >= 3) { game.player.teleport(bench.x, .03, bench.z); game.player.seated = true; game.player.avatar.root.rotation.y = 0; toast('坐一会儿。按 E 起身。'); }
+    if (bench && game.world.sectors >= 3) { game.player.teleport(bench.x, .03, bench.z); game.player.seatHeight=.5575;game.player.seated = true; game.player.avatar.root.rotation.y = 0;seatExit={x:bench.x,z:bench.z-1.1};toast(touchDevice?'坐一会儿，点提示即可起身。':'坐一会儿。按 E 起身。'); }
     else {
       const place=campusPlaces.find(p=>Math.hypot(game.player.position.x-p.x,game.player.position.z-p.z)<5.5);
       if(place){el('info-title').textContent=place.name;const paragraphs=info.querySelectorAll('p');paragraphs[0].textContent=place.description;paragraphs[1].textContent='沿着树荫和道路继续走，还会遇见更多熟悉的地方。';const link=info.querySelector('a')!;link.href=place.name==='北大楼'?'https://zh.wikipedia.org/wiki/北大楼':'https://vr.nju.edu.cn/';game.mode='paused';game.player.clearInput();document.exitPointerLock?.();info.showModal();}
@@ -157,7 +160,7 @@ async function boot() {
   game.onTick = () => {
     touchControls?.update(game.mode === 'playing' && !uiHidden, game.player.flying);
     if (++tick % 15) return;
-    const pos = game.player.position, onBench = game.player.seated || (game.world.sectors >= 3 && benchLocations.some(p => p.distanceTo(pos) < 2.4));
+    const pos = game.player.position, onBench = game.player.seated || (game.world.sectors >= 3 && (benchLocations.some(p => p.distanceTo(pos) < 2.4)||Boolean(game.world.garden.nearby(pos))));
     const nearBuilding = campusPlaces.find(p=>Math.hypot(pos.x-p.x,pos.z-p.z)<5.5);
     const nearDirectory = game.world.directory.nearby(pos);
     el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!onBench && !nearBuilding && !nearDirectory && !game.football.canKick);
