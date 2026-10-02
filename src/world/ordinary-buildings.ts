@@ -25,6 +25,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const plinth = new T.MeshStandardMaterial({name:'campus-plinth',color:0x74776f,map:mats.textures.get('stone-grain.webp'),roughness:.96});
   const recess = new T.MeshStandardMaterial({name:'window-reveal',color:0x303a37,roughness:.95});
   const glass = [0x4d6362,0x5d706d,0x3d5357].map((color,i)=>new T.MeshStandardMaterial({name:i===1?'window-glass-warm':'window-glass-cool',color,roughness:.32,metalness:.32,envMapIntensity:.7}));
+  const gardenGlass = new T.MeshStandardMaterial({name:'songlin-garden-glazing',color:0x769ba3,roughness:.34,metalness:.22,envMapIntensity:1.1});
   const utility = new T.MeshStandardMaterial({name:'utility-casing',color:0xbdbfb1,roughness:.85});
   const louvre = new T.MeshStandardMaterial({name:'utility-grille',color:0x727a73,roughness:.78});
   const windowGuard = new T.MeshStandardMaterial({name:'window-guard',color:0x87908b,roughness:.65,metalness:.35});
@@ -78,7 +79,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       // Positive local Z is always outdoors, including courtyard hole rings.
       const put=(target:Builder,u:number,y:number,v:number,w:number,h:number,d:number,mat:T.Material)=>{
         const x=mx+u*Math.cos(angle)+v*nx,z=mz-u*Math.sin(angle)+v*nz;
-        if(glass.some(g=>g===mat))target.add(new T.PlaneGeometry(w,h),mat,x,y,z,new T.Euler(0,angle,0));
+        if(glass.some(g=>g===mat)||mat===gardenGlass)target.add(new T.PlaneGeometry(w,h),mat,x,y,z,new T.Euler(0,angle,0));
         else target.box(w,h,d,x,y,z,mat,false,angle);
       };
       if(!ri)edges.push({len,x:mx,z:mz,angle,nx,nz});
@@ -89,6 +90,16 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       put(b,0,height-.12,.02,len,.22,.30,stone);
       put(b,0,height+.18,0,len,.30,.20,wall);
       if(profile.bands)for(let floor=1;floor<profile.levels;floor++)put(b,0,floor*floorHeight+.1,.04,len,.16,.22,stone);
+      // The visible garden faces of Songlin have broad ground-floor glazing.
+      // Keep the north entrance and all upper storeys on the existing profile.
+      const glazedGarden=profile.gardenGlazing&&!ri&&(nx<-.7||nz>.7)&&len>3;
+      if(glazedGarden){
+        const width=len-.48,bottom=.88,top=floorHeight-.16,panes=Math.max(2,Math.ceil(width/1.65));
+        put(b,0,(bottom+top)/2,.075,width,top-bottom,.02,gardenGlass);
+        for(const y of[bottom-.035,top+.035])put(b,0,y,.10,width+.16,.075,.19,stone);
+        for(let pane=0;pane<=panes;pane++)put(b,width*(pane/panes-.5),(bottom+top)/2,.115,.055,top-bottom+.08,.15,defaultFrame);
+        windows+=panes;
+      }
       const bays=Math.floor((len-.8)/profile.bays);
       if(profile.style==='glass')for(let j=0;j<=bays;j++){
         const u=len*((j+.5)/(bays+1)-.5);
@@ -97,6 +108,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       for(let j=0;j<bays;j++)for(let floor=0;floor<profile.levels;floor++){
         const u=len*((j+1)/(bays+1)-.5),y=floorHeight*(floor+.60),w=Math.min(profile.windowWidth,len/(bays+1)*.76),h=Math.min(profile.windowHeight,floorHeight*.72);
         const g=glass[Math.floor(random()*glass.length)];
+        if(glazedGarden&&floor===0)continue;
         if(profile.arched){
           const x=mx+u*Math.cos(angle),z=mz-u*Math.sin(angle);
           b.add(new T.ExtrudeGeometry(archShape(w+.20,h+.20),{depth:.10,bevelEnabled:false}),stone,x+.02*nx,y,z+.02*nz,new T.Euler(0,angle,0));
@@ -238,7 +250,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   // buildings outside the camera or shadow frustum instead of drawing campus-wide batches.
   const group=b.finish('plan-based campus buildings with VR facade profiles',120);
   group.add(plaques);
-  for(const mesh of group.children)if(mesh instanceof T.Mesh&&glass.includes(mesh.material as T.MeshStandardMaterial)){mesh.receiveShadow=false;mesh.castShadow=false;}
+  for(const mesh of group.children)if(mesh instanceof T.Mesh&&(glass.includes(mesh.material as T.MeshStandardMaterial)||mesh.material===gardenGlass)){mesh.receiveShadow=false;mesh.castShadow=false;}
   group.userData.buildings=records;
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
   let detailShadows=false;

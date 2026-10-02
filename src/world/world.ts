@@ -34,6 +34,7 @@ export const campusPlaces=[
   {name:'汉口路校门',x:-91,z:350,description:'连接北园、中大路与汉口路的校门。穿过汉口路后，可继续步入南园。'},
   {name:'广州路校门',x:-35,z:715,description:'南园南端的校园出入口，沿校园道路可以回到宿舍区与汉口路。'},
   {name:'大礼堂',x:-27,z:99,description:'大礼堂于 1920 年投入使用，是金陵大学旧址的组成部分。中式屋顶、三樘入口和两侧耳房，记录着校园公共生活的记忆。'},
+  {name:'松林楼',x:-65.8,z:411.8,description:'松林楼邻近南园的林下休憩空间。沿楼侧可以看到蓝灰色立面、浅色窗框和底层玻璃窗。'},
 ];
 export type TravelPlace = { name: string; x: number; z: number; yaw: number; pitch?: number; firstPerson?: boolean; photoFov?: number };
 export const travelPlaces: TravelPlace[] = [
@@ -157,6 +158,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     travelPlaces.push({name:record.name,x:x+nx*4,z:z+nz*4,yaw:Math.atan2(nx,nz)});
   }
   travelPlaces.push(directory.arrival);
+  travelPlaces.push({name:'松林楼',x:-65.8,z:411.8,yaw:-Math.PI/2,firstPerson:true});
   root.add(createIvy(mats, quality));
 
   const nearTrees: TreeSpot[] = [

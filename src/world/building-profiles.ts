@@ -8,6 +8,7 @@ export type FacadeProfile = {
   ac?: boolean; bands?: boolean; balcony?: boolean; dome?: boolean;
   groundWall?: number;
   groundWindowGuards?: boolean;
+  gardenGlazing?: boolean;
   arched?: boolean;
   portal?: 'stone' | 'glass' | 'columns';
   source: string; observations: string;
@@ -68,7 +69,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-83': profile(dorm,'gl-1-24','parallel south-campus dormitory row, pale facade',{levels:6}),
   'plan-84': profile(dorm,'gl-1-24','dormitory row, rooftop enclosure and regular window grid',{levels:6}),
   'plan-85': profile(historic,'gl-1-02','grey masonry building by fountain, gable end and barred windows',{levels:2,roof:'hip',frame:0xb6b7a8}),
-  'plan-86': profile(modern,'gl-1-03 / gl-1-04','low blue-grey teaching wing, white grid windows and flat canopy',{levels:3,wall:0xa3b1af,windowWidth:2.2}),
+  'plan-86': profile(modern,'gl-1-03 / gl-1-04','blue-grey teaching wing, broad blue ground-floor garden glazing with pale mullions; upper windows and north entry retained, hidden elevations approximate',{levels:3,wall:0xa3b1af,windowWidth:2.2,gardenGlazing:true}),
   'plan-88': profile(dorm,'gl-1-06 / gl-1-24','pale dormitory block with utility units and window bars'),
   'plan-90': profile(dorm,'gl-1-06 / gl-1-24','cream residential grid, small air-conditioning units'),
   'plan-92': profile(dorm,'gl-1-24','south-campus residential row visible from above'),
