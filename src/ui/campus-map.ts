@@ -3,6 +3,7 @@ import { bounds, insidePolygon } from '../world/campus-map.ts';
 
 export class CampusMapView {
   onSelect: (x: number, z: number, name: string) => void = () => {};
+  onClear: () => void = () => {};
   private destination: [number, number] | null = null;
   private ctx: CanvasRenderingContext2D;
   private region = { ...bounds };
@@ -21,6 +22,7 @@ export class CampusMapView {
     });
   }
   setRegion(region: string) {
+    this.destination = null; this.onClear();
     this.region = region === 'core' ? { minX: -170, maxX: 100, minZ: -40, maxZ: 372 } : region === 'south' ? { minX: -230, maxX: 150, minZ: 344, maxZ: 745 } : { ...bounds };
     const r = this.region, w = this.canvas.width, h = this.canvas.height;
     const scale = Math.min((w - 90) / (r.maxX - r.minX), (h - 60) / (r.maxZ - r.minZ));

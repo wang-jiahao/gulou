@@ -17,6 +17,7 @@ import { createAccessControls, campusEntrances } from './access-controls.ts';
 import { createDormitoryAmenities } from './dormitory-amenities.ts';
 import { createSouthRoadDetails } from './south-road-details.ts';
 import { createSouthTreeDetails } from './south-tree-details.ts';
+import { createCampusDirectory } from './campus-directory.ts';
 export { bounds } from './campus-map.ts';
 
 export const maxFlightAltitude = 180;
@@ -115,6 +116,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   b.box(8.5, .06, 6.5, -31, .025, 99, mats.path);
   const ground = b.finish('registered campus roads lawns and playing fields'); root.add(ground); solids.push(...b.solids);
   const southRoads = createSouthRoadDetails(map, mats); root.add(southRoads.group); solids.push(...southRoads.solids);
+  const directory = createCampusDirectory(map, mats); root.add(directory.group); solids.push(...directory.solids); cameraSolids.push(...directory.group.children);
   const gateFont = await new FontLoader().loadAsync(`${import.meta.env.BASE_URL}assets/fonts/gate-lettering.typeface.json`);
   const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);
   const access=createAccessControls(mats);root.add(access.group);solids.push(...access.solids);
@@ -154,6 +156,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const [x,z,nx,nz]=record.frontage;
     travelPlaces.push({name:record.name,x:x+nx*4,z:z+nz*4,yaw:Math.atan2(nx,nz)});
   }
+  travelPlaces.push(directory.arrival);
   root.add(createIvy(mats, quality));
 
   const nearTrees: TreeSpot[] = [
@@ -251,5 +254,5 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     return moreSolids;
   }
   const updateVegetation = (position: T.Vector3, quality: string, flying: boolean) => vegetationUpdates.forEach(update => update(position, quality, flying));
-  return { root, map, access, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
+  return { root, map, access, directory, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
 }
