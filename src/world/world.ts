@@ -14,6 +14,7 @@ import { createFootballPitch } from './football-pitch.ts';
 import { createCampusSign, photoSpot } from './campus-sign.ts';
 import { fireTowerFootprint } from './surroundings.ts';
 import { createAccessControls, campusEntrances } from './access-controls.ts';
+import { createDormitoryAmenities } from './dormitory-amenities.ts';
 export { bounds } from './campus-map.ts';
 
 export const maxFlightAltitude = 180;
@@ -240,6 +241,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       props.solids.push({ x, y: 1.8+floor, z, w: .18, h: 3.6, d: .18 });
     }
     const propGroup = props.finish('benches lamps and boundary'); root.add(propGroup); moreSolids.push(...props.solids); cameraSolids.push(...propGroup.children);
+    const amenities=createDormitoryAmenities(map,ordinary.records,mats,[...solids,...moreSolids]);root.add(amenities.group);moreSolids.push(...amenities.solids);lampPositions.push(...amenities.lamps);cameraSolids.push(...amenities.group.children);
     afterSector();
     sectors++;
     return moreSolids;

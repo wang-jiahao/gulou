@@ -220,7 +220,9 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     }
     records.push({id:f.id,name:f.tags.name,source:profile.source,height,windows,roof:profile.roof,dormitory:profile.style==='dormitory',frontage:frontView});
   }
-  const group=b.finish('plan-based campus buildings with VR facade profiles');
+  // Every triangle remains present. Independent bounds let the renderer cull
+  // buildings outside the camera or shadow frustum instead of drawing campus-wide batches.
+  const group=b.finish('plan-based campus buildings with VR facade profiles',120);
   group.add(plaques);
   for(const mesh of group.children)if(mesh instanceof T.Mesh&&glass.includes(mesh.material as T.MeshStandardMaterial)){mesh.receiveShadow=false;mesh.castShadow=false;}
   group.userData.buildings=records;
