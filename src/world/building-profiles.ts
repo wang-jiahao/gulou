@@ -6,6 +6,8 @@ export type FacadeProfile = {
   roof: 'flat' | 'hip' | 'heritage';
   bays: number; windowWidth: number; windowHeight: number;
   ac?: boolean; bands?: boolean; balcony?: boolean; dome?: boolean;
+  groundWall?: number;
+  groundWindowGuards?: boolean;
   arched?: boolean;
   portal?: 'stone' | 'glass' | 'columns';
   source: string; observations: string;
@@ -70,7 +72,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-88': profile(dorm,'gl-1-06 / gl-1-24','pale dormitory block with utility units and window bars'),
   'plan-90': profile(dorm,'gl-1-06 / gl-1-24','cream residential grid, small air-conditioning units'),
   'plan-92': profile(dorm,'gl-1-24','south-campus residential row visible from above'),
-  'plan-94': profile(dorm,'gl-1-17','cream six-storey dormitory, grey ground-floor band',{wall:0xc7c3ad}),
+  'plan-94': profile(dorm,'gl-1-17 / gl-1-06','cream six-storey dormitory, tall grey ground-floor band; visible window guards inform partial ground-floor detail, hidden elevations remain approximate',{wall:0xc7c3ad,groundWall:0x777f7d,groundWindowGuards:true}),
   'plan-95': profile(dorm,'gl-1-06','dormitory courtyard elevation, pale paint and metal window frames'),
   'plan-97': profile(dorm,'gl-1-24','western dormitory row, regular pale window grid'),
   'plan-99': profile(dorm,'gl-1-06 / gl-1-24','courtyard dormitory with service units and flat roof'),

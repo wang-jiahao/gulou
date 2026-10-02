@@ -27,6 +27,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const glass = [0x4d6362,0x5d706d,0x3d5357].map((color,i)=>new T.MeshStandardMaterial({name:i===1?'window-glass-warm':'window-glass-cool',color,roughness:.32,metalness:.32,envMapIntensity:.7}));
   const utility = new T.MeshStandardMaterial({name:'utility-casing',color:0xbdbfb1,roughness:.85});
   const louvre = new T.MeshStandardMaterial({name:'utility-grille',color:0x727a73,roughness:.78});
+  const windowGuard = new T.MeshStandardMaterial({name:'window-guard',color:0x87908b,roughness:.65,metalness:.35});
   const archShape=(w:number,h:number)=>{const s=new T.Shape();s.moveTo(-w/2,-h/2);s.lineTo(w/2,-h/2);s.lineTo(w/2,h/2-w/2);s.absarc(0,h/2-w/2,w/2,0,Math.PI,false);s.closePath();return s;};
   const paints = new Map<string,T.MeshStandardMaterial>();
   const paint = (color:number,brick=false) => {
@@ -82,6 +83,9 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       };
       if(!ri)edges.push({len,x:mx,z:mz,angle,nx,nz});
       put(b,0,.42,.025,len,.84,.12,plinth);
+      // A thin finish stays behind the existing reveals and glass, so the
+      // darker storey cannot cover windows or alter the physical footprint.
+      if(profile.groundWall!==undefined)put(b,0,floorHeight*.525,.006,len,floorHeight*1.05,.018,paint(profile.groundWall));
       put(b,0,height-.12,.02,len,.22,.30,stone);
       put(b,0,height+.18,0,len,.30,.20,wall);
       if(profile.bands)for(let floor=1;floor<profile.levels;floor++)put(b,0,floor*floorHeight+.1,.04,len,.16,.22,stone);
@@ -108,6 +112,16 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         if(w>2.2)for(const side of[-1,1])put(detail,u+side*w*.26,y,.12,.04,h,.13,frame);
         put(detail,u,y-h/2-.08,.14,w+.28,.10,.40,stone);
         put(detail,u,y+h/2+.1,.09,w+.18,.10,.23,stone);
+        // Leave the central entry bay clear; only the confirmed ground-floor
+        // treatment is applied, rather than inventing cages on every storey.
+        if(profile.groundWindowGuards&&floor===0&&Math.abs(u)>2.6){
+          for(const side of[-1,1]){
+            put(detail,u,y+side*h/2,.32,w+.1,.035,.055,windowGuard);
+            put(detail,u+side*w/2,y,.20,.035,h,.28,windowGuard);
+          }
+          const bars=Math.ceil(w/.22);
+          for(let q=1;q<bars;q++)put(detail,u+w*(q/bars-.5),y,.32,.022,h,.03,windowGuard);
+        }
         if(profile.ac&&(j+floor)%3===0&&floor>0){
           put(detail,u+w*.35,y-h*.73,.33,.70,.45,.45,utility);
           put(detail,u+w*.35,y-h*.73,.57,.52,.31,.025,louvre);

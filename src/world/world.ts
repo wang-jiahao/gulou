@@ -15,6 +15,7 @@ import { createCampusSign, photoSpot } from './campus-sign.ts';
 import { fireTowerFootprint } from './surroundings.ts';
 import { createAccessControls, campusEntrances } from './access-controls.ts';
 import { createDormitoryAmenities } from './dormitory-amenities.ts';
+import { createSouthRoadDetails } from './south-road-details.ts';
 export { bounds } from './campus-map.ts';
 
 export const maxFlightAltitude = 180;
@@ -112,6 +113,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   b.box(12, .06, 5, 0, .025, 16.4, mats.path);
   b.box(8.5, .06, 6.5, -31, .025, 99, mats.path);
   const ground = b.finish('registered campus roads lawns and playing fields'); root.add(ground); solids.push(...b.solids);
+  const southRoads = createSouthRoadDetails(map, mats); root.add(southRoads.group); solids.push(...southRoads.solids);
   const gateFont = await new FontLoader().loadAsync(`${import.meta.env.BASE_URL}assets/fonts/gate-lettering.typeface.json`);
   const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);
   const access=createAccessControls(mats);root.add(access.group);solids.push(...access.solids);
