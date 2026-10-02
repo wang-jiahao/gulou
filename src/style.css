@@ -11,3 +11,7 @@
 @media(pointer:coarse) and (orientation:landscape){#touch-stick{width:100px;height:100px;bottom:20px}.touch-buttons{bottom:22px}.touch-look-hint{bottom:7px}.welcome-copy{top:23%;left:7%}.welcome-copy h1{font-size:36px;margin:10px 0}.welcome-copy p{margin:8px 0;font-size:11px}.eyebrow{font-size:10px}.enter{padding:10px 16px}.masthead{top:16px}.welcome-footer{bottom:12px;font-size:9px}.touch-device .flight-hud{bottom:24px}.touch-device #resume{bottom:80px}}
 
 .touch-device #app{height:100dvh}.touch-device #touch-controls{padding-bottom:env(safe-area-inset-bottom)}
+
+@media(max-width:650px){.location{max-width:calc(100vw - 224px)}.location div{min-width:0}.location div>span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.location small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+
+#football-hud{position:absolute;left:35px;top:105px;padding:12px 15px;background:#153b2dde;border:1px solid #ffffff30;border-radius:8px;color:#f2f0df;font-size:12px;backdrop-filter:blur(8px);pointer-events:auto}#football-hud strong{font-size:18px;font-variant-numeric:tabular-nums;margin-left:4px}#football-hud button{background:#f0efdb;color:#34573d;border-radius:4px;margin-left:14px;padding:8px 10px;font-size:11px}#football-hud small{display:block;color:#e1e8d8b0;font-size:10px;margin-top:6px}.touch-device #football-hud{top:80px;left:16px;max-width:calc(100vw - 32px)}

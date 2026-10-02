@@ -20,6 +20,7 @@ for (const path of await files('public')) {
     count++;
   } else if (/\.(png|webp|jpg)$/.test(path)) {
     const meta = await sharp(path, { failOn: 'warning' }).stats(); assert.ok(meta.channels.length > 0,path); count++;
+  } else if (path.endsWith('.wav')) { const b = await readFile(path); assert.equal(b.toString('ascii',0,4),'RIFF'); assert.equal(b.toString('ascii',8,12),'WAVE'); assert.equal(b.readUInt32LE(4)+8,b.length); count++;
   } else if (path.endsWith('.json')) { JSON.parse(await readFile(path,'utf8')); count++; }
 }
 console.log(`Verified ${count} models, images and data files.`);

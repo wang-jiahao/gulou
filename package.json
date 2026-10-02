@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -21,7 +21,9 @@
     "test:audio": "node --experimental-strip-types scripts/audio-check.mjs",
     "test:mobile": "node scripts/phase4-check.mjs",
     "assets:students": "node scripts/build-student.mjs && node scripts/build-student.mjs --female",
-    "test:scenic": "node scripts/scenic-check.mjs"
+    "test:scenic": "node scripts/scenic-check.mjs",
+    "test:gate-photo": "node scripts/gate-photo-check.mjs",
+    "test:football": "node scripts/football-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

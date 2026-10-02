@@ -1,6 +1,7 @@
 import * as T from 'three';
 import { Builder } from './geometry.ts';
 import { geographic, type CampusMap } from './campus-map.ts';
+import { createHankouGate } from './hankou-gate.ts';
 import type { Materials } from './materials.ts';
 
 function lettering(text: string, width: number, height: number, background = '#aba38d', color = '#3d3b32') {
@@ -41,21 +42,8 @@ export function createPriorityDetails(map: CampusMap, mats: Materials) {
   }
   // Three shallow steps remain within the plan's forecourt, clear of 两江路.
   for (let i = 0; i < 3; i++) b.box(13.5, .14, 1.4 - i * .32, x, .07 + i * .14, z + 1 - i * .16, mats.stone, true);
-  const gate = map.gates.hankou, gx = gate[0], gz = gate[1] - 7;
-  for (const side of [-1, 1]) {
-    b.box(1.25, 5.1, 1.6, gx + side * 6.3, 2.55, gz, plaster, true);
-    b.box(1.55, .27, 1.9, gx + side * 6.3, 5.2, gz, mats.stone);
-    b.box(7, 3.4, 4.3, gx + side * 11, 1.7, gz - .6, plaster, true);
-    b.box(7.4, .32, 4.7, gx + side * 11, 3.52, gz - .6, mats.stone);
-    b.box(3.6, 1.3, .12, gx + side * 11, 2.1, gz + 1.61, glass);
-  }
-  b.box(14, .75, 1.95, gx, 5.12, gz, plaster, true);
-  b.box(14.7, .25, 2.2, gx, 5.6, gz, mats.stone);
-  // The central opening stays traversable. The official photograph's temporary banners are omitted.
-  b.cylinder(new T.Vector3(gx, 5.75, gz), new T.Vector3(gx, 11.6, gz), .035, .025, mats.metal);
-  b.box(1.65, 1.04, .025, gx + .85, 10.9, gz, new T.MeshStandardMaterial({ color: 0x9c302d, side: T.DoubleSide }));
-  const group = b.finish('teaching building entrance and Hankou gate');
-  const title = lettering('南京大学', 7, 1.15, '#c0b9a5'); title.position.set(gx, 5.13, gz + 1.02); group.add(title);
+  const group = b.finish('teaching building entrance details');
+  const gate = createHankouGate(map.gates.hankou, mats); group.add(...gate.group.children.slice()); b.solids.push(...gate.solids);
   const teaching = lettering('教 学 楼', 4, .6); teaching.position.set(x, 4.65, z + 1.33); group.add(teaching);
   for (const [label, px, pz] of [['中大路', -75, 202], ['两江路', -68, 150], ['金大路', 7, 59]] as const) {
     const sign = lettering(label, 1.55, .36, '#485b4c', '#f1ead9'); sign.position.set(px, 2.1, pz); group.add(sign);

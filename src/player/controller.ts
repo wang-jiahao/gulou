@@ -33,7 +33,7 @@ export class Player {
 
   constructor(private scene: T.Scene, solids: Solid[], avatar: Awaited<ReturnType<typeof createAvatar>>, meshes: CollisionMesh[] = []) {
     this.avatar = avatar;
-    this.motor.enableAutostep(.3, .2, true); this.motor.enableSnapToGround(.4);
+    this.motor.enableAutostep(.3, .2, false); this.motor.enableSnapToGround(.4); this.motor.setApplyImpulsesToDynamicBodies(true); this.motor.setCharacterMass(70);
     this.motor.setMaxSlopeClimbAngle(Math.PI / 4); this.motor.setMinSlopeSlideAngle(Math.PI / 3);
     this.addSolids(solids);this.addMeshes(meshes);this.avatar.root.add(this.glider);scene.add(this.avatar.root);this.reset();
     this.connectGroundSampler();
@@ -89,7 +89,7 @@ export class Player {
     this.seated=false;this.flightState='launching';this.launchTime=0;this.launchTarget=Math.min(this.position.y+26,maxFlightAltitude-2);this.flightVelocity.set(0,0,0);this.motor.disableAutostep();this.motor.disableSnapToGround();this.glider.visible=true;return true;
   }
   land(){if(this.flying)this.flightState='landing';}
-  private finishFlight(){this.flightState='walking';this.flightVelocity.set(0,0,0);this.velocityY=0;this.motor.enableAutostep(.3,.2,true);this.motor.enableSnapToGround(.4);this.glider.visible=false;this.avatar.root.rotation.z=0;}
+  private finishFlight(){this.flightState='walking';this.flightVelocity.set(0,0,0);this.velocityY=0;this.motor.enableAutostep(.3,.2,false);this.motor.enableSnapToGround(.4);this.glider.visible=false;this.avatar.root.rotation.z=0;}
   reset() { this.finishFlight();this.teleport(spawn.x, spawn.y, spawn.z); this.seated = false; this.clearInput(); this.avatar.root.rotation.y = 0; }
   teleport(x: number, y: number, z: number) {
     this.position.set(T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), Math.max(.03, y), T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1));

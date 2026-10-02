@@ -1,6 +1,6 @@
 # 资产来源与使用范围
 
-当前本地版本 v0.4.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
+当前本地版本 v0.6.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
 
 | 资产 / 资料 | 来源与许可 | 使用方式 |
 | --- | --- | --- |
@@ -16,7 +16,7 @@
 | 砖、树皮、草地 | [Castle Brick 01](https://polyhaven.com/a/castle_brick_01)、[Bark Platanus](https://polyhaven.com/a/bark_platanus)、[Grass Ground](https://polyhaven.com/a/grass_ground)，CC0 | 调色、法线与派生纹理 |
 | 人物基础 | [MakeHuman 图形资产](https://github.com/makehumancommunity/makehuman/blob/master/LICENSE.md)，CC0 | 基础网格与辅助关节数据；服装、骨骼、动作和脚部 IK 在本项目制作，不使用 MakeHuman 应用源码 |
 | 公开建筑照片 | Wikimedia Commons：Yumeto、zhanyoun、Soufate 等作者 | 仅作建模参考，原图不随仓库和网站分发 |
-| 合成环境声、道具等 | 本项目生成制作 | 脚步、鸟鸣、雨声、长椅、路灯、部分纹理与几何 |
+| 合成环境声、道具等 | 本项目生成制作 | 脚步、鸟鸣、长椅、路灯、足球、球门、部分纹理与几何；雨声实录另列 |
 | C418 / Minecraft 音乐 | Minecraft Java 官方资源索引与资源服务器 | 五首曲目仅保存为本机个人播放文件，未包含在公开仓库与网站中 |
 
 [配准记录](sources/plan-registration.json)保留控制点与拟合方法；拟合残差不等于真实测绘精度。普通建筑位置、尺寸、楼层和植物仍有近似值。
@@ -30,3 +30,14 @@
 - 消防大厦占地来自 [OSM 100949347](https://www.openstreetmap.org/way/100949347)，按附近西侧高楼参考制作，立面与约 78 m 总高度属于估计，不声称是实测立面。
 - I ❤️ NJU 立体字为本项目几何，依据用户提供的合影照片设置近似场景位置。新增参考图仅在本地 references/ 保存，不纳入仓库。
 - 爬山虎改为疏密分层的叶片和藤茎，庭院常绿树形按参考作近似重建；物种、每棵树的位置与枝条不属于测绘数据。
+
+
+## 雨声与叶片清晰度
+
+- 雨声采用 [Rain (1).ogg](https://commons.wikimedia.org/wiki/File:Rain_(1).ogg)，作者 ezwa，PDSounds 记录 682，Wikimedia Commons 标明 Public domain、Copyrighted=False。转换为单声道 22050 Hz WAV，调整电平并对循环接缝交叉淡化；运行时移除低频轰鸣并保留雨点细节。文件为 public/assets/audio/rain-field.wav，不是 Minecraft 音乐。
+- 新爬山虎颜色/透明轮廓/叶脉法线图由 scripts/ivy-texture.py 程序生成，为原创素材。未使用参考照片像素。
+
+## 苏浙运动场与足球
+
+- 场地中心与朝向取自校园平面图中运动场内圈；90×60 米场线属于适配现有粗模的近似练习布局，不是实测。球门口使用 7.32×2.44 米尺寸。
+- 足球的黑白 32 面拼片、球门、球网与场线均由项目程序生成，没有新增第三方模型或图片。足球运动使用 Rapier 刚体，球网以简化碰撞面近似处理。

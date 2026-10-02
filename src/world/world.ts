@@ -9,6 +9,7 @@ import { collisionMesh, type CollisionMesh } from './collision-mesh.ts';
 import { buildOrdinaryBuildings } from './ordinary-buildings.ts';
 import { planShape, insidePolygon, insideRing, type CampusMap } from './campus-map.ts';
 import { createPriorityDetails, createSkyline, createFireTower } from './priority-details.ts';
+import { createFootballPitch } from './football-pitch.ts';
 import { createCampusSign, photoSpot } from './campus-sign.ts';
 import { fireTowerFootprint } from './surroundings.ts';
 export { bounds } from './campus-map.ts';
@@ -17,6 +18,7 @@ export const maxFlightAltitude = 180;
 export const spawn = new T.Vector3(0, .03, 68);
 export const benchLocations = [new T.Vector3(-30, 0, 39), new T.Vector3(30, 0, 52),new T.Vector3(-12,0,115),new T.Vector3(75,0,47)];
 export const campusPlaces=[
+  {name:'苏浙运动场',x:-193,z:-9,description:'到草坪上踢一会儿球。靠近足球按 E，或点击踢球；快走时踢球会更有力量。'},
   {name:'I ❤️ NJU',x:-24,z:46,description:'在草坪前留一张合影。沿西侧稍稍后退，可以把北大楼与紫峰大厦一同收入画面。'},
   {name:'北大楼',x:0,z:18,description:'中央塔楼、十字脊与爬藤，是许多南大学生和校友记忆中的校园风景。'},
   {name:'东大楼',x:37,z:48,description:'抬高的中央屋顶、灰砖与深色木窗，共同构成庭院东侧的建筑轮廓。'},
@@ -36,7 +38,7 @@ export const travelPlaces: TravelPlace[] = [
   { name: '教学楼／郑钢楼', x: -85, z: 153, yaw: 0 },
   { name: '中大路', x: -86, z: 255, yaw: 0 },
   { name: '汉口路校门', x: -91, z: 365, yaw: 0 },
-  { name: '苏浙运动场', x: -193, z: 24, yaw: 0 },
+  { name: '苏浙运动场', x: -193, z: -2, yaw: 0 },
   { name: '南园北门', x: -89, z: 392, yaw: Math.PI },
   { name: '南园喷泉', x: -70, z: 452, yaw: 0 },
   { name: '南园宿舍区', x: -41, z: 526, yaw: 0 },
@@ -50,6 +52,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const solids: Solid[] = [], cameraSolids: T.Object3D[] = [], fixedMeshes: CollisionMesh[] = [], lampPositions:T.Vector3[]=[], vegetationUpdates: ((position: T.Vector3, quality: string, flying: boolean) => void)[] = [];
   const mapResponse = await fetch(`${import.meta.env.BASE_URL}data/campus-layout.json`);
   if (!mapResponse.ok) throw new Error('校园地图加载失败');
+  const groundCameraProxy = new T.Mesh(new T.PlaneGeometry(1800, 1900).rotateX(-Math.PI / 2), new T.MeshBasicMaterial({ side: T.DoubleSide })); groundCameraProxy.position.set(-130, .005, 160); groundCameraProxy.updateMatrixWorld(); cameraSolids.push(groundCameraProxy);
   const map: CampusMap = await mapResponse.json();
   map.features.push(fireTowerFootprint);
   const b = new Builder();
@@ -92,6 +95,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const priority = createPriorityDetails(map, mats); root.add(priority.group); solids.push(...priority.solids);
   cameraSolids.push(...priority.group.children);
   root.add(createSkyline());
+  const field = createFootballPitch(map.features, mats); root.add(field.group); solids.push(...field.solids); cameraSolids.push(...field.group.children);
   const tower = createFireTower(), sign = createCampusSign(); root.add(tower.group, sign.group); solids.push(...tower.solids, ...sign.solids); cameraSolids.push(...tower.group.children, ...sign.group.children);
 
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
@@ -192,5 +196,5 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     return moreSolids;
   }
   const updateVegetation = (position: T.Vector3, quality: string, flying: boolean) => vegetationUpdates.forEach(update => update(position, quality, flying));
-  return { root, map, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
+  return { root, map, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
 }

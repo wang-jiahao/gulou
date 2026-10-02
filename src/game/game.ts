@@ -7,6 +7,7 @@ import { createWorld, spawn, type CampusWorld } from '../world/world.ts';
 import { Player } from '../player/controller.ts';
 import { createAvatar, type CharacterKind } from '../player/avatar.ts';
 import { WalkCamera } from '../player/camera.ts';
+import { Football } from './football.ts';
 import { Music } from '../audio/music.ts';
 import { Ambience } from '../audio/ambience.ts';
 import { Atmosphere } from '../world/atmosphere.ts';
@@ -24,6 +25,7 @@ export class Game {
   world!: CampusWorld;
   player!: Player;
   atmosphere!: Atmosphere;
+  football!: Football;
   mode: Mode = 'loading';
   quality: Quality = 'medium';
   character: CharacterKind = 'male';
@@ -38,6 +40,7 @@ export class Game {
   onTick: () => void = () => {};
   onNotice: (s: string) => void = () => {};
   private last = 0;
+  private photoSaving = false;
   private saveAt = 0;
   private gpuQueries: WebGLQuery[] = [];
   private gl: WebGL2RenderingContext;
@@ -82,6 +85,7 @@ export class Game {
     progress(.5, '搭建北大楼与树荫步道');
     this.world = await createWorld(this.scene, materials, this.quality);
     this.player = new Player(this.scene, this.world.solids, await createAvatar(this.character),this.world.fixedMeshes);
+    this.football = new Football(this.scene, this.player, this.world.pitch); this.football.onGoal = () => this.onNotice('进球！足球即将回到中场。');
     const initialMeshes=this.world.fixedMeshes.length;
     this.shadow = this.createContactShadow(); this.scene.add(this.shadow);
     this.setupShadowMaterials();
@@ -139,8 +143,8 @@ export class Game {
     this.onNotice('空格上升 · Ctrl 下降 · F 降落');
   }
   private resize() {
-    const maxHeight = this.quality === 'high' ? 1080 : this.quality === 'medium' ? 900 : 640;
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, maxHeight / innerHeight, this.quality === 'high' ? 1.75 : 1.25));
+    const maxHeight = this.quality === 'high' ? 1600 : this.quality === 'medium' ? 1200 : 720;
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, maxHeight / innerHeight, this.quality === 'high' ? 2 : this.quality === 'medium' ? 1.5 : 1));
     this.renderer.setSize(innerWidth, innerHeight); this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix();
     this.csm?.updateFrustums();
   }
@@ -149,11 +153,14 @@ export class Game {
     const mesh = new T.Mesh(new T.PlaneGeometry(1.4, 1.4), new T.MeshBasicMaterial({ map: new T.CanvasTexture(canvas), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 })); mesh.rotation.x = -Math.PI / 2; return mesh;
   }
   private tick(time: number) {
+    if (this.photoSaving) { this.last = time; return; }
     const rawDt = Math.max(.001, (time - this.last) / 1000); this.last = time;
     const dt = Math.min(rawDt, .05), start = performance.now(); this.elapsed += dt;
     if(this.windTime)this.windTime.value+=dt*(1+(this.atmosphere?.state.rain??0)*1.5);
     this.frameMs = T.MathUtils.lerp(this.frameMs, Math.min(rawDt * 1000, 200), .03);
+    this.football.prepare(this.mode === 'playing');
     this.player.update(dt, this.cameraRig.yaw, this.mode === 'playing');
+    this.football.update(dt);
     this.cameraRig.update(this.player.position, dt, this.world.cameraSolids, this.player.seated,this.player.flying,this.player.avatar.height);
     this.atmosphere.update(dt,this.mode==='playing',this.camera.position);
     if(this.foliageLight)this.foliageLight.value=this.atmosphere.daylight;
@@ -180,12 +187,24 @@ export class Game {
     this.onTick();
   }
   stats() {
-    return { mode: this.mode, fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,environment:this.atmosphere.snapshot,music:this.music.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
+    return { mode: this.mode, renderSize: [this.renderer.domElement.width, this.renderer.domElement.height], pixelRatio: this.renderer.getPixelRatio(), fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,environment:this.atmosphere.snapshot,music:this.music.snapshot,audio:this.audio.snapshot,football:this.football.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
   }
   async savePhoto() {
-    this.renderer.render(this.scene, this.camera);
-    const blob = await new Promise<Blob | null>(resolve => this.renderer.domElement.toBlob(resolve, 'image/png'));
-    if (!blob) throw new Error('照片生成失败');
-    const a = document.createElement('a'), url = URL.createObjectURL(blob); a.href = url; a.download = `重返鼓楼-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if (this.photoSaving) throw new Error('照片正在生成，请稍候。');
+    const size = this.renderer.getSize(new T.Vector2()), ratio = this.renderer.getPixelRatio();
+    const maximum = Math.min(2048, this.renderer.capabilities.maxTextureSize);
+    this.photoSaving = true;
+    try {
+      this.renderer.setPixelRatio(Math.min(4, maximum / Math.max(size.x, size.y)));
+      if (this.mode === 'photo') { this.camera.fov = this.photoFov; this.camera.updateProjectionMatrix(); this.csm?.updateFrustums(); this.csm?.update(); }
+      this.renderer.render(this.scene, this.camera);
+      const blob = await new Promise<Blob | null>(resolve => this.renderer.domElement.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('照片生成失败');
+      const now = new Date(), pad = (n: number) => String(n).padStart(2, '0');
+      const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+      const a = document.createElement('a'), url = URL.createObjectURL(blob); a.href = url; a.download = `Gulou-${stamp}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } finally {
+      this.renderer.setPixelRatio(ratio); this.photoSaving = false;
+    }
   }
 }

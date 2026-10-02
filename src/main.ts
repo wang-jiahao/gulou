@@ -69,6 +69,7 @@ async function boot() {
     if(e.code==='KeyF'&&game.mode==='playing')game.toggleFlight();
     if (e.code === 'KeyH') { uiHidden = !uiHidden; if (game.mode !== 'photo') el('hud').hidden = uiHidden; if (uiHidden) toast('界面已隐藏，按 H 恢复。'); }
     if (e.code === 'KeyE') interact();
+    if (e.code === 'KeyR' && game.mode === 'playing' && game.football.nearby) game.football.resetBall();
     if (e.code === 'Backquote' && import.meta.env.DEV) el('debug').hidden = !el('debug').hidden;
   });
   window.addEventListener('keyup', e => game.player.keys.delete(e.code));
@@ -100,7 +101,7 @@ async function boot() {
   el<HTMLInputElement>('sensitivity').oninput = e => { game.cameraRig.sensitivity = Number((e.target as HTMLInputElement).value) * .00042; saveSettings(); };
   el<HTMLInputElement>('hide-avatar').onchange = e => { game.photoHideAvatar = (e.target as HTMLInputElement).checked; };
   el<HTMLInputElement>('photo-fov').oninput = e => { game.photoFov = Number((e.target as HTMLInputElement).value); };
-  el('save-photo').onclick = () => { void game.savePhoto().then(() => toast('照片已保存。')).catch(e => toast(String(e))); };
+  el('save-photo').onclick = async () => { const button = el<HTMLButtonElement>('save-photo'); button.disabled = true; button.textContent = '正在生成照片…'; try { await game.savePhoto(); toast('高清照片已保存。'); } catch (e) { toast(e instanceof Error ? e.message : String(e)); } finally { button.disabled = false; button.textContent = '保存照片 ↓'; } };
   mapView = new CampusMapView(el<HTMLCanvasElement>('map-canvas'), game.world.map, el('map-selection'));
   el('map-open').onclick = () => { game.mode = 'paused'; game.player.clearInput(); document.exitPointerLock?.(); mapDialog.showModal(); };
   el('map-resume').onclick = resume; mapDialog.addEventListener('close', () => { if (game.mode === 'paused') el('resume').hidden = false; });
@@ -131,8 +132,12 @@ async function boot() {
   mapView.onSelect = (x, z, name) => { selectedMapPoint = { x, z, name }; el<HTMLButtonElement>('map-teleport').disabled = false; };
   el('map-teleport').onclick = () => { if (selectedMapPoint) travel(selectedMapPoint.x, selectedMapPoint.z, selectedMapPoint.name); };
   el('travel-place-go').onclick = () => { const value = el<HTMLSelectElement>('travel-place').value; if (value === '') return; const p = travelPlaces[Number(value)]; if (p) travel(p.x, p.z, p.name, p.yaw, p.pitch, p.firstPerson, p.photoFov); };
+  el('football-reset').onclick = () => game.football.resetBall();
+  el('football-help').textContent = touchDevice ? '靠近球点踢球 · 快走时可加力' : '靠近球按 E 踢球 · Shift 加力 · R 回球';
+  if (!touchDevice) el('football-reset').setAttribute('aria-keyshortcuts', 'R');
   function interact() {
-    if(game.player.flying)return;
+    if(game.mode !== 'playing' || game.player.flying)return;
+    if (game.football.inReach) { game.football.kick(game.cameraRig.yaw, game.player.keys.has('ShiftLeft') || game.player.keys.has('ShiftRight')); return; }
     if (game.player.seated) { game.player.seated = false; game.player.teleport(game.player.position.x, .03, game.player.position.z - 1); return; }
     const bench = benchLocations.find(p => p.distanceTo(game.player.position) < 2.4);
     if (bench && game.world.sectors >= 3) { game.player.teleport(bench.x, .03, bench.z); game.player.seated = true; game.player.avatar.root.rotation.y = 0; toast('坐一会儿。按 E 起身。'); }
@@ -147,9 +152,10 @@ async function boot() {
     if (++tick % 15) return;
     const pos = game.player.position, onBench = game.player.seated || (game.world.sectors >= 3 && benchLocations.some(p => p.distanceTo(pos) < 2.4));
     const nearBuilding = campusPlaces.find(p=>Math.hypot(pos.x-p.x,pos.z-p.z)<5.5);
-    el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!onBench && !nearBuilding);
-    el('interact').querySelector('span')!.textContent = game.player.seated ? '起身' : onBench ? '坐一会儿' : `认识${nearBuilding?.name??'校园'}`;
+    el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!onBench && !nearBuilding && !game.football.canKick);
+    el('interact').querySelector('span')!.textContent = game.football.canKick ? '踢球' : game.player.seated ? '起身' : onBench ? '坐一会儿' : `认识${nearBuilding?.name??'校园'}`;
     el('location-name').textContent = game.player.flying ? (pos.z > 365 ? '南园上空' : '北园上空') : nearBuilding?.name ?? (pos.z > 365 ? '南园 · 宿舍与生活区' : pos.z > 328 ? '汉口路校门' : pos.z > 152 && Math.abs(pos.x + 88) < 18 ? '中大路' : pos.z > 116 && pos.x < -18 ? '教学楼 · 两江路' : pos.x < -145 ? '北园 · 西侧校园' : pos.z > 86 && pos.x < -15 ? '大礼堂' : pos.x > 34 && pos.z > 18 && pos.z < 81 ? '东大楼' : pos.x < -34 && pos.z > 18 && pos.z < 81 ? '西大楼' : pos.z < -12 ? '北园 · 北大楼后' : '北大楼');
+    el('football-hud').hidden = !game.football.nearby || game.mode !== 'playing'; el('football-score').textContent = String(game.football.goals);
     if (mapDialog.open) mapView.update(pos.x, pos.z, game.cameraRig.yaw);
     const a=game.atmosphere.state;el('clock-chip').textContent=`${a.clock} · ${a.weatherLabel}`;el('welcome-atmosphere').textContent=`北大楼 · ${a.clock} · ${a.weatherLabel}`;
     if(worldSettings.open)el('weather-value').textContent=a.weatherLabel;
