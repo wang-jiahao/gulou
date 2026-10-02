@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -32,7 +32,8 @@
     "test:dormitories": "node scripts/dormitory-check.mjs",
     "test:geometry": "node scripts/geometry-check.mjs",
     "test:amenities": "node scripts/phase11-check.mjs",
-    "test:south-roads": "node scripts/south-road-check.mjs"
+    "test:south-roads": "node scripts/south-road-check.mjs",
+    "test:street-trees": "node scripts/street-tree-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

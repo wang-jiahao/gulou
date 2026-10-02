@@ -7,6 +7,32 @@ import type { TreeSpot } from './vegetation.ts';
 type TreeLOD = 'near' | 'far' | 'distant';
 type TreeAsset = { box: T.Box3; sources: { geometry: T.BufferGeometry; material: T.MeshStandardMaterial }[] };
 const caches = new WeakMap<T.Material, { assets: Map<TreeLOD, Promise<TreeAsset>>; materials: Map<string, T.MeshStandardMaterial> }>();
+const whitewashedMaterials = new WeakMap<T.MeshStandardMaterial, T.MeshStandardMaterial>();
+
+function whitewashedTrunk(base: T.MeshStandardMaterial) {
+  let material = whitewashedMaterials.get(base);
+  if (material) return material;
+  material = base.clone(); material.name = `${base.name}-whitewash`;
+  material.userData.whitewashHeight = 1.2;
+  material.onBeforeCompile = shader => {
+    shader.vertexShader = 'varying vec3 vTrunkWorld;\n' + shader.vertexShader;
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vec4 trunkWorld = vec4(transformed, 1.0);
+      #ifdef USE_INSTANCING
+        trunkWorld = instanceMatrix * trunkWorld;
+      #endif
+      vTrunkWorld = (modelMatrix * trunkWorld).xyz;`);
+    shader.fragmentShader = 'varying vec3 vTrunkWorld;\n' + shader.fragmentShader;
+    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+      float paintEdge = .018 * sin(vTrunkWorld.x * 31.0 + vTrunkWorld.z * 19.0);
+      float paintCoverage = 1.0 - smoothstep(1.18 + paintEdge, 1.22 + paintEdge, vTrunkWorld.y);
+      float barkGrain = clamp(dot(diffuseColor.rgb, vec3(.2126, .7152, .0722)), 0.0, 1.0);
+      vec3 chalk = vec3(.70, .72, .66) * (.82 + .18 * barkGrain);
+      diffuseColor.rgb = mix(diffuseColor.rgb, chalk, paintCoverage);`);
+  };
+  material.customProgramCacheKey = () => 'gulou-trunk-whitewash-v1';
+  whitewashedMaterials.set(base, material); return material;
+}
 
 function loadTree(lod: TreeLOD, foliage: T.Material): Promise<TreeAsset> {
   let cache = caches.get(foliage);
@@ -71,6 +97,7 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
   const box = assets[0].box, h = box.max.y - box.min.y, rand = rng(lod === 'near' ? 318 : 981);
   const solids: Solid[] = [], dummy = new T.Object3D(), group = new T.Group();
   group.name = `broadleaf trees ${lod} — CC0 model, approximate species`;
+  group.userData.trees = spots.map(tree => ({...tree}));
   const cells = new Map<string, { trees: TreeSpot[]; group: T.Group; levels: T.Group[]; center: T.Vector3; active: number }>();
   for (const tree of spots) {
     const gx = Math.floor(tree.x / 60), gz = Math.floor(tree.z / 60), key = `${gx}:${gz}`;
@@ -91,9 +118,17 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
     assets.forEach((asset, level) => {
       const layer = cell.levels[level]; layer.visible = level === 0;
       for (const { geometry, material } of asset.sources) {
-        const mesh = new T.InstancedMesh(geometry, material, cell.trees.length);
-        transforms.forEach((m, i) => { mesh.setMatrixAt(i, m); mesh.setColorAt(i, new T.Color().setRGB(.91, .96, .87)); });
-        mesh.castShadow = names[level] === 'near'; mesh.receiveShadow = true; mesh.computeBoundingSphere(); layer.add(mesh);
+        const trunk = material.name.includes('trunk');
+        // Split only mixed trunk batches. All levels reuse the original meshes,
+        // transforms and one painted material, so the band cannot jump with LOD.
+        const batches = trunk ? [false, true] : [false];
+        for (const painted of batches) {
+          const indices = cell.trees.map((_, i) => i).filter(i => !trunk || Boolean(cell.trees[i].whitewash) === painted);
+          if (!indices.length) continue;
+          const mesh = new T.InstancedMesh(geometry, painted ? whitewashedTrunk(material) : material, indices.length);
+          indices.forEach((source, i) => { mesh.setMatrixAt(i, transforms[source]); mesh.setColorAt(i, new T.Color().setRGB(.91, .96, .87)); });
+          mesh.castShadow = names[level] === 'near'; mesh.receiveShadow = true; mesh.computeBoundingSphere(); layer.add(mesh);
+        }
       }
       const sprays = names[level] === 'near' ? 3200 : names[level] === 'far' ? 600 : 0;
       if (!sprays) return;

@@ -45,6 +45,10 @@ grass=Image.new('RGBA',(256,256),(0,0,0,0));d=ImageDraw.Draw(grass)
 for i in range(55):
     x=r.randrange(5,251);h=r.randrange(35,240);dx=r.randrange(-35,36);w=r.randrange(1,4);v=r.randrange(80,155)
     d.polygon([(x-w,255),(x+w,255),(x+dx//3,255-h//2),(x+dx,255-h)],fill=(v-30,v,35,255))
+# Avoid dark fringes when transparent texels are averaged into mipmaps.
+visible=[pixel for pixel in grass.getdata() if pixel[3]==255]
+background=tuple(round(sum(pixel[c] for pixel in visible)/len(visible)) for c in range(3))+(0,)
+grass.putdata([pixel if pixel[3] else background for pixel in grass.getdata()])
 grass.save(out/'grass-tuft.png')
 print('Original texture assets generated.')
 # A lawn and cut stone paving with restrained variation, generated at authoring time.

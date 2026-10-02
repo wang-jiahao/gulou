@@ -16,6 +16,7 @@ import { fireTowerFootprint } from './surroundings.ts';
 import { createAccessControls, campusEntrances } from './access-controls.ts';
 import { createDormitoryAmenities } from './dormitory-amenities.ts';
 import { createSouthRoadDetails } from './south-road-details.ts';
+import { createSouthTreeDetails } from './south-tree-details.ts';
 export { bounds } from './campus-map.ts';
 
 export const maxFlightAltitude = 180;
@@ -213,6 +214,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       if (farTrees.some(t => Math.hypot(t.x - x, t.z - z) < 11)) continue;
       farTrees.push({ x, z, height: 12 + rand() * 8 });
     }
+    root.add(createSouthTreeDetails(farTrees, map, mats));
     const far = await createModelTrees(farTrees.filter(t => !map.features.some(f => f.tags.leisure === 'track' && insideRing(t.x, t.z, f.points))), 'far', mats.leaves); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);
     const props = new Builder();
     for (const p of benchLocations) {

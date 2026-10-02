@@ -2,7 +2,7 @@ import * as T from 'three';
 import { Builder, rng, type Solid } from './geometry.ts';
 import type { Materials } from './materials.ts';
 
-export type TreeSpot = { x: number; z: number; height: number; kind?: 'cedar' | 'broad' };
+export type TreeSpot = { x: number; z: number; height: number; kind?: 'cedar' | 'broad'; whitewash?: boolean };
 export function createTrees(spots: TreeSpot[], mats: Materials, seed = 1917) {
   const rand = rng(seed), b = new Builder(), cards: T.Matrix4[] = [], colors: T.Color[] = [], obj = new T.Object3D();
   for (const tree of spots) {
