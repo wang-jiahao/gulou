@@ -3,10 +3,11 @@ import * as T from 'three';
 export async function loadMaterials(onProgress: (n: number) => void) {
   const loader = new T.TextureLoader(), textures = new Map<string, T.Texture>(); let loaded = 0;
   const windTime={value:0}, foliageLight={value:1};
-  const names = ['historic-brick.webp', 'courtyard-asphalt.webp', 'stone-grain.webp', 'castle_brick_01_nor_gl.jpg', 'lawn.webp', 'grass_ground_nor_gl.jpg', 'pavers.webp', 'pavers-height.webp', 'bark_platanus_diff.jpg', 'leaf-spray.png', 'ivy-leaf-natural.png', 'ivy-leaf_nor_gl.png', 'grass-tuft.png', 'pine-spray.png', 'cypress-spray.png', 'pine-bark.webp'];
+  const names = ['historic-brick.webp', 'courtyard-asphalt.webp', 'stone-grain.webp', 'castle_brick_01_nor_gl.jpg', 'lawn.webp', 'grass_ground_nor_gl.jpg', 'pavers.webp', 'pavers-height.webp', 'bark_platanus_diff.jpg', 'campus-leaf-spray.png', 'campus-canopy-alpha.webp', 'ivy-leaf-natural.png', 'ivy-leaf_nor_gl.png', 'grass-tuft.png', 'pine-spray.png', 'cypress-spray.png', 'pine-bark.webp'];
   await Promise.all(names.map(async name => {
     const t = await loader.loadAsync(`${import.meta.env.BASE_URL}assets/textures/${name}`);
-    t.colorSpace = name.includes('nor_') || name.includes('height') ? T.NoColorSpace : T.SRGBColorSpace;
+    t.colorSpace = name.includes('nor_') || name.includes('height') || name.includes('alpha') ? T.NoColorSpace : T.SRGBColorSpace;
+    if(name==='campus-canopy-alpha.webp')t.flipY=false; // Match the GLTF atlas UV origin.
     t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 16; textures.set(name, t); onProgress(++loaded / names.length);
   }));
   const grass = new T.MeshStandardMaterial({ color: 0xc7ceae, map: textures.get('lawn.webp'), normalMap: textures.get('grass_ground_nor_gl.jpg'), normalScale: new T.Vector2(0.3, 0.3), roughness: 1 });
@@ -24,11 +25,12 @@ export async function loadMaterials(onProgress: (n: number) => void) {
   const wood = new T.MeshStandardMaterial({ color: 0x655039, roughness: 0.86 });
   const metal = new T.MeshStandardMaterial({ color: 0x343f3a, roughness: 0.55, metalness: 0.4 });
   const foliage = (name: string, color: number) => {
-    const m = new T.MeshStandardMaterial({ name, map: textures.get(name === 'ivy' ? 'ivy-leaf-natural.png' : name === 'cypress' ? 'cypress-spray.png' : name === 'conifer' ? 'pine-spray.png' : name === 'grass-tuft' ? 'grass-tuft.png' : 'leaf-spray.png'), color, alphaTest: .4, alphaToCoverage: name !== 'ivy', side: T.DoubleSide, roughness: name === 'ivy' ? .84 : .92 });
+    const m = new T.MeshStandardMaterial({ name, map: textures.get(name === 'ivy' ? 'ivy-leaf-natural.png' : name === 'cypress' ? 'cypress-spray.png' : name === 'conifer' ? 'pine-spray.png' : name === 'grass-tuft' ? 'grass-tuft.png' : 'campus-leaf-spray.png'), color, alphaTest: .4, alphaToCoverage: name !== 'ivy', side: T.DoubleSide, roughness: name === 'ivy' ? .84 : .92 });
     // Front and back of leaves both receive light without an expensive transmission pass.
     if (m.map) m.map.wrapS = m.map.wrapT = T.ClampToEdgeWrapping;
     if (name === 'ivy') { m.normalMap = textures.get('ivy-leaf_nor_gl.png')!; m.normalScale.set(.35, .35); }
     m.userData.foliageLight = foliageLight;
+    m.userData.canopyAlpha = textures.get('campus-canopy-alpha.webp');
     m.customProgramCacheKey = () => `gulou-foliage-${name}`;
     const wind:T.Material['onBeforeCompile']=(shader)=>{
       shader.uniforms.uWindTime=windTime;

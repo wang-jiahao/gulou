@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -26,7 +26,10 @@
     "test:football": "node scripts/football-check.mjs",
     "test:flight-wardrobe": "node scripts/phase8-check.mjs",
     "test:courtyard": "node scripts/phase9-check.mjs",
-    "test:flight-performance": "node scripts/flight-performance.mjs"
+    "test:flight-performance": "node scripts/flight-performance.mjs",
+    "test:buildings": "node scripts/phase10-check.mjs",
+    "test:access": "node scripts/access-check.mjs",
+    "test:dormitories": "node scripts/dormitory-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

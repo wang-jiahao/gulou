@@ -32,11 +32,11 @@ try{
   await page.evaluate(q=>window.__GULOU__.game.setQuality(q),quality);
   for(const y of [2,95,180,95,2]){
    await page.evaluate(y=>{const g=window.__GULOU__.game;g.player.teleport(0,y,68);},y);await page.waitForTimeout(180);
-   lod.push(await page.evaluate(()=>{const g=window.__GULOU__.game;let visible=0,invalid=0;g.scene.traverse(o=>{if(!o.name.startsWith('broadleaf trees '))return;for(const cell of o.children){if(!cell.visible)continue;visible++;if(cell.children.filter(l=>l.visible).length!==1)invalid++;}});return{quality:g.quality,visible,invalid,geometries:g.renderer.info.memory.geometries,textures:g.renderer.info.memory.textures};}));
+   lod.push(await page.evaluate(()=>{const g=window.__GULOU__.game;let visible=0,invalid=0;const treeGeometryIds=new Set();g.scene.traverse(o=>{if(!o.name.startsWith('broadleaf trees '))return;o.traverse(child=>{if(child.geometry)treeGeometryIds.add(child.geometry.uuid);});for(const cell of o.children){if(!cell.visible)continue;visible++;if(cell.children.filter(l=>l.visible).length!==1)invalid++;}});return{treeGeometryIds:[...treeGeometryIds].sort().join(','),quality:g.quality,visible,invalid,geometries:g.renderer.info.memory.geometries,textures:g.renderer.info.memory.textures};}));
   }
  }
  assert.ok(lod.every(s=>s.visible>0&&s.invalid===0),'LOD leaves exactly one active level per visible tree cell');
- assert.ok(Math.max(...lod.map(s=>s.geometries))-Math.min(...lod.map(s=>s.geometries))<12,'LOD transitions do not allocate geometry repeatedly');
+ assert.equal(new Set(lod.map(s=>s.treeGeometryIds)).size,1,'Tree LOD transitions reuse the same geometry objects; facade GPU buffers may initialize independently');
  await page.evaluate(()=>window.__GULOU__.game.setQuality('medium'));
  for(const [name,x,z,yaw,pitch]of [['north-final',0,68,0,-.15],['north-close',0,38,0,-.29],['gate-final',-91.05,365,0,-.04]]){
   await page.evaluate(([x,z,yaw,pitch])=>{const g=window.__GULOU__.game;g.player.travelTo(x,z);g.cameraRig.firstPerson=true;g.cameraRig.yaw=yaw;g.cameraRig.pitch=pitch;},[x,z,yaw,pitch]);

@@ -1,0 +1,11 @@
+import{readFile,writeFile}from'node:fs/promises';
+import{buildingProfiles,getBuildingProfile}from'../src/world/building-profiles.ts';
+const map=JSON.parse(await readFile('public/data/campus-layout.json','utf8')),inventory=JSON.parse(await readFile('docs/validation/phase10/vr-inventory.json','utf8'));
+const records=map.features.filter(f=>f.tags.building).map(f=>({id:f.id,name:f.tags.name,individualProfile:!!buildingProfiles[f.id],...getBuildingProfile(f)}));
+const scenes=inventory.scenes.map(s=>({...s,buildingIds:records.filter(r=>r.source.includes(s.id.replace('scene_',''))).map(r=>r.id)}));
+const report={allVrViews:155,exteriorViews:92,reviewedDirections:368,failedTiles:inventory.failedTiles,profiledFootprints:Object.keys(buildingProfiles).length,records,scenes,limits:['VR images from different dates and viewpoints; roof/floor dimensions are estimates','An appearance profile is not a fully bespoke reconstruction','Some historic residences cannot yet be uniquely matched to a plan component','Urban skyline and interior-only views are not counted as newly reconstructed campus buildings']};
+await writeFile('docs/validation/phase10/vr-building-audit.json',JSON.stringify(report,null,2));
+const rows=['# v0.9 建筑与官方 VR 对照','','已查看 155 个目录视点中的 92 个室外／鸟瞰视点，共 368 个方向。63 个室内视点不作为这轮建筑外观的验收项。斗鸡闸原 XML 的图片补零格式与服务器不符，改用实际存在的不补零路径后，室外参考无下载缺片。','','这一版为 125 个普通建筑轮廓补充立面构件，其中 78 个使用不同的 VR 外观参数；原有四座重点模型另外制作。**这不是 78 栋独立精雕模型，也不代表 VR 中每处建筑已精准复原。** 近照可辨认的颜色、入口、窗格和屋顶用于外观校正；只在鸟瞰中出现的楼仍以轮廓和大致体量为依据。没有可确认的一一对应时，保留通用类型，不凭名字强行认定位置。','','| 地图建筑 | VR 参考 | 当前层数估计 | 观察与本轮处理 |','| --- | --- | ---: | --- |'];
+for(const r of records.filter(r=>r.individualProfile))rows.push(`| ${r.name} | ${r.source} | ${r.levels} | ${r.observations} |`);
+rows.push('','仍需核对：连体楼的分段高度、赛珍珠等旧居的独立平面定位、部分被树挡住的后立面、各栋宿舍不同年代的门牌与窗型。建筑入口按照当前路网和可达空地选择，具体门洞位置仍属近似；没有开放室内。','', '逐栋记录、视点与参考来源索引见 `validation/phase10/vr-building-audit.json`。原始 VR 图只保留在 `references/official-vr/phase10/`，不进入 public 或 dist。');
+await writeFile('docs/vr-building-audit.md',rows.join('\n')+'\n');console.log(JSON.stringify({exteriorViews:92,directions:368,profiles:report.profiledFootprints}));

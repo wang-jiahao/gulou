@@ -56,3 +56,10 @@
 - `cypress-spray.png` 与 `courtyard-asphalt.webp` 由 `scripts/courtyard-textures.py` 生成，未使用参考照片像素。常绿树为程序化近似树形，不宣称准确树种。
 - `tree-distant.glb` 是同一 Poly Haven CC0 Tree Small 02 的进一步简化版本；近、中、远三级按距离和画质切换，几何及材质按世界实例共享。
 - 全量 130 个地图轮廓、36 片道路和 39 片草地检查记录留在本机 `docs/map-audit.md`；描图一致性不等于校园测绘精度。
+
+## 本地 v0.9 建筑、宿舍、通行设施与植被
+
+- 官方 VR 室外／鸟瞰参考扩展到 92 个视点、368 个方向，图像只在 `references/official-vr/phase10/`。`scripts/collect-vr-exteriors.py` 保存来源索引，`scripts/audit-vr-buildings.mjs` 输出本机逐栋核对文档。79 个外观参数并非 79 个完全独立的精确模型；估计层高、被遮挡立面和示意图映射仍为近似。
+- 普通建筑的窗框、窗台、入口、空调、阳台和屋顶细节由项目生成，近景细节按距离启用。南园宿舍增加逐栋门牌和地图目的地；不可见部位按相应建筑类型补全，不声称每个门窗和空调位置均与现实一致。
+- 9 组通行设施的位置依据校园图出入口符号和开放地图 gate 节点；包含汉口路、广州路、南园北门、北京西路两处、西北、西、天津路和南园东侧出入口。闸机和道闸为本项目制作的模拟设备，布局和开合逻辑用于本地游玩，没有读取摄像头或采集人脸。南园东侧位置按 OSM 与当前地图近似对齐，北侧无专名入口使用描述性名称。
+- `campus-leaf-spray.png` 与 `campus-canopy-alpha.webp` 由 `scripts/campus-foliage-textures.py` 从已使用的 Poly Haven Tree Small 02 CC0 图集清理、裁切和生成蒙版。`cypress-spray.png` 仍由原创程序生成，调整色彩及微纹理，与阔叶树保持接近的明度和叶片尺度。

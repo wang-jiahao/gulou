@@ -36,6 +36,8 @@ function loadTree(lod: TreeLOD, foliage: T.Material): Promise<TreeAsset> {
           // The atlas includes transparent leaf margins. Opaque triangles made
           // the canopy look like angular cardboard even close to the landmark.
           material.alphaTest = .38; material.alphaToCoverage = true; material.side = T.DoubleSide;
+          material.alphaMap = foliage.userData.canopyAlpha;
+          material.color.set(0xd6dcc9);
           material.onBeforeCompile = shader => {
             shader.uniforms.uFoliageLight = foliage.userData.foliageLight;
             shader.fragmentShader = 'uniform float uFoliageLight;\n' + shader.fragmentShader;
@@ -93,7 +95,7 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
         transforms.forEach((m, i) => { mesh.setMatrixAt(i, m); mesh.setColorAt(i, new T.Color().setRGB(.91, .96, .87)); });
         mesh.castShadow = names[level] === 'near'; mesh.receiveShadow = true; mesh.computeBoundingSphere(); layer.add(mesh);
       }
-      const sprays = names[level] === 'near' ? 850 : names[level] === 'far' ? 280 : 0;
+      const sprays = names[level] === 'near' ? 3200 : names[level] === 'far' ? 600 : 0;
       if (!sprays) return;
       const leaves = new T.InstancedMesh(leafGeo, foliage, cell.trees.length * sprays); let index = 0;
       cell.trees.forEach(spot => {
@@ -101,8 +103,9 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
           let x: number, y: number, z: number;
           do { x = rand() * 2 - 1; y = rand() * 2 - 1; z = rand() * 2 - 1; } while (x * x + y * y + z * z > 1);
           dummy.position.set(spot.x + x * spot.height * .31, spot.height * (.75 + y * .25), spot.z + z * spot.height * .32);
-          dummy.rotation.set(rand() * 3, rand() * 6.28, rand() * 3); dummy.scale.setScalar(.72 + rand() * .65); dummy.updateMatrix();
-          leaves.setMatrixAt(index, dummy.matrix); leaves.setColorAt(index, new T.Color().setHSL(.20, .18, .65 + rand() * .25)); index++;
+          dummy.rotation.set(rand() * 3, rand() * 6.28, rand() * 3); dummy.scale.setScalar(.50 + rand() * .40); dummy.updateMatrix();
+          const shade=.76+rand()*.22;
+          leaves.setMatrixAt(index, dummy.matrix); leaves.setColorAt(index, new T.Color().setRGB(shade*.95,shade,shade*.9)); index++;
         }
       });
       leaves.castShadow = names[level] === 'near'; leaves.receiveShadow = true; leaves.computeBoundingSphere(); layer.add(leaves);
@@ -110,8 +113,8 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
   }
   const updateVisibility = (position: T.Vector3, quality: string, flying: boolean) => {
     const range = flying ? 850 : quality === 'high' ? 550 : quality === 'low' ? 300 : 420;
-    const near = quality === 'high' ? 125 : quality === 'low' ? 55 : 90;
-    const middle = quality === 'high' ? 240 : quality === 'low' ? 120 : 180;
+    const near = flying ? (quality === 'high' ? 90 : 55) : quality === 'high' ? 125 : quality === 'low' ? 55 : 90;
+    const middle = flying ? (quality === 'high' ? 155 : quality === 'low' ? 80 : 105) : quality === 'high' ? 240 : quality === 'low' ? 120 : 180;
     for (const cell of cells.values()) {
       const distance = cell.center.distanceTo(position);
       cell.group.visible = distance < range;

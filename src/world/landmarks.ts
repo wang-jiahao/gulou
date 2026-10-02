@@ -39,7 +39,12 @@ export function buildWing(side:'east'|'west'){
   panelDoor(b,p,0,1.7,d/2+1.23,2.8,3.1);
   for(const x of [-1.65,1.65])b.box(.3,3.5,.5,x,1.75,d/2+1.21,p.stone);
   b.box(4.3,.25,1.8,0,3.58,d/2+.75,p.stone);
-  curvedRoof(b,0,d/2+.55,4.7,2.6,3.68,.42,p.roof,p.ribs,false);
+  // VR shows a flat, carved stone lintel at the wing entrance, not a miniature
+  // tiled roof over the door. Keep the broad upper roof as the main silhouette.
+  b.box(4.65,.22,1.35,0,3.80,d/2+.78,p.stone);
+  b.box(4.18,.14,1.12,0,4.0,d/2+.78,p.stone);
+  for(const x of [-1.5,1.5])for(const y of [.28,3.45])b.box(.52,.18,.72,x,y,d/2+1.20,p.stone);
+  for(let x=-w/2;x<w/2;x+=.34)for(const s of[-1,1])b.add(new T.CylinderGeometry(.07,.085,.11,7).rotateX(Math.PI/2),p.ribs,x,10.0+.5*Math.pow(Math.abs(x/(w/2)),8),s*(d/2+1.34));
   for(let step=0;step<3;step++)b.box(4.3,(3-step)*.14,.38,0,(3-step)*.07,d/2+1.62+step*.38,p.stone,true);
   if(side==='east'){
     b.box(16.4,9.2,6.5,0,4.6,-d/2-3.15,p.brick,true);
@@ -93,6 +98,7 @@ export function buildAuditorium(){
   }
   const gable=new T.Shape();gable.moveTo(-6,0);gable.lineTo(0,3.7);gable.lineTo(6,0);gable.closePath();
   b.add(new T.ExtrudeGeometry(gable,{depth:.2,bevelEnabled:false}),p.redwood,0,9.8,front-1);
+  for(let x=-5.4;x<=5.4;x+=.48){const h=(1-Math.abs(x)/6)*3.5;b.box(.045,h,.065,x,9.8+h/2,front-.77,p.wood);}
   for(const side of [-1,1])b.cylinder(new T.Vector3(side*6,9.8,front-.78),new T.Vector3(0,13.5,front-.78),.14,.14,p.ribs,7);
   for(const side of [-1,1])for(const z of [-12,-6,0,6,12]){detailedWindow(b,p,side*9.76,3.6,z,1.6,2.3,side*Math.PI/2,true,Math.round(z+30));b.box(.026,2.1,1.43,side*9.73,3.6,z,p.glass);}
   const group=b.finish('Great Auditorium');const solids=place(group,b.solids,-52.4,98.9,Math.PI/2);

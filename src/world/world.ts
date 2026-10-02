@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { Builder, rng, type Solid } from './geometry.ts';
-import { createGroundPlants, createIvy, createJunipers, type TreeSpot } from './vegetation.ts';
+import { createGroundPlants, createIvy, createJunipers, createWestWingIvy, type TreeSpot } from './vegetation.ts';
 import type { Materials } from './materials.ts';
 import { createModelTrees } from './model-trees.ts';
 import { collisionMesh, type CollisionMesh } from './collision-mesh.ts';
@@ -13,6 +13,7 @@ import { createPriorityDetails, createSkyline, createFireTower } from './priorit
 import { createFootballPitch } from './football-pitch.ts';
 import { createCampusSign, photoSpot } from './campus-sign.ts';
 import { fireTowerFootprint } from './surroundings.ts';
+import { createAccessControls, campusEntrances } from './access-controls.ts';
 export { bounds } from './campus-map.ts';
 
 export const maxFlightAltitude = 180;
@@ -112,6 +113,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const ground = b.finish('registered campus roads lawns and playing fields'); root.add(ground); solids.push(...b.solids);
   const gateFont = await new FontLoader().loadAsync(`${import.meta.env.BASE_URL}assets/fonts/gate-lettering.typeface.json`);
   const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);
+  const access=createAccessControls(mats);root.add(access.group);solids.push(...access.solids);
   cameraSolids.push(...priority.group.children);
   root.add(createSkyline());
   const field = createFootballPitch(map.features, mats); root.add(field.group); solids.push(...field.solids); cameraSolids.push(...field.group.children);
@@ -139,7 +141,15 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   // optional facade models are still streaming.
   const landmarkCollision=await fetch(`${import.meta.env.BASE_URL}data/landmarks-collision.json`);if(!landmarkCollision.ok)throw new Error('扩展区域碰撞数据未加载');
   solids.push(...await landmarkCollision.json() as Solid[]);
-  const ordinary=buildOrdinaryBuildings(map.features,mats);fixedMeshes.push(...ordinary.fixedMeshes);
+  const ordinary=buildOrdinaryBuildings(map.features,mats,map.roads);fixedMeshes.push(...ordinary.fixedMeshes);vegetationUpdates.push(ordinary.updateVisibility);
+  // Keep the original 13 travel entries stable, then append named entrances and
+  // dormitory doors so each residence can be inspected without guessing its roof.
+  travelPlaces.splice(13);
+  for(const e of campusEntrances)if(!travelPlaces.some(p=>p.name===e.name))travelPlaces.push({name:e.name,x:e.x-Math.sin(e.angle)*5,z:e.z-Math.cos(e.angle)*5,yaw:e.angle+Math.PI});
+  for(const record of ordinary.records)if(record.dormitory&&record.frontage){
+    const [x,z,nx,nz]=record.frontage;
+    travelPlaces.push({name:record.name,x:x+nx*4,z:z+nz*4,yaw:Math.atan2(nx,nz)});
+  }
   root.add(createIvy(mats, quality));
 
   const nearTrees: TreeSpot[] = [
@@ -181,6 +191,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       const canvas=document.createElement('canvas');canvas.width=512;canvas.height=160;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#86784f';ctx.fillRect(0,0,512,160);ctx.strokeStyle='#b3a374';ctx.lineWidth=6;ctx.strokeRect(8,8,496,144);ctx.fillStyle='#2a2419';ctx.font='72px "Songti SC", "SimSun", serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(place.name,256,85);
       const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const plaque=new T.Mesh(new T.PlaneGeometry(place.w,place.h),new T.MeshStandardMaterial({map:texture,roughness:.65,metalness:.22}));plaque.position.set(place.x,place.y,place.z);plaque.rotation.y=place.a;plaque.receiveShadow=true;root.add(plaque);
     }
+    root.add(createWestWingIvy(mats,quality));
     afterSector();
     sectors++;
     await new Promise<void>(resolve => setTimeout(resolve, 50));
@@ -234,5 +245,5 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     return moreSolids;
   }
   const updateVegetation = (position: T.Vector3, quality: string, flying: boolean) => vegetationUpdates.forEach(update => update(position, quality, flying));
-  return { root, map, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
+  return { root, map, access, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
 }

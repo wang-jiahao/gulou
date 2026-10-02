@@ -29,10 +29,12 @@ for strand in range(29):
             length = (23 + rng.uniform(0,14)) * taper
             tip = point + np.array([np.cos(leaf_angle), np.sin(leaf_angle)]) * length
             middle = (point + tip) / 2
-            green = int((103 + rng.uniform(-12,18)) * tint)
-            cv2.ellipse(rgba, tuple(middle.astype(int)), (max(2,int(length*.58)),7), leaf_angle*180/np.pi,0,360,(int(green*.59),green,int(green*.34),255),-1,cv2.LINE_AA)
+            green = int((96 + rng.uniform(-10,15)) * tint)
+            cv2.ellipse(rgba, tuple(middle.astype(int)), (max(2,int(length*.58)),7), leaf_angle*180/np.pi,0,360,(int(green*.76),green,int(green*.57),255),-1,cv2.LINE_AA)
 cv2.line(rgba,(s//2,int(s*.04)),(int(s*.51),int(s*.72)),(61,98,39,255),4,cv2.LINE_AA)
 rgba=cv2.resize(rgba,(512,512),interpolation=cv2.INTER_AREA)
+grain=np.random.default_rng(912).normal(0,2.2,(512,512,1))
+rgba[:,:,:3]=np.clip(rgba[:,:,:3].astype(float)+grain,0,255).astype(np.uint8)
 # Dilate edge RGB into transparent pixels to avoid dark mip fringes.
 for c in range(3):
     dilated=cv2.dilate(rgba[:,:,c],np.ones((5,5),np.uint8))

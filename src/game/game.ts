@@ -96,9 +96,13 @@ export class Game {
     await this.renderer.compileAsync(this.scene, this.camera);
     this.mode = 'ready'; this.readyMs = performance.now(); progress(1, '校园已就绪 · 无需注册');
     this.last = performance.now(); this.renderer.setAnimationLoop(t => this.tick(t));
-    void this.world.expand(()=>this.setupShadowMaterials()).then(solids => {
+    void this.world.expand(()=>this.setupShadowMaterials()).then(async solids => {
       this.player.addSolids(solids);this.player.addMeshes(this.world.fixedMeshes.slice(initialMeshes));
       this.atmosphere.setLamps(this.world.lampPositions);this.atmosphere.register();
+      // Expanded facades have materials that the core-only warm-up never saw.
+      // Prepare their shader variants (including currently hidden detail cells)
+      // before the first flight crosses into a new part of campus.
+      await this.renderer.compileAsync(this.scene,this.camera);
       void this.atmosphere.buildRainHeights((x,z)=>this.player.groundHeightAt(x,z));
     }).catch(e => { console.error(e); this.onNotice('部分远景未加载，核心区域仍可游玩。'); });
   }
@@ -169,6 +173,7 @@ export class Game {
     this.atmosphere.update(dt,this.mode==='playing',this.camera.position);
     if(this.foliageLight)this.foliageLight.value=this.atmosphere.daylight;
     this.world.updateVegetation(this.player.position, this.quality, this.player.flying);
+    this.world.access.update(dt,this.player.position,this.mode==='playing');
     this.csm!.lightDirection.copy(this.atmosphere.sunDirection).negate();this.csm!.lights.forEach(light=>{light.intensity=this.atmosphere.sunIntensity;light.color.copy(this.atmosphere.lightColor);});
     this.renderer.toneMappingExposure=1.05+this.atmosphere.night*.12;
     this.player.avatar.root.visible = !this.cameraRig.firstPerson && !(this.mode === 'photo' && this.photoHideAvatar);

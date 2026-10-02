@@ -34,11 +34,16 @@ export class Builder {
   finish(name: string) {
     const group = new T.Group(); group.name = name;
     for (const [mat, geometries] of this.buckets) {
-      const geo = mergeGeometries(geometries.map(g => g.index ? g.toNonIndexed() : g));
+      const parts = geometries.map(g => g.index ? g.toNonIndexed() : g);
+      const geo = mergeGeometries(parts);
+      for (let i=0;i<parts.length;i++) if(parts[i]!==geometries[i])parts[i].dispose();
       for (const g of geometries) g.dispose();
       if (!geo) continue;
       geo.computeBoundingSphere(); const mesh = new T.Mesh(geo, mat); mesh.castShadow = true; mesh.receiveShadow = true; mesh.name = mat.name; group.add(mesh);
     }
+    // Distance-controlled facade cells retain their Builder. Do not retain all
+    // the unmerged window/trim buffers alongside the merged render geometry.
+    this.buckets.clear();
     return group;
   }
 }

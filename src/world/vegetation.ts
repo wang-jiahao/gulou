@@ -123,14 +123,14 @@ export function createJunipers(spots: TreeSpot[], mats: Materials, quality = 'me
       for (let layer = 0; layer < 18; layer++) {
         const t = layer / 17, y = h * .20 + t * (top - h * .20);
         const radius = (h * .12 * Math.pow(1 - t, .4) + .24) * (.78 + rand() * .3);
-        const count = quality === 'low' ? 24 : 42;
+        const count = quality === 'low' ? 34 : 66;
         for (let k = 0; k < count; k++) {
           const phi = rand() * Math.PI * 2, r = Math.sqrt(rand()) * radius;
           const tipDrop = .65 * Math.pow(r / radius, 2);
           const bend = Math.sin(t * 2.8 + a) * h * .025;
           obj.position.set(sx + Math.cos(phi) * r + bend, y - tipDrop + (rand() - .5) * .6, sz + Math.sin(phi) * r);
           obj.rotation.set((rand() - .5) * .7, phi + rand() * .6, (rand() - .5) * .65);
-          const size = (.65 + rand() * .48) * (.6 + .4 * Math.pow(1 - t, .3));
+          const size = (.48 + rand() * .34) * (.6 + .4 * Math.pow(1 - t, .3));
           obj.scale.set(size, size * (1.45 + rand() * .45), size); obj.updateMatrix(); matrices.push(obj.matrix.clone());
           const light = .62 + .26 * r / radius + rand() * .12;
           colors.push(new T.Color().setRGB(light * .91, light, light * .83));
@@ -166,4 +166,22 @@ export function createGroundPlants(mats: Materials, groundHeight: (x: number, z:
     const mesh = new T.InstancedMesh(new T.PlaneGeometry(1, 1), mat, data.length); data.forEach((m, i) => mesh.setMatrixAt(i, m)); mesh.receiveShadow = true; mesh.castShadow = name === 'shrubs'; mesh.name = name; mesh.computeBoundingSphere(); group.add(mesh);
   }
   return { group, solids };
+}
+
+/** Street-facing west-wing growth observed in gl-3-07; shares the campus ivy atlas. */
+export function createWestWingIvy(mats: Materials, quality='medium') {
+  const r=rng(1916),obj=new T.Object3D(),matrices:T.Matrix4[]=[];
+  const step=quality==='low'?.23:.15,centers=Array.from({length:14},(_,i)=>(i-6.5)*(50.2-5)/13);
+  for(let u=-24.5;u<24.5;u+=step)for(let y=.85;y<9.1;y+=step){
+    const patch=.5+.25*Math.sin(u*.47+Math.sin(y*1.3))+.2*Math.sin(u*1.9-y*.62);
+    if(y<2.8&&Math.abs(u)<2.5)continue;
+    if(centers.some(c=>Math.abs(u-c)<.95)&&[1.45,4.45,7.65].some(c=>Math.abs(y-c)<1.30))continue;
+    if(r()>patch*.96||y<2&&r()<.55)continue;
+    obj.position.set(-40.57+.045+patch*.14,y+(r()-.5)*step,45.9-u+(r()-.5)*step);
+    obj.rotation.set(.2+r()*.55,Math.PI/2+(r()-.5)*.55,(r()-.5)*1.3);
+    obj.scale.setScalar(.16+r()*.1);obj.updateMatrix();matrices.push(obj.matrix.clone());
+  }
+  const mesh=new T.InstancedMesh(new T.PlaneGeometry(1,1),mats.ivy,matrices.length);
+  matrices.forEach((m,i)=>{mesh.setMatrixAt(i,m);const shade=.65+r()*.25;mesh.setColorAt(i,new T.Color().setRGB(shade*.95,shade,shade*.86));});
+  mesh.name='west wing partial climbing ivy';mesh.castShadow=mesh.receiveShadow=true;mesh.computeBoundingSphere();return mesh;
 }
