@@ -48,3 +48,11 @@
 - 门楣和柱面凸字使用 [LXGW WenKai](https://github.com/lxgw/LxgwWenKai)（SIL OFL 1.1）的 12 个字形，经 `scripts/build-gate-lettering.py` 转换为轮廓子集并更名为 **Gulou Gate Lettering**。分发文件仅约 29 KB，许可保存在 `public/assets/fonts/OFL.txt`；完整字体留在忽略的源素材目录。生成器需要 Python fontTools。
 - 人物沿用 MakeHuman CC0 图形基础，重新调整脸型、鼻唇轮廓、肤色、眉眼和发型；头部与手部采用平滑细分，自制开衫／外套与内搭。三套穿搭仅在本地更改材质并保存偏好，不涉及联网皮肤服务。
 - 门柱细颗粒石材由固定种子的程序噪声生成；没有使用参考照片的像素。
+
+## 本地 v0.8 参考核对与树木细节
+
+- 当前十二个校门字已替换为 `scripts/trace-gate-lettering.py` 从用户照片分离后重建的笔画轮廓，按官方 VR 核对排列。不是文楷，也不是原书法矢量稿。仅包含几何轮廓，不打包原照片；不为原书法另行声明许可。上一节 v0.7 的字体说明保留为历史记录。
+- 北大楼塔顶单窗、窗下石台、山墙瓦饰、屋檐瓦端、庭院常绿树、三头灯和沥青道路以本地照片与官方 VR 为参考。草坪高差确认存在，0.20 m 草坪标高、0.22 m 石缘顶面为近似值。
+- `cypress-spray.png` 与 `courtyard-asphalt.webp` 由 `scripts/courtyard-textures.py` 生成，未使用参考照片像素。常绿树为程序化近似树形，不宣称准确树种。
+- `tree-distant.glb` 是同一 Poly Haven CC0 Tree Small 02 的进一步简化版本；近、中、远三级按距离和画质切换，几何及材质按世界实例共享。
+- 全量 130 个地图轮廓、36 片道路和 39 片草地检查记录留在本机 `docs/map-audit.md`；描图一致性不等于校园测绘精度。

@@ -36,7 +36,7 @@ export class CampusMapView {
     this.map.features.forEach(p => surface(p, p.tags.leisure ? '#c0a391' : p.tags.garden === 'south' ? '#d0bca4' : '#9caeaa'));
     const route = [[0, 18], [0, 83], [-24, 83], [-24, 99], [-18, 114], [-18, 145], [-85, 147], [-85, 182], [-85.6, 255], [-91, 352]];
     c.beginPath(); route.forEach(([x, z], i) => { const q = this.project(x, z); if (!i) c.moveTo(...q); else c.lineTo(...q); }); c.strokeStyle = '#bd8151'; c.lineWidth = 4; c.setLineDash([8, 6]); c.stroke(); c.setLineDash([]);
-    const labels: [string, number, number][] = [['北大楼', 0, 0], ['大礼堂', -53, 99], ['教学楼', -85, 128], ['中大路', -85, 235], ['汉口路校门', -91, 350], ['南园', -55, 480], ['广州路校门', -35, 715], ['苏浙运动场', -195, -20]];
+    const labels: [string, number, number][] = [['北大楼', 0, 0], ['金大路', 0, 59], ['东大楼', 52, 48], ['西大楼', -51, 46], ['大礼堂', -53, 99], ['教学楼', -85, 128], ['中大路', -85, 235], ['汉口路校门', -91, 350], ['南园', -55, 480], ['广州路校门', -35, 715], ['苏浙运动场', -195, -20]];
     c.font = '16px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
     for (const [text, x, z] of labels) {
       if (x < r.minX || x > r.maxX || z < r.minZ || z > r.maxZ) continue;

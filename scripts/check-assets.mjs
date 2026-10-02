@@ -1,6 +1,8 @@
 import { readdir, readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import sharp from 'sharp';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { ShapeUtils } from 'three';
 
 async function files(path) {
   const out = [];
@@ -21,6 +23,20 @@ for (const path of await files('public')) {
   } else if (/\.(png|webp|jpg)$/.test(path)) {
     const meta = await sharp(path, { failOn: 'warning' }).stats(); assert.ok(meta.channels.length > 0,path); count++;
   } else if (path.endsWith('.wav')) { const b = await readFile(path); assert.equal(b.toString('ascii',0,4),'RIFF'); assert.equal(b.toString('ascii',8,12),'WAVE'); assert.equal(b.readUInt32LE(4)+8,b.length); count++;
-  } else if (path.endsWith('.json')) { JSON.parse(await readFile(path,'utf8')); count++; }
+  } else if (path.endsWith('.json')) {
+    const data = JSON.parse(await readFile(path,'utf8'));
+    if (path.endsWith('/gate-lettering.typeface.json')) {
+      const font = new FontLoader().parse(data);
+      for (const letter of '南京大学严肃活泼团结紧张') {
+        assert.ok(data.glyphs[letter], `Missing gate character ${letter}`);
+        const area = font.generateShapes(letter, 1).reduce((sum, shape) => {
+          const p = shape.extractPoints(5);
+          return sum + Math.abs(ShapeUtils.area(p.shape)) - p.holes.reduce((a, h) => a + Math.abs(ShapeUtils.area(h)), 0);
+        }, 0);
+        assert.ok(area > .1, `${letter}: filled strokes missing; check exterior/hole winding`);
+      }
+    }
+    count++;
+  }
 }
 console.log(`Verified ${count} models, images and data files.`);

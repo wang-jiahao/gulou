@@ -56,6 +56,9 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const groundCameraProxy = new T.Mesh(new T.PlaneGeometry(1800, 1900).rotateX(-Math.PI / 2), new T.MeshBasicMaterial({ side: T.DoubleSide })); groundCameraProxy.position.set(-130, .005, 160); groundCameraProxy.updateMatrixWorld(); cameraSolids.push(groundCameraProxy);
   const map: CampusMap = await mapResponse.json();
   map.features.push(fireTowerFootprint);
+  const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
+  const lawnHeight = .20;
+  const courtyardHeight = (x: number, z: number) => [...raisedLawns].some(lawn => insidePolygon(x, z, lawn)) ? lawnHeight : .022;
   const b = new Builder();
   // Surfaces and courtyards share the supplied plan, including polygon holes.
   // Lawns, paths and the running track sit only centimetres above this slab.
@@ -65,14 +68,11 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   b.box(1800, .4, 1900, -130, -.2, 160, base);
   // Modest collider tiles avoid the contact tolerance of a kilometre-wide convex box.
   for (let x = -640; x < 192; x += 64) for (let z = -320; z < 768; z += 64) solids.push({ x: x + 32, y: -.2, z: z + 32, w: 64, h: .4, d: 64 });
-  const asphalt = new T.MeshStandardMaterial({ name: 'paving', color: 0x9a9e9a, map: mats.textures.get('stone-grain.webp'), roughness: .95, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
-  asphalt.onBeforeCompile = shader => {
-    shader.uniforms.uCourtyardPavers = { value: mats.textures.get('pavers.webp') };
-    shader.vertexShader = 'varying vec2 vRoadWorld;\n' + shader.vertexShader;
-    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvRoadWorld=(modelMatrix*vec4(transformed,1.)).xz;');
-    shader.fragmentShader = 'varying vec2 vRoadWorld;uniform sampler2D uCourtyardPavers;\n' + shader.fragmentShader;
-    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\nfloat courtyard=(1.-smoothstep(35.,39.,abs(vRoadWorld.x)))*smoothstep(15.,18.,vRoadWorld.y)*(1.-smoothstep(80.,84.,vRoadWorld.y));diffuseColor.rgb=mix(diffuseColor.rgb,texture2D(uCourtyardPavers,vRoadWorld/3.6).rgb*vec3(.86,.87,.83),courtyard);');
-  };
+  const asphalt = new T.MeshStandardMaterial({ name: 'paving', color: 0x93988f, map: mats.textures.get('courtyard-asphalt.webp'), roughness: .95, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+  // The white strokes in the schematic map are drawing outlines, not metre-wide
+  // strips of pale paving. Fill only the courtyard substrate beneath its paths.
+  b.box(78, .012, 72, 0, .005, 49, asphalt);
+  // Official VR shows asphalt garden paths, rather than a continuous stone plaza.
   const addSurface = (polygon: Parameters<typeof planShape>[0], material: T.Material, y: number) => {
     const geometry = new T.ShapeGeometry(planShape(polygon)).rotateX(-Math.PI / 2);
     const uv = geometry.getAttribute('uv'); for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 3.6, uv.getY(i) / 3.6);
@@ -84,10 +84,24 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     for (const ring of [road.points, ...(road.holes ?? [])]) for (let i = 0; i < ring.length; i++) {
       const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], x = (ax + bx) / 2, z = (az + bz) / 2, length = Math.hypot(bx - ax, bz - az);
       if (length < 1 || x < -163 || x > 85 || z < -27 || z > 350) continue;
+      if (Math.abs(x) < 39 && z > 14 && z < 84) continue;
       b.box(.16, .12, length, x, .07, z, mats.stone, false, Math.atan2(bx - ax, bz - az));
     }
   }
-  for (const lawn of map.lawns) addSurface(lawn, mats.grass, .022);
+  for (const lawn of map.lawns) {
+    const raised = raisedLawns.has(lawn);
+    addSurface(lawn, mats.grass, raised ? lawnHeight : .022);
+    if (!raised) continue;
+    // The lawn is one shallow step above the asphalt walks. Use the same
+    // traced outline for the visible edge and the solid support underneath it.
+    const soil = new T.ExtrudeGeometry(planShape(lawn), { depth: lawnHeight, bevelEnabled: false, steps: 1 }).rotateX(-Math.PI / 2);
+    const proxy = new T.Mesh(soil, new T.MeshBasicMaterial({ side: T.DoubleSide })); fixedMeshes.push(collisionMesh(proxy)); cameraSolids.push(proxy);
+    for (const ring of [lawn.points, ...(lawn.holes ?? [])]) for (let i = 0; i < ring.length; i++) {
+      const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], length = Math.hypot(bx - ax, bz - az);
+      if (length < .15) continue;
+      b.box(.16, .21, length, (ax + bx) / 2, .115, (az + bz) / 2, mats.stone, true, Math.atan2(bx - ax, bz - az));
+    }
+  }
   for (const field of map.features.filter(f => f.tags.leisure === 'track')) {
     addSurface(field, new T.MeshStandardMaterial({ color: 0x9e6554, roughness: .96 }), .04);
     for (const hole of field.holes ?? []) addSurface({ points: hole }, mats.grass, .041);
@@ -102,6 +116,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   root.add(createSkyline());
   const field = createFootballPitch(map.features, mats); root.add(field.group); solids.push(...field.solids); cameraSolids.push(...field.group.children);
   const tower = createFireTower(), sign = createCampusSign(); root.add(tower.group, sign.group); solids.push(...tower.solids, ...sign.solids); cameraSolids.push(...tower.group.children, ...sign.group.children);
+  const signElevation = courtyardHeight(-24, 46) > .1 ? lawnHeight : 0;
+  sign.group.position.y += signElevation; sign.solids.forEach(s => { s.y += signElevation; });
 
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   const gltf = await loader.loadAsync(`${import.meta.env.BASE_URL}assets/buildings/beidalou.glb`);
@@ -127,24 +143,24 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   root.add(createIvy(mats, quality));
 
   const nearTrees: TreeSpot[] = [
-    { x: -16, z: 21, height: 14, kind: 'cedar' }, { x: 17, z: 19, height: 16, kind: 'cedar' },
+    { x: -6.7, z: 20, height: 13.8, kind: 'cedar' }, { x: 7.4, z: 21.2, height: 15.8, kind: 'cedar' },
     { x: -28, z: 30, height: 15 }, { x: 29, z: 31, height: 17 },
     { x: -32, z: 46, height: 17 }, { x: 31, z: 57, height: 16 },
     { x: -31, z: 68, height: 18 }, { x: 27, z: 76, height: 16 },
     { x: -13, z: 63, height: 19 }, { x: 15, z: 83, height: 18 },
-    { x: -24, z: 14, height: 8 }, { x: -8.5, z: 17, height: 7.8 }, { x: 8, z: 17, height: 8.4 }, { x: 25, z: 13, height: 9 },
+    { x: -24, z: 14, height: 8 },  { x: 25, z: 13, height: 9 },
     { x: -35, z: 6, height: 17 }, { x: 38, z: 3, height: 15 },
     { x: -19, z: -22, height: 17 }, { x: 23, z: -24, height: 18 },
   ];
   const trees = createJunipers(nearTrees.filter(t => t.kind === 'cedar'), mats, quality); root.add(trees.group); solids.push(...trees.solids);
-  const broadleaf = await createModelTrees(nearTrees.filter(t => t.kind !== 'cedar'), quality === 'low' ? 'far' : 'near', mats.leaves); root.add(broadleaf.group); solids.push(...broadleaf.solids);
+  const broadleaf = await createModelTrees(nearTrees.filter(t => t.kind !== 'cedar'), quality === 'low' ? 'far' : 'near', mats.leaves); root.add(broadleaf.group); solids.push(...broadleaf.solids); vegetationUpdates.push(broadleaf.updateVisibility);
   // The gateway photograph is framed by mature avenue trees, not an empty lot.
   const gateTrees = await createModelTrees([
     { x: -102, z: 333, height: 21 }, { x: -80, z: 329, height: 22 },
     { x: -104, z: 311, height: 19 }, { x: -77, z: 306, height: 21 },
   ], quality === 'low' ? 'far' : 'near', mats.leaves);
-  root.add(gateTrees.group); solids.push(...gateTrees.solids);
-  const plants = createGroundPlants(mats); root.add(plants.group);
+  root.add(gateTrees.group); solids.push(...gateTrees.solids); vegetationUpdates.push(gateTrees.updateVisibility);
+  const plants = createGroundPlants(mats, courtyardHeight); root.add(plants.group);
   let sectors = 1;
 
   async function expand(afterSector: () => void = () => {}) {
@@ -192,14 +208,25 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       props.solids.push({ x: p.x, y: .5, z: p.z + .25, w: 2.25, h: 1, d: .68 });
     }
     const lightGlass = new T.MeshStandardMaterial({ name:'lamp-glass',color: 0xf7ebc5, emissive: 0xc2a165, emissiveIntensity: .18, roughness: .35 });
-    const lampSpots=[...[-1,1].flatMap(side=>[23,43,64,-20].map(z=>[side*32.3,z])),[-20,89],[-20,112],...Array.from({length:8},(_,i)=>[-77-i*.9,165+i*24]),[-82,389],[-74,445],[-39,519],[-22,600],[-28,686]];
+    const lampSpots=[...[-1,1].flatMap(side=>[23,43,64,-20].map(z=>[side*(z===23?5.2:32.3),z])),[-20,89],[-20,112],...Array.from({length:8},(_,i)=>[-77-i*.9,165+i*24]),[-82,389],[-74,445],[-39,519],[-22,600],[-28,686]];
     for (const [x,z] of lampSpots) {
-      lampPositions.push(new T.Vector3(x,3.85,z));
-      props.cylinder(new T.Vector3(x, 0, z), new T.Vector3(x, 3.9, z), .09, .045, mats.metal, 8);
-      props.box(.38, .55, .38, x, 3.85, z, lightGlass);
-      props.box(.52, .1, .52, x, 4.15, z, mats.metal);
-      for (const a of [-1, 1]) for (const c of [-1, 1]) props.box(.035, .6, .035, x + a * .2, 3.85, z + c * .2, mats.metal);
-      props.solids.push({ x, y: 1.8, z, w: .18, h: 3.6, d: .18 });
+      const floor = courtyardHeight(x,z) > .1 ? lawnHeight : 0;
+      lampPositions.push(new T.Vector3(x,3.85+floor,z));
+      props.cylinder(new T.Vector3(x, floor, z), new T.Vector3(x, 3.6+floor, z), .065, .042, mats.metal, 10);
+      if (z < 85) {
+        // White elongated globes on curved arms are visible in the courtyard VR views.
+        for (const side of [-1,0,1]) {
+          const height=side===0?3.93:3.68,dx=side*.30;
+          props.line([new T.Vector3(x,2.85+floor,z),new T.Vector3(x+dx,3.1+floor,z),new T.Vector3(x+dx,height-.25+floor,z)],.025,mats.metal,5);
+          props.add(new T.SphereGeometry(1,12,16).scale(.105,.36,.105),lightGlass,x+dx,height+floor,z);
+          props.add(new T.SphereGeometry(.055,8,6),mats.metal,x+dx,height+.36+floor,z);
+        }
+      } else {
+        props.box(.38, .55, .38, x, 3.85+floor, z, lightGlass);
+        props.box(.52, .1, .52, x, 4.15+floor, z, mats.metal);
+        for (const a of [-1, 1]) for (const c of [-1, 1]) props.box(.035, .6, .035, x + a * .2, 3.85+floor, z + c * .2, mats.metal);
+      }
+      props.solids.push({ x, y: 1.8+floor, z, w: .18, h: 3.6, d: .18 });
     }
     const propGroup = props.finish('benches lamps and boundary'); root.add(propGroup); moreSolids.push(...props.solids); cameraSolids.push(...propGroup.children);
     afterSector();

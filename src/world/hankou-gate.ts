@@ -12,7 +12,8 @@ function lettering(font: Font, text: string, width: number, height: number, colo
   [...text].forEach((letter, i) => {
     const geometry = new TextGeometry(letter, { font, size: 1, depth: .025, curveSegments: 5, bevelEnabled: true, bevelThickness: .006, bevelSize: .006, bevelSegments: 2 });
     geometry.computeBoundingBox(); const box = geometry.boundingBox!, size = box.getSize(new T.Vector3());
-    const scale = Math.min((vertical ? width : width / text.length * .78) / size.x, (vertical ? height / text.length * .86 : height) / size.y);
+    const glyph = font.data.glyphs[letter] as { displayScale?: number };
+    const scale = Math.min((vertical ? width : width / text.length * .78) / size.x, (vertical ? height / text.length * .86 : height) / size.y) * (glyph.displayScale ?? 1);
     geometry.translate(-(box.min.x + box.max.x) / 2, -(box.min.y + box.max.y) / 2, 0); geometry.scale(scale, scale, 1);
     const mesh = new T.Mesh(geometry, material); mesh.position.set(vertical ? 0 : width * ((i + .5) / text.length - .5), vertical ? height * (.5 - (i + .5) / text.length) : 0, 0);
     mesh.castShadow = mesh.receiveShadow = true; group.add(mesh);

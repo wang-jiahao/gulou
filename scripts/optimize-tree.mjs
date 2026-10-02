@@ -8,7 +8,7 @@ import { mkdir } from 'node:fs/promises';
 await Promise.all([MeshoptEncoder.ready, MeshoptSimplifier.ready]);
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
 await mkdir('public/assets/vegetation', { recursive: true });
-for (const [lod, ratio] of [['near', .028], ['far', .008]]) {
+for (const [lod, ratio] of [['near', .028], ['far', .008], ['distant', .00085]]) {
   const doc = await io.read('assets/source-models/tree-small/tree.gltf');
   for (const material of doc.getRoot().listMaterials()) {
     material.setDoubleSided(true).setAlphaMode('OPAQUE').setRoughnessFactor(.94).setMetallicFactor(0);
