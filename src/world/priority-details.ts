@@ -2,6 +2,7 @@ import * as T from 'three';
 import { Builder } from './geometry.ts';
 import { geographic, type CampusMap } from './campus-map.ts';
 import { createHankouGate } from './hankou-gate.ts';
+import type { Font } from 'three/addons/loaders/FontLoader.js';
 import type { Materials } from './materials.ts';
 
 function lettering(text: string, width: number, height: number, background = '#aba38d', color = '#3d3b32') {
@@ -13,7 +14,7 @@ function lettering(text: string, width: number, height: number, background = '#a
 }
 
 /** Facade proportions follow the official VR; heights and details remain approximate. */
-export function createPriorityDetails(map: CampusMap, mats: Materials) {
+export function createPriorityDetails(map: CampusMap, mats: Materials, gateFont: Font) {
   const b = new Builder();
   const plaster = new T.MeshStandardMaterial({ color: 0xc9c2ac, roughness: .9 });
   const roof = new T.MeshStandardMaterial({ name: 'teaching-roof', color: 0x494c46, roughness: .9 });
@@ -43,7 +44,7 @@ export function createPriorityDetails(map: CampusMap, mats: Materials) {
   // Three shallow steps remain within the plan's forecourt, clear of 两江路.
   for (let i = 0; i < 3; i++) b.box(13.5, .14, 1.4 - i * .32, x, .07 + i * .14, z + 1 - i * .16, mats.stone, true);
   const group = b.finish('teaching building entrance details');
-  const gate = createHankouGate(map.gates.hankou, mats); group.add(...gate.group.children.slice()); b.solids.push(...gate.solids);
+  const gate = createHankouGate(map.gates.hankou, mats, gateFont); group.add(...gate.group.children.slice()); b.solids.push(...gate.solids);
   const teaching = lettering('教 学 楼', 4, .6); teaching.position.set(x, 4.65, z + 1.33); group.add(teaching);
   for (const [label, px, pz] of [['中大路', -75, 202], ['两江路', -68, 150], ['金大路', 7, 59]] as const) {
     const sign = lettering(label, 1.55, .36, '#485b4c', '#f1ead9'); sign.position.set(px, 2.1, pz); group.add(sign);

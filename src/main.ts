@@ -1,5 +1,6 @@
 import './style.css';
 import type { Game, Quality } from './game/game.ts';
+import type { OutfitStyle } from './player/avatar.ts';
 import { CampusMapView } from './ui/campus-map.ts';
 import { TouchControls, touchDevice } from './ui/touch-controls.ts';
 import type { WeatherMode } from './game/environment-state.ts';
@@ -14,7 +15,7 @@ let selectedMapPoint: { x: number; z: number; name: string } | null = null;
 const settings = el<HTMLDialogElement>('settings'), info = el<HTMLDialogElement>('info'),worldSettings=el<HTMLDialogElement>('world-settings');
 const toast = (message: string) => { el('toast').textContent = message; el('toast').hidden = false; clearTimeout(toastTimer); toastTimer = window.setTimeout(() => { el('toast').hidden = true; }, 3500); };
 const fatal = (e: unknown) => { console.error(e); el('fatal').hidden = false; el('fatal-message').textContent = e instanceof Error ? e.message : '请检查网络或换用支持 WebGL2 的浏览器。'; };
-const saveSettings = () => { try { const a=game.atmosphere?.state;localStorage.setItem('gulou-settings-v1', JSON.stringify({ quality: game.quality, character: game.character, volume: game.audio.volume, musicVolume: game.music.volume, musicEnabled: game.music.enabled, sensitivity: game.cameraRig.sensitivity,world:a?{hour:a.hour,autoTime:a.autoTime,cycleMinutes:a.cycleMinutes,weatherMode:a.weatherMode}:undefined })); } catch { /* Optional preferences. */ } };
+const saveSettings = () => { try { const a=game.atmosphere?.state;localStorage.setItem('gulou-settings-v1', JSON.stringify({ quality: game.quality, character: game.character, outfit: game.outfit, volume: game.audio.volume, musicVolume: game.music.volume, musicEnabled: game.music.enabled, sensitivity: game.cameraRig.sensitivity,world:a?{hour:a.hour,autoTime:a.autoTime,cycleMinutes:a.cycleMinutes,weatherMode:a.weatherMode}:undefined })); } catch { /* Optional preferences. */ } };
 function lockPointer() { if (touchDevice || !game.renderer.domElement.requestPointerLock) return; const r = game.renderer.domElement.requestPointerLock(); if (r) void r.catch(() => toast('也可以按住鼠标拖动视角，WASD 行走。')); }
 function resume() { settings.close(); info.close();worldSettings.close(); mapDialog.close(); game.mode = 'playing'; el('resume').hidden = true; lockPointer(); }
 function openSettings() { if (!entered) return; game.mode = 'paused'; game.player.clearInput(); document.exitPointerLock?.(); el('photo-panel').hidden = true; el('hud').hidden = uiHidden; settings.showModal(); el('view-toggle').textContent = game.cameraRig.firstPerson ? '第一人称 ⇄' : '第三人称 ⇄'; }
@@ -31,6 +32,7 @@ async function boot() {
   try {
     const s = JSON.parse(localStorage.getItem('gulou-settings-v1') ?? '{}');
     if (s.character === 'male' || s.character === 'female') { game.character = s.character; el<HTMLSelectElement>('character-style').value = s.character; }
+    if (['campus', 'forest', 'warm'].includes(s.outfit)) { game.outfit = s.outfit; el<HTMLSelectElement>('outfit-style').value = s.outfit; }
     if (['high', 'medium', 'low'].includes(s.quality)) { game.setQuality(s.quality); el<HTMLSelectElement>('quality').value = s.quality; }
     if (typeof s.musicVolume === 'number') game.music.setVolume(s.musicVolume);
     if (typeof s.musicEnabled === 'boolean') game.music.enabled = s.musicEnabled;
@@ -97,6 +99,7 @@ async function boot() {
     try { await game.setCharacter(kind); saveSettings(); } catch { select.value = game.character; toast('角色暂时没有加载成功，请稍后重试。'); } finally { select.disabled = false; }
   };
   el<HTMLSelectElement>('quality').onchange = e => { game.setQuality((e.target as HTMLSelectElement).value as Quality); saveSettings(); };
+  el<HTMLSelectElement>('outfit-style').onchange = e => { game.setOutfit((e.target as HTMLSelectElement).value as OutfitStyle); saveSettings(); };
   el<HTMLInputElement>('volume').oninput = e => { game.audio.setVolume(Number((e.target as HTMLInputElement).value) / 100); saveSettings(); };
   el<HTMLInputElement>('sensitivity').oninput = e => { game.cameraRig.sensitivity = Number((e.target as HTMLInputElement).value) * .00042; saveSettings(); };
   el<HTMLInputElement>('hide-avatar').onchange = e => { game.photoHideAvatar = (e.target as HTMLInputElement).checked; };

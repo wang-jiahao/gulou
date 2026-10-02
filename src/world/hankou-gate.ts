@@ -1,16 +1,23 @@
 import * as T from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import type { Font } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { Builder, rng } from './geometry.ts';
 import type { Materials } from './materials.ts';
 
-function textPlate(text: string, width: number, height: number, color: string, background?: string, font = 'STKaiti, "Kaiti SC", KaiTi, "Songti SC", serif') {
-  const canvas = document.createElement('canvas'); canvas.height = 256; canvas.width = Math.max(256, Math.round(256 * width / height));
-  const ctx = canvas.getContext('2d')!;
-  if (background) { ctx.fillStyle = background; ctx.fillRect(0, 0, canvas.width, canvas.height); }
-  ctx.fillStyle = color; ctx.font = `bold ${Math.min(170, canvas.width / text.length * .72)}px ${font}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  const gap = canvas.width / (text.length + 1);
-  [...text].forEach((character, i) => ctx.fillText(character, gap * (i + 1), 137));
-  const map = new T.CanvasTexture(canvas); map.colorSpace = T.SRGBColorSpace;
-  return new T.Mesh(new T.PlaneGeometry(width, height), new T.MeshStandardMaterial({ map, transparent: !background, alphaTest: .15, roughness: .64, metalness: background ? .05 : .42, polygonOffset: true, polygonOffsetFactor: -1 }));
+/** Rendered lettering, not pixels from the reference photograph. */
+function lettering(font: Font, text: string, width: number, height: number, color: number, vertical = false) {
+  const group = new T.Group();
+  const material = new T.MeshStandardMaterial({ color, roughness: .32, metalness: .4 });
+  [...text].forEach((letter, i) => {
+    const geometry = new TextGeometry(letter, { font, size: 1, depth: .025, curveSegments: 5, bevelEnabled: true, bevelThickness: .006, bevelSize: .006, bevelSegments: 2 });
+    geometry.computeBoundingBox(); const box = geometry.boundingBox!, size = box.getSize(new T.Vector3());
+    const scale = Math.min((vertical ? width : width / text.length * .78) / size.x, (vertical ? height / text.length * .86 : height) / size.y);
+    geometry.translate(-(box.min.x + box.max.x) / 2, -(box.min.y + box.max.y) / 2, 0); geometry.scale(scale, scale, 1);
+    const mesh = new T.Mesh(geometry, material); mesh.position.set(vertical ? 0 : width * ((i + .5) / text.length - .5), vertical ? height * (.5 - (i + .5) / text.length) : 0, 0);
+    mesh.castShadow = mesh.receiveShadow = true; group.add(mesh);
+  });
+  return group;
 }
 
 function nationalFlag(time: { value: number }) {
@@ -30,73 +37,106 @@ function nationalFlag(time: { value: number }) {
     shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.z+=sin(uFlagTime*1.5+uv.x*7.)*.085*pow(uv.x,1.4);transformed.y+=sin(uFlagTime*.8+uv.x*4.)*.025*uv.x;');
   };
   material.customProgramCacheKey = () => 'gulou-national-flag';
-  const geometry = new T.PlaneGeometry(1.8, 1.2, 16, 8).translate(.9, 0, 0);
-  const flag = new T.Mesh(geometry, material); flag.name = 'five-star national flag'; flag.receiveShadow = true; return flag;
+  const flag = new T.Mesh(new T.PlaneGeometry(1.8, 1.2, 20, 10).translate(.9, 0, 0), material); flag.name = 'five-star national flag'; flag.receiveShadow = true; return flag;
 }
 
-/** Main gate massing follows the official VR front/side views; dimensions are estimated. */
-export function createHankouGate(point: number[], mats: Materials) {
+/** Geometry is proportioned against the user's gate photo and official VR, not a survey. */
+export function createHankouGate(point: number[], mats: Materials, font: Font) {
   const gx = point[0], gz = point[1] - 7, b = new Builder();
-  const concrete = new T.MeshStandardMaterial({ color: 0xd7d8ce, map: mats.textures.get('stone-grain.webp'), bumpMap: mats.textures.get('stone-grain.webp'), bumpScale: .008, roughness: .92 });
-  const baseStone = new T.MeshStandardMaterial({ color: 0x919d97, roughness: .85 });
-  const joints = new T.MeshStandardMaterial({ color: 0x9da7a0, roughness: .92 });
-  const glass = new T.MeshStandardMaterial({ name: 'window-glass-warm', color: 0x314a4c, roughness: .22, metalness: .58 });
-  const frame = new T.MeshStandardMaterial({ color: 0x515e59, metalness: .25, roughness: .7 });
+  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
+  const ctx = canvas.getContext('2d')!, pixels = ctx.createImageData(256, 256), random = rng(6217);
+  for (let i = 0; i < pixels.data.length; i += 4) { const value = 231 + (random() - .5) * 22 - (random() > .985 ? 50 : 0); pixels.data.set([value, value, value, 255], i); }
+  ctx.putImageData(pixels, 0, 0); const grain = new T.CanvasTexture(canvas); grain.colorSpace = T.SRGBColorSpace; grain.wrapS = grain.wrapT = T.RepeatWrapping; grain.repeat.set(4, 4); grain.anisotropy = 8;
+  const granite = new T.MeshStandardMaterial({ name: 'gate-granite', color: 0xc6ccca, map: grain, bumpMap: grain, bumpScale: .002, roughness: .7 });
+  const baseStone = new T.MeshStandardMaterial({ color: 0x909d99, map: grain, roughness: .8 });
+  const joints = new T.MeshStandardMaterial({ color: 0x7c8784, roughness: .94 });
+  const ceiling = new T.MeshStandardMaterial({ color: 0xadb5b1, roughness: .86 });
+  const glass = new T.MeshStandardMaterial({ name: 'window-glass-warm', color: 0x314a4c, roughness: .19, metalness: .52 });
+  const frame = new T.MeshStandardMaterial({ color: 0x636f6d, metalness: .6, roughness: .4 });
   const paint = new T.MeshStandardMaterial({ color: 0xdadbd1, roughness: .97, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  // The revised opening is 8.7 m wide. Both pedestrian passages beside it remain open.
+  const bevelBox = (w: number, h: number, d: number, x: number, y: number, z: number, mat: T.Material, solid = false) => {
+    b.add(new RoundedBoxGeometry(w, h, d, 2, Math.min(.035, h / 6)), mat, x, y, z);
+    if (solid) b.solids.push({ x, y, z, w, h, d });
+  };
   for (const side of [-1, 1]) {
-    const postX = gx + side * 5.35, boothX = gx + side * 11.4;
-    b.box(2, 5.45, 1.9, postX, 2.725, gz, concrete, true);
-    b.box(2.16, .5, 2.04, postX, .25, gz, baseStone, true);
-    b.box(2.18, .2, 2.08, postX, 5.5, gz, concrete);
-    for (const y of [.52, 1.55, 2.58, 3.61]) b.box(2.008, .014, 1.91, postX, y, gz, joints);
-    b.box(4.8, 4.2, 5, boothX, 2.1, gz - .45, concrete, true);
-    b.box(4.92, .48, 5.08, boothX, .24, gz - .45, baseStone, true);
-    b.box(8.35, .23, 5.35, gx + side * 9.95, 4.39, gz - .45, concrete, true);
-    b.box(8.55, .12, 5.53, gx + side * 9.95, 4.56, gz - .45, baseStone);
-    // Glazing, deep outer frame, sill, muntins and an inward-facing booth door.
-    b.box(2.68, 1.56, .06, boothX, 2.38, gz + 2.061, frame);
-    b.box(2.48, 1.36, .07, boothX, 2.38, gz + 2.103, glass);
-    for (const dx of [-1.23, 0, 1.23]) b.box(.055, 1.43, .12, boothX + dx, 2.38, gz + 2.16, frame);
-    for (const y of [1.67, 2.37, 3.09]) b.box(2.58, .055, .12, boothX, y, gz + 2.16, frame);
-    b.box(2.9, .13, .44, boothX, 1.58, gz + 2.15, baseStone);
-    const doorX = gx + side * 8.97;
-    b.box(.08, 2.65, 1.25, doorX, 1.325, gz - .5, frame);
-    b.box(.085, 1.35, 1.02, doorX - side * .045, 1.78, gz - .5, glass);
-    b.box(.12, .16, .07, doorX - side * .09, 1.14, gz - .04, mats.metal);
+    const postX = gx + side * 5.1, boothX = gx + side * 11.5;
+    bevelBox(2.25, 6.25, 2.4, postX, 3.125, gz, granite, true);
+    bevelBox(2.44, 1.25, 2.58, postX, .625, gz, baseStone, true);
+    bevelBox(2.52, .16, 2.66, postX, 1.32, gz, granite);
+    for (let y = 1.53; y < 6; y += .77) {
+      b.box(2.255, .012, 2.406, postX, y, gz, joints);
+      b.box(.012, .76, .008, postX + (Math.round(y / .77) % 2 ? .27 : -.32), y + .39, gz + 1.204, joints);
+    }
+    // Side corridors remain open; the glazed guard rooms sit behind their portals.
+    bevelBox(4.5, 4.1, 5, boothX, 2.05, gz - 2.05, granite, true);
+    bevelBox(8.4, .82, 3.1, gx + side * 10.75, 4.36, gz - .2, granite, true);
+    bevelBox(8.7, .18, 3.42, gx + side * 10.75, 4.85, gz - .2, baseStone);
+    bevelBox(.72, 4.0, .85, gx + side * 15.15, 2, gz - .2, granite, true);
+    for (const offset of [-1.05, .4]) {
+      b.box(1.24, 1.75, .09, boothX + offset, 2.15, gz + .501, frame);
+      b.box(1.09, 1.58, .05, boothX + offset, 2.15, gz + .559, glass);
+      for (const dx of [-.53, 0, .53]) b.box(.032, 1.63, .10, boothX + offset + dx, 2.15, gz + .604, frame);
+      b.box(1.2, .035, .10, boothX + offset, 2.43, gz + .609, frame);
+      b.box(1.34, .09, .3, boothX + offset, 1.26, gz + .62, baseStone);
+    }
+    const doorX = gx + side * 9.23;
+    b.box(.075, 2.6, 1.2, doorX, 1.3, gz - 1.45, frame);
+    b.box(.08, 1.8, 1.03, doorX - side * .045, 1.6, gz - 1.45, glass);
+    b.box(.11, .32, .035, doorX - side * .10, 1.1, gz - 1.08, mats.metal);
+    // Retractable fence is folded against the piers, leaving a wide walkable centre.
+    for (let i = 0; i < 8; i++) {
+      const x = gx + side * (3.03 + i * .075);
+      b.cylinder(new T.Vector3(x, .1, gz - .6), new T.Vector3(x, 1.18, gz - .6), .013, .013, frame, 6);
+      b.cylinder(new T.Vector3(x, .15, gz - .6), new T.Vector3(x + side * .25, 1.08, gz - .6), .010, .010, frame, 6);
+    }
+    b.solids.push({ x: gx + side * 3.3, y: .6, z: gz - .6, w: .7, h: 1.2, d: .2 });
   }
-  b.box(12.95, .98, 2.12, gx, 5.09, gz, concrete, true);
-  b.box(13.35, .16, 2.42, gx, 5.66, gz, baseStone);
-  b.box(13.65, .11, 2.58, gx, 5.8, gz, concrete);
-  b.box(9.5, .11, .28, gx, 4.59, gz + 1.02, baseStone);
-  b.cylinder(new T.Vector3(gx, 5.86, gz - .35), new T.Vector3(gx, 11.1, gz - .35), .035, .025, mats.metal, 10);
-  b.add(new T.SphereGeometry(.072, 12, 8), mats.metal, gx, 11.17, gz - .35);
-  // Stone bollards mark the pedestrian forecourt, leaving the central route unobstructed.
-  for (const side of [-1, 1]) for (let i = 0; i < 5; i++) {
-    const x = gx + side * (3.8 + i * 1.9), z = gz + 6 + i * 1.55;
-    b.add(new T.CylinderGeometry(.33, .37, .12, 20), baseStone, x, .06, z);
-    b.add(new T.SphereGeometry(.31, 14, 10), concrete, x, .42, z);
-    b.solids.push({ x, y: .37, z, w: .64, h: .74, d: .64 });
+  // Deep flat canopy, recessed fascia, stone panel joints and underside coffer lines.
+  bevelBox(12.65, 1.22, 2.68, gx, 5.56, gz, granite, true);
+  bevelBox(14.2, .24, 4.5, gx, 6.27, gz - .18, baseStone, true);
+  bevelBox(14.4, .12, 4.7, gx, 6.45, gz - .18, granite);
+  for (const side of [-1, 1]) {
+    b.box(.18, .48, 4.62, gx + side * 7.05, 6.67, gz - .18, granite);
+    b.box(14.1, .48, .16, gx, 6.67, gz - .18 + side * 2.26, granite);
   }
-  // Crossing stripes follow the road in front of the gate; paint has no collision.
-  for (let i = 0; i < 12; i++) b.box(7.1, .008, .48, gx, .065, gz + 10 + i * .92, paint);
-  const planter = new T.MeshStandardMaterial({ color: 0x982e37, roughness: .85 });
-  const soil = new T.MeshStandardMaterial({ color: 0x343b27, roughness: 1 });
-  const pink = new T.MeshStandardMaterial({ color: 0xc77c96, roughness: .9 });
-  const lightFlower = new T.MeshStandardMaterial({ color: 0xe3c1c7, roughness: .9 });
-  const random = rng(2212);
-  for (const side of [-1, 1]) for (const offset of [0, 3.3]) {
-    const x = gx + side * (14.9 + offset), z = gz + 3.8;
-    b.box(1.6, .58, .75, x, .29, z, planter, true);
-    b.box(1.72, .08, .86, x, .62, z, planter);
-    b.box(1.48, .06, .66, x, .62, z, soil);
-    for (let i = 0; i < 42; i++) b.add(new T.SphereGeometry(.065 + random() * .035, 6, 4), i % 3 ? pink : lightFlower, x + (random() - .5) * 1.45, .69 + random() * .17, z + (random() - .5) * .65);
+  b.box(12.4, .065, 2.6, gx, 4.918, gz, ceiling);
+  for (let x = -5.4; x <= 5.4; x += .9) b.box(.018, .018, 2.62, gx + x, 4.877, gz, joints);
+  for (const z of [-.85, 0, .85]) b.box(12.4, .018, .018, gx, 4.877, gz + z, joints);
+  for (const side of [-1, 1]) for (const [w, h, y] of [[3.2, .32, 6.98], [1.7, .37, 7.315]]) bevelBox(w, h, .22, gx, y, gz + side * 2.24, granite);
+  b.cylinder(new T.Vector3(gx, 6.95, gz - .35), new T.Vector3(gx, 13.5, gz - .35), .042, .028, mats.metal, 12);
+  b.add(new T.SphereGeometry(.082, 16, 10), frame, gx, 13.58, gz - .35);
+  const red = new T.MeshStandardMaterial({ color: 0xb51f2d, roughness: .58 }), gold = new T.MeshStandardMaterial({ color: 0xc7a149, metalness: .6, roughness: .36 });
+  // Lanterns follow the supplied photograph; the temporary welcome banner is omitted.
+  for (const offset of [-2.65, -.9, .9, 2.65]) {
+    const x = gx + offset, z = gz + .38;
+    b.cylinder(new T.Vector3(x, 4.89, z), new T.Vector3(x, 4.65, z), .012, .012, gold, 6);
+    b.add(new T.SphereGeometry(.36, 28, 16).scale(1, .72, 1), red, x, 4.43, z);
+    for (const y of [4.17, 4.69]) b.add(new T.CylinderGeometry(.085, .085, .055, 16), gold, x, y, z);
+    for (let i = 0; i < 12; i++) {
+      const a = i / 12 * Math.PI * 2, points: T.Vector3[] = [];
+      for (let j = 1; j <= 11; j++) { const t = j / 12 * Math.PI; points.push(new T.Vector3(x + Math.sin(t) * Math.cos(a) * .363, 4.43 + Math.cos(t) * .26, z + Math.sin(t) * Math.sin(a) * .363)); }
+      b.line(points, .004, gold, 3);
+    }
+    for (let i = -2; i <= 2; i++) b.cylinder(new T.Vector3(x + i * .015, 4.15, z), new T.Vector3(x + i * .018, 3.94 - Math.abs(i) * .015, z), .005, .005, red, 4);
   }
-  const group = b.finish('Hankou gate piers booths and forecourt');
-  const name = textPlate('南京大学', 6.8, .79, '#b49a47'); name.position.set(gx, 5.1, gz + 1.07); group.add(name);
-  const rearName = textPlate('南京大学', 6.8, .79, '#b49a47'); rearName.position.set(gx, 5.1, gz - 1.07); rearName.rotation.y = Math.PI; group.add(rearName);
-  const address = textPlate('22', .36, .21, '#f6f5ed', '#294d75', 'sans-serif'); address.position.set(gx - 13.1, 2.2, gz + 2.09); group.add(address);
-  const flag = nationalFlag(mats.windTime); flag.position.set(gx, 10.4, gz - .35); group.add(flag);
-  group.userData = { reference: 'NJU official VR scene_gl-2-01, front and sides', accuracy: 'photograph-based approximate dimensions; temporary anniversary banners omitted' };
+  const bollardOffsets = [3.7, 5.15, 6.6, 9.1, 10.55, 12];
+  for (const side of [-1, 1]) for (let i = 0; i < bollardOffsets.length; i++) {
+    // Leave a clear approach at ±7.6 m for both pedestrian portals.
+    const x = gx + side * bollardOffsets[i], z = gz + 5.1 + i * .62;
+    b.add(new T.CylinderGeometry(.30, .32, .09, 24), baseStone, x, .045, z);
+    b.add(new T.SphereGeometry(.30, 24, 16), granite, x, .36, z);
+    b.solids.push({ x, y: .32, z, w: .6, h: .64, d: .6 });
+  }
+  for (let i = 0; i < 12; i++) b.box(6.7, .008, .46, gx, .065, gz + 9.5 + i * .94, paint);
+  const group = b.finish('Hankou gate stone panels canopy lettering and forecourt');
+  const name = lettering(font, '南京大学', 6.0, .88, 0xe5b452); name.position.set(gx, 5.58, gz + 1.351); group.add(name);
+  const rearName = lettering(font, '南京大学', 6.0, .88, 0xe5b452); rearName.position.set(gx, 5.58, gz - 1.351); rearName.rotation.y = Math.PI; group.add(rearName);
+  for (const [side, text] of [[-1, '严肃活泼'], [1, '团结紧张']] as const) {
+    const motto = lettering(font, text, .90, 3.20, 0xa31425, true); motto.position.set(gx + side * 5.1, 3.35, gz + 1.216); group.add(motto);
+  }
+  const flag = nationalFlag(mats.windTime); flag.position.set(gx, 12.45, gz - .35); group.add(flag);
+  // Camera proxies elsewhere use shallow traversal, so expose the relief meshes too.
+  for (const child of [...group.children]) if (child instanceof T.Group) { child.updateMatrix(); for (const mesh of [...child.children]) { mesh.applyMatrix4(child.matrix); group.add(mesh); } group.remove(child); }
+  group.userData = { reference: 'user-provided Hankou gate photo and NJU official VR', accuracy: 'photo-based approximate proportions; temporary welcome banner omitted; lanterns reflect photo decoration' };
   return { group, solids: b.solids };
 }

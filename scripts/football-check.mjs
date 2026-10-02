@@ -1,7 +1,8 @@
 import { chromium, devices } from 'playwright';
 import assert from 'node:assert/strict';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 
+const version = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')).version;
 const url = `${process.env.TEST_URL ?? 'http://localhost:4173/'}?debug=1`;
 const channel = process.env.BROWSER === 'edge' ? 'msedge' : 'chrome';
 const browser = await chromium.launch({ channel });
@@ -187,7 +188,7 @@ try {
   await m.screenshot({ path: 'docs/images/mobile-football.png' });
   const mobile = await m.evaluate(() => window.__GULOU__.stats());
   assert.deepEqual(errors, []); assert.deepEqual(missing, []);
-  const report = { version: '0.6.0', time: new Date().toISOString(), browser: channel, browserVersion: await browser.version(), device: 'Apple M4; Pixel 7 is viewport/touch emulation, not physical-phone performance', checks, errors, missing, desktop, mobile };
+  const report = { version, time: new Date().toISOString(), browser: channel, browserVersion: await browser.version(), device: 'Apple M4; Pixel 7 is viewport/touch emulation, not physical-phone performance', checks, errors, missing, desktop, mobile };
   await writeFile('docs/validation/phase7/football.json', JSON.stringify(report, null, 2));
   console.log(JSON.stringify({ checks, errors, missing, goals: desktop.football.goals }));
 } catch (e) {

@@ -2,6 +2,7 @@
 
 - **OpenStreetMap contributors**: building footprints and geographic reference data, ODbL 1.0. https://www.openstreetmap.org/copyright
 - **Poly Haven**: CC0 environment maps, tree geometry, bark, foliage and ground textures. Specific asset URLs are listed in docs/asset_sources.md and public/credits.html.
+- **LXGW WenKai / Klee Project Authors**: SIL Open Font License 1.1. Twelve glyphs converted into the renamed Gulou Gate Lettering outline subset. https://github.com/lxgw/LxgwWenKai — license: public/assets/fonts/OFL.txt.
 - **MakeHuman**: CC0 base mesh and helper geometry used for the student. The project does not include MakeHuman application code. https://github.com/makehumancommunity/makehuman/blob/master/LICENSE.md
 - **Three.js, Vite, Meshoptimizer, glTF Transform**: MIT. **Rapier**: Apache-2.0. Dependencies retain their respective notices.
 - **Nanjing University official VR, campus plan and public building photographs**: modeling references. Original photographs, panorama tiles and the source plan are excluded from this repository and deployment. Reconstructed geometry and building dimensions are approximate; no endorsement by the university is implied.

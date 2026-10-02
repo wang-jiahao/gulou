@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { Builder, rng, type Solid } from './geometry.ts';
 import { createGroundPlants, createIvy, createJunipers, type TreeSpot } from './vegetation.ts';
@@ -57,7 +58,10 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   map.features.push(fireTowerFootprint);
   const b = new Builder();
   // Surfaces and courtyards share the supplied plan, including polygon holes.
-  const base = new T.MeshStandardMaterial({ color: 0xa5aa96, roughness: 1 });
+  // Lawns, paths and the running track sit only centimetres above this slab.
+  // Bias the foundation away from the camera so its pale surface cannot win
+  // the depth test intermittently when looking down from flight altitude.
+  const base = new T.MeshStandardMaterial({ name: 'campus-foundation', color: 0xa5aa96, roughness: 1, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 8 });
   b.box(1800, .4, 1900, -130, -.2, 160, base);
   // Modest collider tiles avoid the contact tolerance of a kilometre-wide convex box.
   for (let x = -640; x < 192; x += 64) for (let z = -320; z < 768; z += 64) solids.push({ x: x + 32, y: -.2, z: z + 32, w: 64, h: .4, d: 64 });
@@ -92,7 +96,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   b.box(12, .06, 5, 0, .025, 16.4, mats.path);
   b.box(8.5, .06, 6.5, -31, .025, 99, mats.path);
   const ground = b.finish('registered campus roads lawns and playing fields'); root.add(ground); solids.push(...b.solids);
-  const priority = createPriorityDetails(map, mats); root.add(priority.group); solids.push(...priority.solids);
+  const gateFont = await new FontLoader().loadAsync(`${import.meta.env.BASE_URL}assets/fonts/gate-lettering.typeface.json`);
+  const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);
   cameraSolids.push(...priority.group.children);
   root.add(createSkyline());
   const field = createFootballPitch(map.features, mats); root.add(field.group); solids.push(...field.solids); cameraSolids.push(...field.group.children);
@@ -133,6 +138,12 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   ];
   const trees = createJunipers(nearTrees.filter(t => t.kind === 'cedar'), mats, quality); root.add(trees.group); solids.push(...trees.solids);
   const broadleaf = await createModelTrees(nearTrees.filter(t => t.kind !== 'cedar'), quality === 'low' ? 'far' : 'near', mats.leaves); root.add(broadleaf.group); solids.push(...broadleaf.solids);
+  // The gateway photograph is framed by mature avenue trees, not an empty lot.
+  const gateTrees = await createModelTrees([
+    { x: -102, z: 333, height: 21 }, { x: -80, z: 329, height: 22 },
+    { x: -104, z: 311, height: 19 }, { x: -77, z: 306, height: 21 },
+  ], quality === 'low' ? 'far' : 'near', mats.leaves);
+  root.add(gateTrees.group); solids.push(...gateTrees.solids);
   const plants = createGroundPlants(mats); root.add(plants.group);
   let sectors = 1;
 

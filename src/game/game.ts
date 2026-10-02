@@ -5,7 +5,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { loadMaterials } from '../world/materials.ts';
 import { createWorld, spawn, type CampusWorld } from '../world/world.ts';
 import { Player } from '../player/controller.ts';
-import { createAvatar, type CharacterKind } from '../player/avatar.ts';
+import { createAvatar, type CharacterKind, type OutfitStyle } from '../player/avatar.ts';
 import { WalkCamera } from '../player/camera.ts';
 import { Football } from './football.ts';
 import { Music } from '../audio/music.ts';
@@ -29,6 +29,7 @@ export class Game {
   mode: Mode = 'loading';
   quality: Quality = 'medium';
   character: CharacterKind = 'male';
+  outfit: OutfitStyle = 'campus';
   private characterRequest = 0;
   photoFov = 58;
   photoHideAvatar = false;
@@ -85,6 +86,7 @@ export class Game {
     progress(.5, '搭建北大楼与树荫步道');
     this.world = await createWorld(this.scene, materials, this.quality);
     this.player = new Player(this.scene, this.world.solids, await createAvatar(this.character),this.world.fixedMeshes);
+    this.player.avatar.setOutfit(this.outfit);
     this.football = new Football(this.scene, this.player, this.world.pitch); this.football.onGoal = () => this.onNotice('进球！足球即将回到中场。');
     const initialMeshes=this.world.fixedMeshes.length;
     this.shadow = this.createContactShadow(); this.scene.add(this.shadow);
@@ -132,6 +134,7 @@ export class Game {
     if (kind === this.character) return;
     const next = await createAvatar(kind);
     if (request !== this.characterRequest) { next.dispose(); return; }
+    next.setOutfit(this.outfit);
     const previous = this.player.replaceAvatar(next);
     for (const material of previous.materials) { this.shadowMaterials.delete(material); this.csm?.shaders.delete(material); }
     previous.dispose(); this.character = kind; this.setupShadowMaterials();
@@ -142,6 +145,7 @@ export class Game {
     if(!this.player.startFlight()){this.onNotice('上方有遮挡，先走到开阔处再起飞。');return;}
     this.onNotice('空格上升 · Ctrl 下降 · F 降落');
   }
+  setOutfit(style: OutfitStyle) { this.outfit = style; this.player?.avatar.setOutfit(style); }
   private resize() {
     const maxHeight = this.quality === 'high' ? 1600 : this.quality === 'medium' ? 1200 : 720;
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, maxHeight / innerHeight, this.quality === 'high' ? 2 : this.quality === 'medium' ? 1.5 : 1));
@@ -187,7 +191,7 @@ export class Game {
     this.onTick();
   }
   stats() {
-    return { mode: this.mode, renderSize: [this.renderer.domElement.width, this.renderer.domElement.height], pixelRatio: this.renderer.getPixelRatio(), fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,environment:this.atmosphere.snapshot,music:this.music.snapshot,audio:this.audio.snapshot,football:this.football.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
+    return { mode: this.mode, renderSize: [this.renderer.domElement.width, this.renderer.domElement.height], pixelRatio: this.renderer.getPixelRatio(), fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, outfit: this.outfit, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,environment:this.atmosphere.snapshot,music:this.music.snapshot,audio:this.audio.snapshot,football:this.football.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
   }
   async savePhoto() {
     if (this.photoSaving) throw new Error('照片正在生成，请稍候。');

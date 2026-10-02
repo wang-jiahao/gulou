@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 export type CharacterKind = 'male' | 'female';
+export type OutfitStyle = 'campus' | 'forest' | 'warm';
 
 /** CC0 MakeHuman base, original clothing and rig; meter-scale articulated student. */
 export async function createAvatar(kind: CharacterKind = 'male') {
@@ -24,6 +25,14 @@ export async function createAvatar(kind: CharacterKind = 'male') {
     const delta = new T.Quaternion().setFromUnitVectors(b.sub(a).normalize(), new T.Vector3(side === 'Left' ? .09 : -.09, -1, 0).normalize());
     const parent = upper.parent!.getWorldQuaternion(new T.Quaternion());
     upper.quaternion.premultiply(parent.clone().invert().multiply(delta).multiply(parent)); model.updateMatrixWorld(true);
+    const hand = bones[`${side}Hand`];
+    const lowerDirection = hand.getWorldPosition(new T.Vector3()).sub(fore.getWorldPosition(new T.Vector3())).normalize();
+    const lowerDelta = new T.Quaternion().setFromUnitVectors(lowerDirection, new T.Vector3(side === 'Left' ? .055 : -.055, -1, .035).normalize());
+    const lowerParent = fore.parent!.getWorldQuaternion(new T.Quaternion());
+    fore.quaternion.premultiply(lowerParent.clone().invert().multiply(lowerDelta).multiply(lowerParent)); model.updateMatrixWorld(true);
+    // Relax the wrist towards the thigh instead of presenting an open palm forwards.
+    const wristAxis = hand.position.clone().normalize();
+    hand.quaternion.setFromAxisAngle(wristAxis, side === 'Left' ? -.32 : .32);
     const thigh=bones[`${side}UpLeg`],knee=bones[`${side}Leg`];
     const legDelta=new T.Quaternion().setFromUnitVectors(knee.getWorldPosition(new T.Vector3()).sub(thigh.getWorldPosition(new T.Vector3())).normalize(),new T.Vector3(side==='Left'?.018:-.018,-1,.012).normalize());
     const legParent=thigh.parent!.getWorldQuaternion(new T.Quaternion());thigh.quaternion.premultiply(legParent.clone().invert().multiply(legDelta).multiply(legParent));model.updateMatrixWorld(true);
@@ -69,6 +78,15 @@ export async function createAvatar(kind: CharacterKind = 'male') {
   };
   return {
     root, head: bones.Head, kind, height, materials,
+    setOutfit(style: OutfitStyle) {
+      const palette = style === 'forest' ? [0x627b69, 0xd9d4c6, 0x525f65, 0x887456] : style === 'warm' ? [0xa5856b, 0xe0d7c7, 0x626d77, 0x595e54] : kind === 'female' ? [0xc4b9a2, 0x879b8e, 0x63788a, 0x9b7b58] : [0x354c61, 0xd5d2c5, 0x536371, 0x555d54];
+      for (const material of materials) {
+        if (!(material instanceof T.MeshStandardMaterial)) continue;
+        const index = ['student-cotton', 'student-tee', 'student-denim', 'student-backpack'].indexOf(material.name);
+        if (index >= 0) material.color.setHex(palette[index]);
+        if (material.name === 'jacket-trim') material.color.setHex(palette[0]).multiplyScalar(.82);
+      }
+    },
     dispose() { mixer.stopAllAction(); mixer.uncacheRoot(model); geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); skeletons.forEach(s => s.dispose()); cloth.dispose(); },
     kick() { kickTime = .32; },
     setGroundSampler(sampler:(x:number,z:number)=>number){groundSampler=sampler;},
