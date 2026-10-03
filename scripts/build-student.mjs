@@ -45,13 +45,14 @@ const hipY=positions.Hips.y,neckY=positions.Neck.y;
 const segments=definitions.filter(d=>d[2]).map(([name,,parent])=>({name:parent,tip:name,a:positions[parent],b:positions[name]}));
 const segmentDistance=(point,segment)=>{const d=segment.b.clone().sub(segment.a);const t=T.MathUtils.clamp(point.clone().sub(segment.a).dot(d)/d.lengthSq(),0,1);return point.distanceTo(segment.a.clone().addScaledVector(d,t));};
 function weights(point,force){
-  if(force)return [[indices[force],1]];
+  if(force==='torso'&&point.y<hipY+.10)return [[indices.Hips,1]];
+  if(force&&force!=='torso')return [[indices[force],1]];
   const side=point.x>0?'Left':'Right';
   if(point.y>neckY+.015)return [[indices.Head,1]];
   const armDistance=Math.min(...segments.filter(s=>[side+'Arm',side+'ForeArm'].includes(s.name)).map(s=>segmentDistance(point,s)));
   const torsoDistance=Math.hypot(point.x,point.z-.025);
   if(Math.abs(point.x)>.32&&point.y>hipY+.02&&(point.distanceTo(positions[side+'Hand'])<.15||Math.abs(point.x)>.42))return [[indices[side+'Hand'],1]];
-  const limb=point.y<hipY+.1&&armDistance>.11?'leg':armDistance<torsoDistance*.8&&point.y>hipY+.07?'arm':'body';
+  const limb=force==='torso'?'body':point.y<hipY+.1&&armDistance>.11?'leg':armDistance<torsoDistance*.8&&point.y>hipY+.07?'arm':'body';
   if(limb==='arm'&&point.distanceTo(positions[side+'Arm'])<.15){const w=T.MathUtils.smoothstep((side==='Left'?1:-1)*(point.x-positions[side+'Arm'].x),-.055,.07);return [[indices[side+'Arm'],w],[indices.Spine2,1-w]];}
   if(limb==='arm'){
     const wrist=positions[side+'Hand'];if(point.distanceTo(wrist)<.09||Math.abs(point.x)>Math.abs(wrist.x))return [[indices[side+'Hand'],1]];
@@ -113,8 +114,8 @@ const fit=female?.94:1;
 const torsoRings=[[hipY+.015,.191*fit,.116,.016],[hipY+.04,.194*fit,.119,.016],[hipY+.14,.186*fit,.121,.014],[hipY+.28,.207*fit,.131,.016],[neckY-.11,.227*fit,.116,.013],[neckY-.064,.208*fit,.094,.013],[neckY-.013,.072,.058,.014]];
 function ringMesh(rings,gap=0){const p=[],u=[],idx=[],n=64;for(let r=0;r<rings.length;r++){const[y,rx,rz,z]=rings[r];for(let i=0;i<=n;i++){const a=Math.PI/2+gap+i/n*(Math.PI*2-gap*2),fold=1+Math.sin(a*7+y*19)*.006;p.push(Math.cos(a)*rx*fold,y,z+Math.sin(a)*rz*fold);u.push(i/n,r/(rings.length-1));if(r<rings.length-1&&i<n){const k=r*(n+1)+i;idx.push(k,k+n+1,k+1,k+1,k+n+1,k+n+2);}}}const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setAttribute('uv',new T.Float32BufferAttribute(u,2));g.setIndex(idx);g.computeVertexNormals();return g;}
 const tee=mat('student-tee',female?0x879b8e:0xd5d2c5,.94),trim=mat('jacket-trim',female?0xafa38d:0x304251,.92);
-makeSkinned(ringMesh(torsoRings.map(([y,x,z,c])=>[y+.005,x-.011,z-.011,c])),tee,'cotton crew-neck tee');
-makeSkinned(ringMesh(torsoRings,female?.43:.34),shirt,'open front overshirt');
+makeSkinned(ringMesh(torsoRings.map(([y,x,z,c])=>[y+.005,x-.011,z-.011,c])),tee,'cotton crew-neck tee','torso');
+makeSkinned(ringMesh(torsoRings,female?.43:.34),shirt,'open front overshirt','torso');
 makeSkinned(new T.TorusGeometry(.060,.006,10,48).rotateX(Math.PI/2).translate(0,neckY-.002,.014),tee,'ribbed crew collar','Neck');
 const tube=(points,radius,material,name,force)=>makeSkinned(new T.TubeGeometry(new T.CatmullRomCurve3(points),24,radius,8,false),material,name,force);
 for(const side of ['Left','Right']){
@@ -122,11 +123,11 @@ for(const side of ['Left','Right']){
  const end=wrist.clone().addScaledVector(direction,-.025),start=shoulder.clone().add(new T.Vector3(-sign*.07,-.010,0));
  const curve=new T.CatmullRomCurve3([start,start.clone().lerp(elbow,.5),elbow,elbow.clone().lerp(end,.7),end]);
  const g=new T.TubeGeometry(curve,28,1,24,false),p=g.getAttribute('position');
- for(let row=0;row<=28;row++){const t=row/28,c=curve.getPointAt(t),radius=(T.MathUtils.lerp(.078*fit,.04,t)+Math.sin(t*Math.PI)*.003)*Math.max(.001,T.MathUtils.smoothstep(t,0,.14));for(let col=0;col<=24;col++){const i=row*25+col,q=new T.Vector3().fromBufferAttribute(p,i).sub(c).multiplyScalar(radius).add(c);p.setXYZ(i,q.x,q.y,q.z);}}
+ for(let row=0;row<=28;row++){const t=row/28,c=curve.getPointAt(t),radius=(T.MathUtils.lerp(.078*fit,.04,t)+Math.sin(t*Math.PI)*.003)*Math.max(.001,T.MathUtils.smoothstep(t,0,.06));for(let col=0;col<=24;col++){const i=row*25+col,q=new T.Vector3().fromBufferAttribute(p,i).sub(c).multiplyScalar(radius).add(c);p.setXYZ(i,q.x,q.y,q.z);}}
  g.computeVertexNormals();makeSkinned(g,shirt,side+' tailored sleeve');
  const cuff=new T.CylinderGeometry(.041,.043,.033,24,1,true).applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),direction));cuff.translate(...end.clone().addScaledVector(direction,-.012).toArray());makeSkinned(cuff,trim,side+' cuff');
  const gap=female?.43:.34;
- const placket=torsoRings.map(([y,rx,rz,c])=>new T.Vector3(sign*Math.sin(gap)*rx,y,c+Math.cos(gap)*rz+.002));tube(placket,.004,trim,side+' placket');
+ const placket=torsoRings.map(([y,rx,rz,c])=>new T.Vector3(sign*Math.sin(gap)*rx,y,c+Math.cos(gap)*rz+.002));tube(placket,.004,trim,side+' placket','torso');
  if(!female){const points=[new T.Vector3(sign*.053,neckY-.012,.068),new T.Vector3(sign*.096,neckY-.076,.112),new T.Vector3(sign*.078,neckY-.114,.132),new T.Vector3(sign*.036,neckY-.056,.103)];const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(points.flatMap(p=>p.toArray()),3));geo.setAttribute('uv',new T.Float32BufferAttribute([0,0,1,0,1,1,0,1],2));geo.setIndex([0,1,2,0,2,3]);geo.computeVertexNormals();const collar=shirt.clone();collar.side=T.DoubleSide;makeSkinned(geo,collar,side+' folded collar','Spine2');}
 }
 const button=mat('shirt-button',female?0xb19b75:0xada48f,.55);

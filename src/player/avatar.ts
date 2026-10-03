@@ -92,14 +92,39 @@ export async function createAvatar(kind: CharacterKind = 'male') {
     kick() { kickTime = .32; },
     setGroundSampler(sampler:(x:number,z:number)=>number){groundSampler=sampler;},
     get gaitPhase(){return phase;},
-    update(dt: number, speed: number, seated: boolean, flying=false, seatHeight=.55) {
+    update(dt: number, speed: number, seated: boolean, flying=false, seatHeight=.55, cyclingPhase?:number) {
       moving = T.MathUtils.damp(moving, Math.min(1, speed / .5), 12, dt);
       const running = T.MathUtils.clamp((speed - 2) / 2.2, 0, 1);
       idle.weight = 1 - moving; walk.weight = moving * (1 - running); run.weight = moving * running;
       walk.timeScale = Math.max(.25, speed / 1.3); run.timeScale = Math.max(.3, speed / 2.05); mixer.update(dt);
       model.position.y = baseY;
+      model.position.z = 0;
       model.rotation.x=0;
+      if(bones.Spine)bones.Spine.quaternion.copy(rest.get(bones.Spine)!);
       bones.Hips.position.copy(hipsRest);
+      if(cyclingPhase!==undefined){
+        kickTime=0;
+        for(const side of['Left','Right'])for(const part of['UpLeg','Leg','Arm','ForeArm']){const bone=bones[side+part];bone.quaternion.copy(rest.get(bone)!);}
+        model.position.y=baseY+.99-hipRestHeight;model.position.z=.25;root.updateMatrixWorld(true);
+        // Lean the torso toward the bars, then solve hands and ankles to actual
+        // contact points on the shared bicycle model for either avatar size.
+        if(bones.Spine&&bones.Neck){const target=bones.Neck.getWorldPosition(new T.Vector3()).add(new T.Vector3(0,-.14,-.44).applyQuaternion(root.quaternion));align(bones.Spine,bones.Neck,target);}
+        const solve=(a:T.Bone,b:T.Bone,c:T.Bone,target:T.Vector3,bend:T.Vector3)=>{
+          const origin=a.getWorldPosition(new T.Vector3()),mid=b.getWorldPosition(new T.Vector3()),end=c.getWorldPosition(new T.Vector3()),upper=origin.distanceTo(mid),lower=mid.distanceTo(end);
+          const direction=target.clone().sub(origin),d=T.MathUtils.clamp(direction.length(),Math.abs(upper-lower)+.002,upper+lower-.002);direction.normalize();
+          bend.addScaledVector(direction,-bend.dot(direction)).normalize();const along=(upper*upper+d*d-lower*lower)/(2*d),height=Math.sqrt(Math.max(0,upper*upper-along*along));
+          align(a,b,origin.clone().addScaledVector(direction,along).addScaledVector(bend,height));align(b,c,target);
+        };
+        for(const side of['Left','Right']){
+          const sign=side==='Left'?-1:1;
+          const footTarget=root.localToWorld(new T.Vector3(sign*.22,.32-sign*.14*Math.sin(cyclingPhase)+footRest[side].y,.12+sign*.14*Math.cos(cyclingPhase)));
+          solve(bones[side+'UpLeg'],bones[side+'Leg'],bones[side+'Foot'],footTarget,new T.Vector3(sign*.15,0,-1).applyQuaternion(root.quaternion));
+          const handTarget=root.localToWorld(new T.Vector3(sign*.23,1.03,-.43));
+          solve(bones[side+'Arm'],bones[side+'ForeArm'],bones[side+'Hand'],handTarget,new T.Vector3(sign*.25,-1,0).applyQuaternion(root.quaternion));
+          const foot=bones[side+'Foot'];foot.quaternion.copy(foot.parent!.getWorldQuaternion(new T.Quaternion()).invert().multiply(root.getWorldQuaternion(new T.Quaternion())).multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),Math.PI)));
+        }
+        root.updateMatrixWorld(true);return;
+      }
       if(flying){kickTime=0;model.rotation.x=-.16;for(const side of ['Left','Right']){bones[side+'Arm'].quaternion.copy(rotation(side+'Arm',-1.1));bones[side+'ForeArm'].quaternion.copy(rotation(side+'ForeArm',-.5));bones[side+'UpLeg'].quaternion.copy(rotation(side+'UpLeg',.17));bones[side+'Leg'].quaternion.copy(rotation(side+'Leg',.35));}return;}
       if (seated) {
         kickTime=0;model.position.y=baseY+seatHeight+.08-hipRestHeight;root.updateMatrixWorld(true);

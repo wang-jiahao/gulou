@@ -144,6 +144,7 @@ export class Game {
     previous.dispose(); this.character = kind; this.setupShadowMaterials();
   }
   toggleFlight(){
+    if(this.player.riding){this.onNotice('先按 E 或点击提示下车，再起飞。');return;}
     if(this.player.flying){this.player.land();this.onNotice('正在降落，可用 WASD 微调位置。');return;}
     if(this.world.sectors<3){this.onNotice('正在准备空中视野，请稍候再起飞。');return;}
     if(!this.player.startFlight()){this.onNotice('上方有遮挡，先走到开阔处再起飞。');return;}
@@ -169,7 +170,7 @@ export class Game {
     this.football.prepare(this.mode === 'playing');
     this.player.update(dt, this.cameraRig.yaw, this.mode === 'playing');
     this.football.update(dt);
-    this.cameraRig.update(this.player.position, dt, this.world.cameraSolids, this.player.seated,this.player.flying,this.player.avatar.height);
+    this.cameraRig.update(this.player.position, dt, this.world.cameraSolids, this.player.seated,this.player.flying,this.player.avatar.height,Boolean(this.player.riding));
     this.atmosphere.update(dt,this.mode==='playing',this.camera.position);
     if(this.foliageLight)this.foliageLight.value=this.atmosphere.daylight;
     this.world.updateVegetation(this.player.position, this.quality, this.player.flying);
@@ -182,7 +183,7 @@ export class Game {
     if(this.shadowFov!==this.camera.fov){this.shadowFov=this.camera.fov;this.csm?.updateFrustums();}
     this.camera.updateMatrixWorld();this.csm?.update();
     this.audio.setEnvironment(this.atmosphere.state.rain,this.atmosphere.night,this.player.flying);
-    this.audio.update(dt, this.player.speed, this.mode === 'playing');
+    this.audio.update(dt, this.player.riding?0:this.player.speed, this.mode === 'playing');
     const ext = this.timerExtension, gl = this.gl;
     if (ext && this.gpuQueries.length && gl.getQueryParameter(this.gpuQueries[0], gl.QUERY_RESULT_AVAILABLE)) {
       const q = this.gpuQueries.shift()!; if (!gl.getParameter(ext.GPU_DISJOINT_EXT)) this.gpuMs = gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6; gl.deleteQuery(q);
@@ -196,7 +197,7 @@ export class Game {
     this.onTick();
   }
   stats() {
-    return { mode: this.mode, renderSize: [this.renderer.domElement.width, this.renderer.domElement.height], pixelRatio: this.renderer.getPixelRatio(), fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, outfit: this.outfit, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,environment:this.atmosphere.snapshot,music:this.music.snapshot,audio:this.audio.snapshot,football:this.football.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
+    return { mode: this.mode, renderSize: [this.renderer.domElement.width, this.renderer.domElement.height], pixelRatio: this.renderer.getPixelRatio(), fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, outfit: this.outfit, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,bicycle:this.player.riding?.id??null,rideSpeed:this.player.rideSpeed,environment:this.atmosphere.snapshot,music:this.music.snapshot,audio:this.audio.snapshot,football:this.football.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
   }
   async savePhoto() {
     if (this.photoSaving) throw new Error('照片正在生成，请稍候。');

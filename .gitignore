@@ -28,3 +28,9 @@ docs/sources/*
 !docs/sources/plan-registration.json
 
 AGENTS.md
+
+# User-downloaded reference video; never part of the game distribution.
+/*.mp4
+/*.mov
+/*.mkv
+/*.webm

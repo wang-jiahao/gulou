@@ -16,9 +16,9 @@ export class WalkCamera {
   look(dx: number, dy: number) { this.yaw -= dx * this.sensitivity; this.pitch = T.MathUtils.clamp(this.pitch + dy * this.sensitivity, -.85, this.flightBlend>.3?1.35:.9); }
   toggle() { this.firstPerson = !this.firstPerson; this.initialized = false; }
   reset() { this.yaw = 0; this.pitch = -.015; this.initialized = false; }
-  update(position: T.Vector3, dt: number, obstacles: T.Object3D[], seated: boolean, flying = false, height = 1.77) {
+  update(position: T.Vector3, dt: number, obstacles: T.Object3D[], seated: boolean, flying = false, height = 1.77, riding = false) {
     this.flightBlend=T.MathUtils.damp(this.flightBlend,flying?1:0,4,dt);
-    this.target.copy(position).add(new T.Vector3(0, seated ? 1.4 : this.firstPerson ? height - .11 : height + .28, 0));
+    this.target.copy(position).add(new T.Vector3(0, riding ? (this.firstPerson ? height-.15 : 1.2) : seated ? 1.4 : this.firstPerson ? height - .11 : height + .28, 0));
     this.direction.set(Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
     if (this.firstPerson) {
       this.camera.position.copy(this.target); this.camera.lookAt(this.target.clone().addScaledVector(this.direction, -1));

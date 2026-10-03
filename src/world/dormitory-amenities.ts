@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {createBicycle,type CampusBicycle} from './bicycle.ts';
 import {Builder,type Solid} from './geometry.ts';
 import {insidePolygon,type CampusMap,type MapPolygon} from './campus-map.ts';
 import type {Materials} from './materials.ts';
@@ -11,13 +12,11 @@ const crosses=(a:number[],b:number[],c:number[],d:number[])=>orientation(a,b,c)*
 /** Green cycle canopies and parked bicycles seen in VR gl-1-06. Individual
  * placements are fitted to available plan space, not asserted as surveyed positions. */
 export function createDormitoryAmenities(map:CampusMap,residences:Residence[],mats:Materials,obstacles:Solid[]){
+ const bicycles:CampusBicycle[]=[];
  const b=new Builder(),placements:Placement[]=[],lamps:T.Vector3[]=[];
  const green=new T.MeshStandardMaterial({name:'cycle-shelter-roof',color:0x456456,roughness:.74,metalness:.18,side:T.DoubleSide});
  const soffit=new T.MeshStandardMaterial({name:'cycle-shelter-soffit',color:0xc6cbbb,roughness:.86});
  const rail=new T.MeshStandardMaterial({color:0x637873,roughness:.55,metalness:.55});
- const tyre=new T.MeshStandardMaterial({color:0x262b28,roughness:.93});
- const rim=new T.MeshStandardMaterial({color:0xa9b3b0,roughness:.42,metalness:.8});
- const frameColors=[0x435d72,0x965b48,0x718675].map(color=>new T.MeshStandardMaterial({color,roughness:.6,metalness:.35}));
  const light=new T.MeshStandardMaterial({name:'lamp-glass',color:0xf0efce,emissive:0xc2a165,emissiveIntensity:.18,roughness:.35});
  const zones=[...map.features.filter(f=>f.tags.building),...map.roads,...map.lawns].map(p=>({p,minX:Math.min(...p.points.map(q=>q[0])),maxX:Math.max(...p.points.map(q=>q[0])),minZ:Math.min(...p.points.map(q=>q[1])),maxZ:Math.max(...p.points.map(q=>q[1]))}));
  const corners=(x:number,z:number,angle:number,w:number,d:number)=>[[-w/2,-d/2],[w/2,-d/2],[w/2,d/2],[-w/2,d/2]].map(([u,v])=>[x+u*Math.cos(angle)+v*Math.sin(angle),z-u*Math.sin(angle)+v*Math.cos(angle)]);
@@ -58,21 +57,13 @@ export function createDormitoryAmenities(map:CampusMap,residences:Residence[],ma
   b.solids.push({x,y:2.38,z,w:6.7,h:.12,d:2.65,angle});
   for(let u=-3.2;u<3.25;u+=.42){const p=point(u,2.39,0);b.add(new T.BoxGeometry(.023,.03,2.58).translate(0,.05,0).rotateX(-.075),rail,p.x,p.y,p.z,new T.Euler(0,angle,0));}
   for(let slot=0;slot<5;slot++){
-   const u=-2.5+slot*1.22,frame=frameColors[slot%3];
-   for(const v of[-.58,.58]){
-    const p=point(u,.34,v),rotation=new T.Euler(0,angle+Math.PI/2,0);
-    b.add(new T.TorusGeometry(.31,.028,5,20),tyre,p.x,p.y,p.z,rotation);
-    b.add(new T.TorusGeometry(.27,.012,4,20),rim,p.x,p.y,p.z,rotation);
-    for(let spoke=0;spoke<8;spoke++){const a=spoke*Math.PI/4;b.cylinder(p,point(u,.34+Math.sin(a)*.26,v+Math.cos(a)*.26),.003,.003,rim,3);}
-   }
-   const rear=point(u,.34,.58),front=point(u,.34,-.58),crank=point(u,.32,.12),saddle=point(u,.86,.25),steer=point(u,.80,-.39);
-   for(const[a,c]of[[rear,saddle],[saddle,steer],[steer,crank],[crank,rear],[crank,saddle],[steer,front]])b.cylinder(a,c,.015,.015,frame,6);
-   b.cylinder(steer,point(u,1.03,-.43),.015,.015,rim,6);b.cylinder(point(u-.19,1.03,-.43),point(u+.19,1.03,-.43),.016,.016,tyre,6);
-   box(.20,.055,.28,u,.91,.25,tyre);box(.48,.07,.07,u,.23,.12,rail);
-   const p=point(u,.52,0);b.solids.push({x:p.x,y:p.y,z:p.z,w:.5,h:1.04,d:1.85,angle});
+   const u=-2.5+slot*1.22,p=point(u,.035,0),bike=createBicycle(slot);
+   bike.group.position.copy(p);bike.group.rotation.y=angle;
+   const solid={x:p.x,y:p.y+.52,z:p.z,w:.5,h:1.04,d:1.85,angle};b.solids.push(solid);
+   bicycles.push({...bike,id:`${id}-bike-${slot}`,solid,home:p.clone(),angle});
   }
   const lp=point(3.25,2.75,1.15);b.cylinder(point(3.25,0,1.15),lp,.04,.04,rail,8);b.add(new T.SphereGeometry(.13,12,8),light,lp.x,lp.y,lp.z);lamps.push(lp);
  }
- const group=b.finish('Nanyuan cycle shelters and parked bicycles',100);group.userData.placements=placements;
- return{group,solids:b.solids,lamps,placements};
+ const group=b.finish('Nanyuan cycle shelters and parked bicycles',100);group.userData.placements=placements;group.add(...bicycles.map(b=>b.group));
+ return{group,solids:b.solids,lamps,placements,bicycles};
 }

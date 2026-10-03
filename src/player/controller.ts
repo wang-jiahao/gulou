@@ -5,6 +5,8 @@ import { bounds, spawn, maxFlightAltitude } from '../world/world.ts';
 import type { Solid } from '../world/geometry.ts';
 import type { CollisionMesh } from '../world/collision-mesh.ts';
 import { createGlider } from './glider.ts';
+import {terrainHeight} from '../world/courtyard-terrain.ts';
+import type {CampusBicycle} from '../world/bicycle.ts';
 
 export class Player {
   avatar: Awaited<ReturnType<typeof createAvatar>>;
@@ -18,6 +20,11 @@ export class Player {
   clearInput() { this.keys.clear(); this.moveInput.set(0, 0); }
   velocityY = 0;
   speed = 0;
+  riding:CampusBicycle|null=null;
+  rideYaw=0;
+  rideSpeed=0;
+  pedalPhase=0;
+  private solidColliders=new Map<Solid,RAPIER.Collider>();
   yaw = 0;
   seated = false;
   // World-space seat surface; the avatar converts it relative to its grounded root.
@@ -57,14 +64,46 @@ export class Player {
     for (const s of solids) {
       const desc = RAPIER.ColliderDesc.cuboid(s.w / 2, s.h / 2, s.d / 2).setTranslation(s.x, s.y, s.z);
       if (s.angle) desc.setRotation({ x: 0, y: Math.sin(s.angle / 2), z: 0, w: Math.cos(s.angle / 2) });
-      this.physics.createCollider(desc);
+      this.solidColliders.set(s,this.physics.createCollider(desc));
     }
   }
   addMeshes(meshes:CollisionMesh[]){for(const mesh of meshes)this.physics.createCollider(RAPIER.ColliderDesc.trimesh(mesh.vertices,mesh.indices));this.physics.step();}
   get flying(){return this.flightState!=='walking';}
+  mount(bike:CampusBicycle){
+    if(this.riding||this.flying||this.seated||this.position.distanceTo(bike.group.position)>2.3)return false;
+    const parked=this.solidColliders.get(bike.solid);if(!parked)return false;
+    parked.setEnabled(false);this.physics.step();
+    const shape=new RAPIER.Cuboid(.34,.84,.95),p=bike.group.position;
+    const rotation={x:0,y:Math.sin(bike.angle/2),z:0,w:Math.cos(bike.angle/2)};
+    if(this.physics.intersectionWithShape({x:p.x,y:p.y+.90,z:p.z},rotation,shape,undefined,undefined,this.collider,this.body)){parked.setEnabled(true);return false;}
+    this.teleport(p.x,p.y+.045,p.z);this.collider.setShape(shape);this.collider.setRotationWrtParent(rotation);
+    this.riding=bike;this.rideYaw=bike.angle;this.rideSpeed=0;this.pedalPhase=0;this.clearInput();this.motor.enableAutostep(.16,.2,false);this.motor.enableSnapToGround(.4);return true;
+  }
+  dismount(){
+    const bike=this.riding;if(!bike)return true;
+    // Try both sides and rear before changing either the rider or parked collider.
+    for(const[u,v]of[[1.1,0],[-1.1,0],[1.5,0],[-1.5,0],[0,1.8]]){
+      const x=this.position.x+u*Math.cos(this.rideYaw)+v*Math.sin(this.rideYaw),z=this.position.z-u*Math.sin(this.rideYaw)+v*Math.cos(this.rideYaw);
+      const origin={x,y:this.position.y+.5,z},hit=this.physics.castRayAndGetNormal(new RAPIER.Ray(origin,{x:0,y:-1,z:0}),1,true,undefined,undefined,this.collider,this.body);
+      if(!hit||hit.normal.y<.7)continue;
+      const y=origin.y-hit.timeOfImpact+.045;
+      const blocked=this.physics.intersectionWithShape({x,y:y+.86,z},{x:0,y:0,z:0,w:1},new RAPIER.Capsule(.57,.27),undefined,undefined,this.collider,this.body);
+      if(blocked)continue;
+      this.parkBicycle();this.teleport(x,y,z);return true;
+    }
+    return false;
+  }
+  private parkBicycle(){
+    const bike=this.riding;if(!bike)return;
+    bike.group.position.copy(this.position);bike.group.rotation.y=this.rideYaw;bike.angle=this.rideYaw;
+    const collider=this.solidColliders.get(bike.solid)!;
+    collider.setTranslation({x:this.position.x,y:this.position.y+.52,z:this.position.z});collider.setRotation({x:0,y:Math.sin(this.rideYaw/2),z:0,w:Math.cos(this.rideYaw/2)});collider.setEnabled(true);
+    this.riding=null;this.rideSpeed=0;this.collider.setShape(new RAPIER.Capsule(.57,.27));this.collider.setRotationWrtParent({x:0,y:0,z:0,w:1});this.motor.enableAutostep(.3,.2,false);this.clearInput();this.physics.step();
+  }
   groundHeightAt(x:number,z:number){const hit=this.physics.castRay(new RAPIER.Ray({x,y:160,z},{x:0,y:-1,z:0}),200,true,undefined,undefined,this.collider,this.body);return hit?160-hit.timeOfImpact:0;}
   travelTo(x: number, z: number) {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
+    if(this.riding&&!this.dismount())return null;
     const cx = T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), cz = T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1);
     for (const radius of [0, .8, 1.6, 3, 5, 8, 13, 21, 34]) for (let i = 0; i < (radius ? 16 : 1); i++) {
       const px = cx + Math.cos(i * Math.PI / 8) * radius, pz = cz + Math.sin(i * Math.PI / 8) * radius;
@@ -86,15 +125,16 @@ export class Player {
     return null;
   }
   startFlight(){
+    if(this.riding)return false;
     const overhead=this.physics.castRay(new RAPIER.Ray({x:this.position.x,y:this.position.y+1.85,z:this.position.z},{x:0,y:1,z:0}),30,true,undefined,undefined,this.collider,this.body);
     if(overhead)return false;
     this.seated=false;this.flightState='launching';this.launchTime=0;this.launchTarget=Math.min(this.position.y+26,maxFlightAltitude-2);this.flightVelocity.set(0,0,0);this.motor.disableAutostep();this.motor.disableSnapToGround();this.glider.visible=true;return true;
   }
   land(){if(this.flying)this.flightState='landing';}
   private finishFlight(){this.flightState='walking';this.flightVelocity.set(0,0,0);this.velocityY=0;this.motor.enableAutostep(.3,.2,false);this.motor.enableSnapToGround(.4);this.glider.visible=false;this.avatar.root.rotation.z=0;}
-  reset() { this.finishFlight();this.teleport(spawn.x, spawn.y, spawn.z); this.seated = false; this.clearInput(); this.avatar.root.rotation.y = 0; }
+  reset() { this.parkBicycle();this.finishFlight();this.teleport(spawn.x, spawn.y, spawn.z); this.seated = false; this.clearInput(); this.avatar.root.rotation.y = 0; }
   teleport(x: number, y: number, z: number) {
-    this.position.set(T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), Math.max(.03, y), T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1));
+    this.position.set(T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), Math.max(.03, terrainHeight(x,z)+.035, y), T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1));
     this.body.setTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }, true);
     this.body.setNextKinematicTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }); this.velocityY = 0; this.previous.copy(this.position); this.avatar.root.position.copy(this.position);
   }
@@ -104,7 +144,14 @@ export class Player {
     const right = active ? T.MathUtils.clamp(Number(this.keys.has('KeyD') || this.keys.has('ArrowRight')) - Number(this.keys.has('KeyA') || this.keys.has('ArrowLeft')) + this.moveInput.x, -1, 1) : 0;
     this.direction.set(right * Math.cos(yaw) - forward * Math.sin(yaw), 0, -forward * Math.cos(yaw) - right * Math.sin(yaw));
     if (this.direction.lengthSq() > 1) this.direction.normalize();
-    const desired = (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) ? 4.2 : 1.65;
+    let desired = (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) ? 4.2 : 1.65;
+    if(this.riding){
+      const braking=this.keys.has('Space')||forward<0;
+      this.rideSpeed=active?T.MathUtils.damp(this.rideSpeed,braking?0:forward>0?(desired>4?7:4.8):0,braking?9:forward>0?1.7:1.1,dt):0;
+      this.rideYaw-=right*1.4*dt*Math.min(1,this.rideSpeed/1.5);
+      this.collider.setRotationWrtParent({x:0,y:Math.sin(this.rideYaw/2),z:0,w:Math.cos(this.rideYaw/2)});
+      this.direction.set(-Math.sin(this.rideYaw),0,-Math.cos(this.rideYaw));desired=this.rideSpeed;
+    }
     if (this.seated) this.direction.set(0, 0, 0);
     if(this.flying&&active){
       const boost=this.keys.has('ShiftLeft')||this.keys.has('ShiftRight');
@@ -136,11 +183,14 @@ export class Player {
     this.speed = dt > 0 ? Math.hypot(this.position.x - this.previous.x, this.position.z - this.previous.z) / dt : 0;
     this.avatar.root.position.copy(this.position);
     if (this.speed > .1) {
-      const target = this.flying?yaw:Math.atan2(-this.direction.x, -this.direction.z);
+      const target = this.riding?this.rideYaw:this.flying?yaw:Math.atan2(-this.direction.x, -this.direction.z);
       const delta = Math.atan2(Math.sin(target - this.avatar.root.rotation.y), Math.cos(target - this.avatar.root.rotation.y));
       this.avatar.root.rotation.y += delta * Math.min(1, dt * 12);
     }
     this.avatar.root.rotation.z=this.flying?this.flightBank:0;
-    this.avatar.update(dt, this.speed, this.seated,this.flying,this.seatHeight-this.position.y);
+    if(this.riding){
+      this.pedalPhase+=this.speed*dt*2.7;this.riding.group.position.copy(this.position);this.riding.group.rotation.y=this.rideYaw;this.avatar.root.rotation.y=this.rideYaw;this.riding.update(this.speed*dt,this.pedalPhase);
+    }
+    this.avatar.update(dt, this.speed, this.seated,this.flying,this.seatHeight-this.position.y,this.riding?this.pedalPhase:undefined);
   }
 }

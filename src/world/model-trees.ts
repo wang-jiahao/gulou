@@ -106,13 +106,13 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
       cells.set(key, cell); group.add(cell.group); cell.group.add(...cell.levels);
     }
     cells.get(key)!.trees.push(tree);
-    solids.push({ x: tree.x, y: tree.height * .22, z: tree.z, w: .8, h: tree.height * .44, d: .8 });
+    solids.push({ x: tree.x, y: tree.height * .22 + (tree.baseY ?? 0), z: tree.z, w: .8, h: tree.height * .44, d: .8 });
   }
   const leafGeo = new T.PlaneGeometry(1, 1.6);
   for (const cell of cells.values()) {
     const transforms = cell.trees.map(tree => {
       const scale = tree.height / h;
-      dummy.position.set(tree.x, -box.min.y * scale, tree.z); dummy.rotation.set(0, rand() * Math.PI * 2, 0);
+      dummy.position.set(tree.x, -box.min.y * scale + (tree.baseY ?? 0), tree.z); dummy.rotation.set(0, rand() * Math.PI * 2, 0);
       dummy.scale.set(scale * (.9 + rand() * .3), scale, scale * (.9 + rand() * .3)); dummy.updateMatrix(); return dummy.matrix.clone();
     });
     assets.forEach((asset, level) => {
@@ -137,7 +137,7 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
         for (let i = 0; i < sprays; i++) {
           let x: number, y: number, z: number;
           do { x = rand() * 2 - 1; y = rand() * 2 - 1; z = rand() * 2 - 1; } while (x * x + y * y + z * z > 1);
-          dummy.position.set(spot.x + x * spot.height * .31, spot.height * (.75 + y * .25), spot.z + z * spot.height * .32);
+          dummy.position.set(spot.x + x * spot.height * .31, spot.height * (.75 + y * .25) + (spot.baseY ?? 0), spot.z + z * spot.height * .32);
           dummy.rotation.set(rand() * 3, rand() * 6.28, rand() * 3); dummy.scale.setScalar(.50 + rand() * .40); dummy.updateMatrix();
           const shade=.76+rand()*.22;
           leaves.setMatrixAt(index, dummy.matrix); leaves.setColorAt(index, new T.Color().setRGB(shade*.95,shade,shade*.9)); index++;

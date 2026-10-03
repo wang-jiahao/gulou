@@ -1,3 +1,4 @@
+import {featureCenter, extraPlaces} from '../world/place-index.ts';
 import type { CampusMap, MapPolygon } from '../world/campus-map.ts';
 import { bounds, insidePolygon } from '../world/campus-map.ts';
 
@@ -17,7 +18,8 @@ export class CampusMapView {
       const x = (px - this.size.x) / this.size.scale, z = (py - this.size.z) / this.size.scale;
       const feature = map.features.find(f => insidePolygon(x, z, f));
       if (x < bounds.minX || x > bounds.maxX || z < bounds.minZ || z > bounds.maxZ) return;
-      const name = feature?.tags.name ?? '地图上的位置';
+      const marker=extraPlaces.find(p=>Math.hypot(p.x-x,p.z-z)<12);
+      const name = marker?.name ?? feature?.tags.name ?? '地图上的位置';
       selection.textContent = `已选择：${name}`; this.destination = [x, z]; this.onSelect(x, z, name);
     });
   }
@@ -39,14 +41,25 @@ export class CampusMapView {
     const route = [[0, 18], [0, 83], [-24, 83], [-24, 99], [-18, 114], [-18, 145], [-85, 147], [-85, 182], [-85.6, 255], [-91, 352]];
     c.beginPath(); route.forEach(([x, z], i) => { const q = this.project(x, z); if (!i) c.moveTo(...q); else c.lineTo(...q); }); c.strokeStyle = '#bd8151'; c.lineWidth = 4; c.setLineDash([8, 6]); c.stroke(); c.setLineDash([]);
     const labels: [string, number, number][] = [['北大楼', 0, 0], ['金大路', 0, 59], ['东大楼', 52, 48], ['西大楼', -51, 46], ['大礼堂', -53, 99], ['教学楼', -85, 128], ['中大路', -85, 235], ['汉口路校门', -91, 350], ['南园', -55, 480], ['广州路校门', -35, 715], ['苏浙运动场', -195, -20]];
-    c.font = '16px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    // Every footprint gets its plan number; full labels are placed only where
+    // they fit. Clicking a building and the searchable directory expose all names.
+    c.font='12px system-ui';c.textAlign='center';c.textBaseline='middle';
+    for(const f of this.map.features){const[x,z]=featureCenter(f);if(x<r.minX||x>r.maxX||z<r.minZ||z>r.maxZ)continue;const q=this.project(x,z);c.fillStyle='#f8f6ed';c.beginPath();c.arc(q[0],q[1],10,0,Math.PI*2);c.fill();c.fillStyle='#284438';c.fillText(f.tags.plan_id??'·',...q);}
+    labels.push(...extraPlaces.map(p=>[p.name,p.x,p.z] as [string,number,number]));
+    const occupied:[number,number,number,number][]=[];
+    const priority=['图书馆','逸夫馆','费彝民楼群','蒙民伟楼','南园综合楼与学生餐厅','南芳园餐厅'];
+    const features=[...this.map.features].sort((a,b)=>Number(priority.includes(b.tags.name))-Number(priority.includes(a.tags.name)));
+    labels.push(...features.filter(f=>!labels.some(l=>l[0]===f.tags.name)).map(f=>[f.tags.name,...featureCenter(f)] as [string,number,number]));
+    c.font = '14px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
     for (const [text, x, z] of labels) {
       if (x < r.minX || x > r.maxX || z < r.minZ || z > r.maxZ) continue;
       const q = this.project(x, z), width = c.measureText(text).width + 14;
+      const box:[number,number,number,number]=[q[0]-width/2,q[1]-12,q[0]+width/2,q[1]+12];
+      if(occupied.some(a=>a[0]<box[2]&&a[2]>box[0]&&a[1]<box[3]&&a[3]>box[1]))continue;occupied.push(box);
       c.fillStyle = '#f8f6edec'; c.fillRect(q[0] - width / 2, q[1] - 12, width, 24); c.fillStyle = '#334c43'; c.fillText(text, ...q);
     }
     c.fillStyle = '#4c6057'; c.textAlign = 'left'; c.fillText('↑ 北', 26, 28);
-    this.selection.textContent = '点击地图选择位置，再点传送；虚线是重点路线';
+    this.selection.textContent = '数字对应平面图编号；点击建筑查看名称，或搜索地点；虚线是重点路线';
   }
   private project(x: number, z: number): [number, number] { return [this.size.x + x * this.size.scale, this.size.z + z * this.size.scale]; }
   update(x: number, z: number, yaw: number) {

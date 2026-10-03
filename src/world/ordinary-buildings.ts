@@ -100,6 +100,23 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         for(let pane=0;pane<=panes;pane++)put(b,width*(pane/panes-.5),(bottom+top)/2,.115,.055,top-bottom+.08,.15,defaultFrame);
         windows+=panes;
       }
+      // Official archive photo 28: modern library has tall pale vertical fins,
+      // paired slender mullions, and glazed panels, unlike the red historic core.
+      if(f.id==='plan-66'&&!museumCore(mx,mz)){
+        const bays=Math.max(1,Math.floor(len/2.25)),pitch=len/bays;
+        for(let floor=0;floor<3;floor++){
+          const y=floorHeight*(floor+.52),wh=floorHeight-.50;
+          for(let bay=0;bay<bays;bay++){
+            const u=(bay+.5)*pitch-len/2;
+            put(b,u,y,.075,pitch-.32,wh,.025,glass[1]);
+            for(const side of[-1,1])put(detail,u+side*(pitch/2-.08),y,.25,.14,wh+.42,.52,paint(0xd1d3c9));
+            for(const fraction of[-.20,.20])put(detail,u+pitch*fraction,y,.12,.045,wh,.12,paint(0xc6cbc4));
+            put(detail,u,y+.30,.13,pitch-.30,.045,.13,paint(0xc6cbc4));windows++;
+          }
+          put(b,0,(floor+1)*floorHeight-.04,.18,len,.20,.42,paint(0xd1d3c9));
+        }
+        continue;
+      }
       const bays=Math.floor((len-.8)/profile.bays);
       if(profile.style==='glass')for(let j=0;j<=bays;j++){
         const u=len*((j+.5)/(bays+1)-.5);
@@ -203,7 +220,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       const frame=defaultFrame;
       // Choose a long exterior facade facing the nearest public route, rather
       // than putting a doorway onto an inner hole or a two-metre return wall.
-      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=candidates.sort((a,c)=>{
+      const candidates=edges.filter(e=>e.len>7&&(f.id!=='plan-66'||(e.nx<-.8&&e.z>278&&e.z<296))),scores=new Map<typeof edges[number],number>();const frontage=candidates.sort((a,c)=>{
         const score=(e:typeof a)=>{
           if(scores.has(e))return scores.get(e)!;
           let best=10000;
@@ -225,9 +242,21 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         put(0,1.32,.13,w,h,.16,recess);put(0,1.32,.23,w-.22,h-.18,.05,profile.style==='historic'||profile.style==='villa'?frame:glass[0]);
         for(const side of[-1,1]){put(side*(w/2+.16),1.44,.18,.28,2.88,.45,stone);put(side*.12,1.25,.30,.035,.28,.05,utility);}
         put(0,1.32,.28,.06,h,.08,frame);put(0,2.98,.28,w+.65,.22,.65,stone);
+        if(f.id==='plan-66'){
+          put(0,1.35,.32,10.8,2.7,.08,glass[0]);
+          for(const u of[-5.5,-3.6,0,3.6,5.5])put(u,1.45,.50,.16,2.9,.4,paint(0xd1d3c9));
+          put(0,3.10,1.25,12.0,.26,2.6,paint(0xd1d3c9));
+        }
         const depth=profile.portal==='glass'?1.1:.7;put(0,3.17,depth*.4,w+1.05,.15,depth,stone);
         if(profile.portal==='columns')for(const side of[-1,1])put(side*(w/2+.3),1.52,.5,.18,2.9,.22,stone);
         if(profile.style==='villa'&&profile.balcony){put(0,3.52,.85,w+.7,.13,.13,stone);for(let q=-4;q<=4;q++)put(q*w/8,3.3,.85,.075,.45,.08,stone);}
+        if(['plan-66','plan-34','plan-4','plan-71','plan-113','plan-117','plan-100'].includes(f.id)){
+          const name=f.id==='plan-4'?'费彝民楼':f.tags.name;
+          const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;const ctx=canvas.getContext('2d')!;
+          ctx.fillStyle=f.id==='plan-66'?'#d0d2c9':'#b9b8ac';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#776339';ctx.font='56px "Songti SC", serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(name,512,68,990);
+          const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
+          const sign=new T.Mesh(new T.PlaneGeometry(f.id==='plan-66'?7:5,.62),new T.MeshStandardMaterial({map:texture,roughness:.8}));const projection=f.id==='plan-66'?2.60:.52;sign.position.set(e.x+e.nx*projection,f.id==='plan-66'?3.10:3.65,e.z+e.nz*projection);sign.rotation.y=e.angle;plaques.add(sign);
+        }
         if(profile.style==='dormitory'){
           const numbers=['零','一','二','三','四','五','六','七','八','九','十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','二十一'];
           const name=f.tags.name.replace(/\d+/g,n=>numbers[Number(n)]??n);

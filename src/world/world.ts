@@ -18,13 +18,18 @@ import { createDormitoryAmenities } from './dormitory-amenities.ts';
 import { createSouthRoadDetails } from './south-road-details.ts';
 import { createSouthTreeDetails } from './south-tree-details.ts';
 import { createCampusDirectory } from './campus-directory.ts';
+import type {CampusBicycle} from './bicycle.ts';
+import {extraPlaces} from './place-index.ts';
+import {createDadaoping} from './dadaoping.ts';
+import { terrainHeight, terrainSurface, terraceHeight, createCourtyardSteps } from './courtyard-terrain.ts';
 import { createSonglinGarden, songlinPathOpening } from './songlin-garden.ts';
 export { bounds } from './campus-map.ts';
 
 export const maxFlightAltitude = 180;
-export const spawn = new T.Vector3(0, .03, 68);
+export const spawn = new T.Vector3(0, terraceHeight + .06, 68);
 export const benchLocations = [new T.Vector3(-30, 0, 39), new T.Vector3(30, 0, 52),new T.Vector3(-12,0,115),new T.Vector3(75,0,47)];
 export const campusPlaces=[
+  ...extraPlaces,
   {name:'苏浙运动场',x:-193,z:-9,description:'到草坪上踢一会儿球。靠近足球按 E，或点击踢球；快走时踢球会更有力量。'},
   {name:'I ❤️ NJU',x:-24,z:46,description:'在草坪前留一张合影。沿西侧稍稍后退，可以把北大楼与紫峰大厦一同收入画面。'},
   {name:'北大楼',x:0,z:18,description:'中央塔楼、十字脊与爬藤，是许多南大学生和校友记忆中的校园风景。'},
@@ -57,6 +62,7 @@ export const travelPlaces: TravelPlace[] = [
 export type CampusWorld = Awaited<ReturnType<typeof createWorld>>;
 
 export async function createWorld(scene: T.Scene, mats: Materials, quality = 'medium') {
+  const bicycles:CampusBicycle[]=[];
   const root = new T.Group(); root.name = 'core-campus'; scene.add(root);
   const solids: Solid[] = [], cameraSolids: T.Object3D[] = [], fixedMeshes: CollisionMesh[] = [], lampPositions:T.Vector3[]=[], vegetationUpdates: ((position: T.Vector3, quality: string, flying: boolean) => void)[] = [];
   const mapResponse = await fetch(`${import.meta.env.BASE_URL}data/campus-layout.json`);
@@ -66,7 +72,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   map.features.push(fireTowerFootprint);
   const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
   const lawnHeight = .20;
-  const courtyardHeight = (x: number, z: number) => [...raisedLawns].some(lawn => insidePolygon(x, z, lawn)) ? lawnHeight : .022;
+  const courtyardHeight = (x: number, z: number) => terrainHeight(x,z) + ([...raisedLawns].some(lawn => insidePolygon(x, z, lawn)) ? lawnHeight : .022);
+  benchLocations.forEach(p => { p.y = courtyardHeight(p.x,p.z); });
   const b = new Builder();
   // Surfaces and courtyards share the supplied plan, including polygon holes.
   // Lawns, paths and the running track sit only centimetres above this slab.
@@ -79,13 +86,15 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const asphalt = new T.MeshStandardMaterial({ name: 'paving', color: 0x93988f, map: mats.textures.get('courtyard-asphalt.webp'), roughness: .95, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
   // The white strokes in the schematic map are drawing outlines, not metre-wide
   // strips of pale paving. Fill only the courtyard substrate beneath its paths.
-  b.box(78, .012, 72, 0, .005, 49, asphalt);
+  b.add(terrainSurface({points:[[-39,13],[39,13],[39,85],[-39,85]]},.018),asphalt);
+  const terrace = new T.Mesh(terrainSurface({points:[[-43,-30],[43,-30],[43,85.85],[-43,85.85]]},.009),mats.grass);
+  terrace.receiveShadow=true; root.add(terrace); fixedMeshes.push(collisionMesh(terrace,true));cameraSolids.push(terrace);
+  const steps=createCourtyardSteps(mats);root.add(steps.group);solids.push(...steps.solids);cameraSolids.push(...steps.group.children);
   // Official VR shows asphalt garden paths, rather than a continuous stone plaza.
   const addSurface = (polygon: Parameters<typeof planShape>[0], material: T.Material, y: number) => {
-    const geometry = new T.ShapeGeometry(planShape(polygon)).rotateX(-Math.PI / 2);
-    const uv = geometry.getAttribute('uv'); for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 3.6, uv.getY(i) / 3.6);
-    if (material === asphalt) { const proxy = new T.Mesh(geometry); proxy.position.y = y; proxy.updateMatrixWorld(); fixedMeshes.push(collisionMesh(proxy, false)); }
-    b.add(geometry, material, 0, y, 0);
+    const geometry = terrainSurface(polygon,y);
+    if (material === asphalt) { const proxy = new T.Mesh(geometry); proxy.updateMatrixWorld(); fixedMeshes.push(collisionMesh(proxy, false)); }
+    b.add(geometry, material);
   };
   for (const road of map.roads) {
     addSurface(road, asphalt, .035);
@@ -93,7 +102,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], x = (ax + bx) / 2, z = (az + bz) / 2, length = Math.hypot(bx - ax, bz - az);
       if (length < 1 || x < -163 || x > 85 || z < -27 || z > 350) continue;
       if (Math.abs(x) < 39 && z > 14 && z < 84) continue;
-      b.box(.16, .12, length, x, .07, z, mats.stone, false, Math.atan2(bx - ax, bz - az));
+      b.box(.16, .12, length, x, .07 + terrainHeight(x,z), z, mats.stone, false, Math.atan2(bx - ax, bz - az));
     }
   }
   for (const lawn of map.lawns) {
@@ -103,11 +112,12 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     // The lawn is one shallow step above the asphalt walks. Use the same
     // traced outline for the visible edge and the solid support underneath it.
     const soil = new T.ExtrudeGeometry(planShape(lawn), { depth: lawnHeight, bevelEnabled: false, steps: 1 }).rotateX(-Math.PI / 2);
+    const soilPositions=soil.getAttribute('position');for(let i=0;i<soilPositions.count;i++)soilPositions.setY(i,soilPositions.getY(i)+terrainHeight(soilPositions.getX(i),soilPositions.getZ(i)));
     const proxy = new T.Mesh(soil, new T.MeshBasicMaterial({ side: T.DoubleSide })); fixedMeshes.push(collisionMesh(proxy)); cameraSolids.push(proxy);
     for (const ring of [lawn.points, ...(lawn.holes ?? [])]) for (let i = 0; i < ring.length; i++) {
       const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], length = Math.hypot(bx - ax, bz - az);
       if (length < .15) continue;
-      b.box(.16, .21, length, (ax + bx) / 2, .115, (az + bz) / 2, mats.stone, true, Math.atan2(bx - ax, bz - az));
+      b.box(.16, .21, length, (ax + bx) / 2, .115 + terrainHeight((ax+bx)/2,(az+bz)/2), (az + bz) / 2, mats.stone, true, Math.atan2(bx - ax, bz - az));
     }
   }
   for (const field of map.features.filter(f => f.tags.leisure === 'track')) {
@@ -115,11 +125,12 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     for (const hole of field.holes ?? []) addSurface({ points: hole }, mats.grass, .041);
   }
   // Entrance aprons attach the detailed models to the traced road network.
-  b.box(12, .06, 5, 0, .025, 16.4, mats.path);
+  b.box(12, .06, 5, 0, .025 + terraceHeight, 16.4, mats.path);
   b.box(8.5, .06, 6.5, -31, .025, 99, mats.path);
   const ground = b.finish('registered campus roads lawns and playing fields'); root.add(ground); solids.push(...b.solids);
   const southRoads = createSouthRoadDetails(map, mats,[songlinPathOpening]); root.add(southRoads.group); solids.push(...southRoads.solids);
   const garden = createSonglinGarden(mats); root.add(garden.group); solids.push(...garden.solids); fixedMeshes.push(...garden.fixedMeshes);cameraSolids.push(...garden.group.children);
+  const dadaoping=createDadaoping(mats);root.add(dadaoping.group);solids.push(...dadaoping.solids);cameraSolids.push(...dadaoping.group.children);
   const directory = createCampusDirectory(map, mats); root.add(directory.group); solids.push(...directory.solids); cameraSolids.push(...directory.group.children);
   const gateFont = await new FontLoader().loadAsync(`${import.meta.env.BASE_URL}assets/fonts/gate-lettering.typeface.json`);
   const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);
@@ -128,7 +139,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   root.add(createSkyline());
   const field = createFootballPitch(map.features, mats); root.add(field.group); solids.push(...field.solids); cameraSolids.push(...field.group.children);
   const tower = createFireTower(), sign = createCampusSign(); root.add(tower.group, sign.group); solids.push(...tower.solids, ...sign.solids); cameraSolids.push(...tower.group.children, ...sign.group.children);
-  const signElevation = courtyardHeight(-24, 46) > .1 ? lawnHeight : 0;
+  const signElevation = courtyardHeight(-24,46);
   sign.group.position.y += signElevation; sign.solids.forEach(s => { s.y += signElevation; });
 
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
@@ -142,11 +153,11 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     if(m.name.startsWith('window-glass'))m.envMapIntensity=1.7;
     cameraSolids.push(o);
   });
-  root.add(gltf.scene);
+  gltf.scene.position.y += terraceHeight; root.add(gltf.scene);
   gltf.scene.updateMatrixWorld(true);gltf.scene.traverse(o=>{if(o instanceof T.Mesh&&(o.material as T.Material).name==='roof')fixedMeshes.push(collisionMesh(o,true));});
   const collisionResponse = await fetch(`${import.meta.env.BASE_URL}data/beidalou-collision.json`);
   if (!collisionResponse.ok) throw new Error('建筑碰撞数据加载失败');
-  const heroSolids: Solid[] = await collisionResponse.json(); solids.push(...heroSolids);
+  const heroSolids: Solid[] = await collisionResponse.json(); heroSolids.forEach(s=>{s.y+=terraceHeight;});solids.push(...heroSolids);
   // Keep all building collision ready before play, even on a slow connection while
   // optional facade models are still streaming.
   const landmarkCollision=await fetch(`${import.meta.env.BASE_URL}data/landmarks-collision.json`);if(!landmarkCollision.ok)throw new Error('扩展区域碰撞数据未加载');
@@ -163,7 +174,9 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   travelPlaces.push(directory.arrival);
   travelPlaces.push({name:'松林楼',x:-65.8,z:411.8,yaw:-Math.PI/2,firstPerson:true});
   travelPlaces.push(garden.arrival);
-  root.add(createIvy(mats, quality));
+  for(const record of ordinary.records)if(record.frontage&&!record.dormitory&&!['松林楼','教学楼／郑钢楼'].includes(record.name)){const[x,z,nx,nz]=record.frontage;const name=travelPlaces.some(p=>p.name===record.name)?`${record.name}（图号 ${record.id.replace('plan-','')}）`:record.name;travelPlaces.push({name,x:x+nx*4,z:z+nz*4,yaw:Math.atan2(nx,nz)});}
+  travelPlaces.push(...extraPlaces);
+  const ivy=createIvy(mats,quality);ivy.position.y=terraceHeight;root.add(ivy);
 
   const nearTrees: TreeSpot[] = [
     { x: -6.7, z: 20, height: 13.8, kind: 'cedar' }, { x: 7.4, z: 21.2, height: 15.8, kind: 'cedar' },
@@ -175,7 +188,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     { x: -35, z: 6, height: 17 }, { x: 38, z: 3, height: 15 },
     { x: -19, z: -22, height: 17 }, { x: 23, z: -24, height: 18 },
   ];
-  const trees = createJunipers(nearTrees.filter(t => t.kind === 'cedar'), mats, quality); root.add(trees.group); solids.push(...trees.solids);
+  nearTrees.forEach(t=>{t.baseY=courtyardHeight(t.x,t.z);});
+  const trees = createJunipers(nearTrees.filter(t => t.kind === 'cedar'), mats, quality); trees.group.position.y=terraceHeight+.20;trees.solids.forEach(s=>{s.y+=terraceHeight+.20;});root.add(trees.group); solids.push(...trees.solids);
   const broadleaf = await createModelTrees(nearTrees.filter(t => t.kind !== 'cedar'), quality === 'low' ? 'far' : 'near', mats.leaves); root.add(broadleaf.group); solids.push(...broadleaf.solids); vegetationUpdates.push(broadleaf.updateVisibility);
   // The gateway photograph is framed by mature avenue trees, not an empty lot.
   const gateTrees = await createModelTrees([
@@ -183,7 +197,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     { x: -104, z: 311, height: 19 }, { x: -77, z: 306, height: 21 },
   ], quality === 'low' ? 'far' : 'near', mats.leaves);
   root.add(gateTrees.group); solids.push(...gateTrees.solids); vegetationUpdates.push(gateTrees.updateVisibility);
-  const plants = createGroundPlants(mats, courtyardHeight); root.add(plants.group);
+  const plants = createGroundPlants(mats, courtyardHeight,(x,z)=>[...raisedLawns].some(l=>insidePolygon(x,z,l))); root.add(plants.group);
   let sectors = 1;
 
   async function expand(afterSector: () => void = () => {}) {
@@ -227,15 +241,15 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const far = await createModelTrees(farTrees.filter(t => !map.features.some(f => f.tags.leisure === 'track' && insideRing(t.x, t.z, f.points))), 'far', mats.leaves); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);
     const props = new Builder();
     for (const p of benchLocations) {
-      for (let k = 0; k < 5; k++) props.box(2.25, .075, .105, p.x, .52, p.z + k * .12, mats.wood);
-      for (let k = 0; k < 4; k++) props.box(2.25, .12, .09, p.x, .78 + k * .16, p.z + .54, mats.wood);
-      for (const side of [-1, 1]) props.box(.1, .5, .52, p.x + side * .83, .25, p.z + .25, mats.metal);
-      props.solids.push({ x: p.x, y: .5, z: p.z + .25, w: 2.25, h: 1, d: .68 });
+      for (let k = 0; k < 5; k++) props.box(2.25, .075, .105, p.x, .52 + p.y, p.z + k * .12, mats.wood);
+      for (let k = 0; k < 4; k++) props.box(2.25, .12, .09, p.x, .78 + k * .16 + p.y, p.z + .54, mats.wood);
+      for (const side of [-1, 1]) props.box(.1, .5, .52, p.x + side * .83, .25 + p.y, p.z + .25, mats.metal);
+      props.solids.push({ x: p.x, y: .5 + p.y, z: p.z + .25, w: 2.25, h: 1, d: .68 });
     }
     const lightGlass = new T.MeshStandardMaterial({ name:'lamp-glass',color: 0xf7ebc5, emissive: 0xc2a165, emissiveIntensity: .18, roughness: .35 });
     const lampSpots=[...[-1,1].flatMap(side=>[23,43,64,-20].map(z=>[side*(z===23?5.2:32.3),z])),[-20,89],[-20,112],...Array.from({length:8},(_,i)=>[-77-i*.9,165+i*24]),[-82,389],[-74,445],[-39,519],[-22,600],[-28,686]];
     for (const [x,z] of lampSpots) {
-      const floor = courtyardHeight(x,z) > .1 ? lawnHeight : 0;
+      const floor = courtyardHeight(x,z);
       lampPositions.push(new T.Vector3(x,3.85+floor,z));
       props.cylinder(new T.Vector3(x, floor, z), new T.Vector3(x, 3.6+floor, z), .065, .042, mats.metal, 10);
       if (z < 85) {
@@ -254,11 +268,11 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       props.solids.push({ x, y: 1.8+floor, z, w: .18, h: 3.6, d: .18 });
     }
     const propGroup = props.finish('benches lamps and boundary'); root.add(propGroup); moreSolids.push(...props.solids); cameraSolids.push(...propGroup.children);
-    const amenities=createDormitoryAmenities(map,ordinary.records,mats,[...solids,...moreSolids]);root.add(amenities.group);moreSolids.push(...amenities.solids);lampPositions.push(...amenities.lamps);cameraSolids.push(...amenities.group.children);
+    const amenities=createDormitoryAmenities(map,ordinary.records,mats,[...solids,...moreSolids]);root.add(amenities.group);bicycles.push(...amenities.bicycles);moreSolids.push(...amenities.solids);lampPositions.push(...amenities.lamps);cameraSolids.push(...amenities.group.children);
     afterSector();
     sectors++;
     return moreSolids;
   }
   const updateVegetation = (position: T.Vector3, quality: string, flying: boolean) => vegetationUpdates.forEach(update => update(position, quality, flying));
-  return { root, map, access, directory, garden, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
+  return { root, map, bicycles, access, directory, garden, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
 }

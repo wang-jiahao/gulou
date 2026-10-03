@@ -2,7 +2,7 @@ import * as T from 'three';
 import { Builder, rng, type Solid } from './geometry.ts';
 import type { Materials } from './materials.ts';
 
-export type TreeSpot = { x: number; z: number; height: number; kind?: 'cedar' | 'broad'; whitewash?: boolean };
+export type TreeSpot = { x: number; z: number; height: number; baseY?: number; kind?: 'cedar' | 'broad'; whitewash?: boolean };
 export function createTrees(spots: TreeSpot[], mats: Materials, seed = 1917) {
   const rand = rng(seed), b = new Builder(), cards: T.Matrix4[] = [], colors: T.Color[] = [], obj = new T.Object3D();
   for (const tree of spots) {
@@ -147,7 +147,7 @@ export function createJunipers(spots: TreeSpot[], mats: Materials, quality = 'me
   return { group, solids: b.solids };
 }
 
-export function createGroundPlants(mats: Materials, groundHeight: (x: number, z: number) => number = () => .022) {
+export function createGroundPlants(mats: Materials, groundHeight: (x: number, z: number) => number = () => .022, isGrass: (x:number,z:number)=>boolean = (x,z)=>groundHeight(x,z)>.1) {
   const r = rng(2026), obj = new T.Object3D(), group = new T.Group(), solids: Solid[] = [];
   const shrubs: T.Matrix4[] = [], grass: T.Matrix4[] = [];
   for (const side of [-1, 1]) {
@@ -159,9 +159,10 @@ export function createGroundPlants(mats: Materials, groundHeight: (x: number, z:
   for (let i = 0; i < 5000; i++) {
     const x = (r() - .5) * 46, z = 23 + r() * 45;
     const floor = groundHeight(x, z);
-    if (floor < .1) continue;
+    if (!isGrass(x,z)) continue;
     obj.position.set(x, floor + .035, z); obj.rotation.set(0, r() * Math.PI, 0); obj.scale.set(.2 + r() * .2, .11 + r() * .08, 1); obj.updateMatrix(); grass.push(obj.matrix.clone());
   }
+  for(const matrix of shrubs){const x=matrix.elements[12],z=matrix.elements[14];matrix.elements[13]+=groundHeight(x,z);}
   for (const [mat, data, name] of [[mats.leaves, shrubs, 'shrubs'], [mats.grassTuft, grass, 'grass']] as const) {
     const mesh = new T.InstancedMesh(new T.PlaneGeometry(1, 1), mat, data.length); data.forEach((m, i) => mesh.setMatrixAt(i, m)); mesh.receiveShadow = true; mesh.castShadow = name === 'shrubs'; mesh.name = name; mesh.computeBoundingSphere(); group.add(mesh);
   }

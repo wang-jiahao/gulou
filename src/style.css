@@ -15,3 +15,6 @@
 @media(max-width:650px){.location{max-width:calc(100vw - 224px)}.location div{min-width:0}.location div>span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.location small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 
 #football-hud{position:absolute;left:35px;top:105px;padding:12px 15px;background:#153b2dde;border:1px solid #ffffff30;border-radius:8px;color:#f2f0df;font-size:12px;backdrop-filter:blur(8px);pointer-events:auto}#football-hud strong{font-size:18px;font-variant-numeric:tabular-nums;margin-left:4px}#football-hud button{background:#f0efdb;color:#34573d;border-radius:4px;margin-left:14px;padding:8px 10px;font-size:11px}#football-hud small{display:block;color:#e1e8d8b0;font-size:10px;margin-top:6px}.touch-device #football-hud{top:80px;left:16px;max-width:calc(100vw - 32px)}
+
+.map-travel input[type=search]{min-width:0;width:190px;border:1px solid #bac6b6;border-radius:6px;background:#fffdf5;color:#314b38;padding:10px;font:inherit;font-size:13px}
+@media(max-width:650px){.map-travel{flex-wrap:wrap}.map-travel input[type=search]{flex-basis:100%;width:100%}.map-travel select{width:calc(100% - 64px)}}

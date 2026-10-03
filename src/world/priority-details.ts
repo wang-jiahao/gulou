@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {terrainHeight} from './courtyard-terrain.ts';
 import { Builder } from './geometry.ts';
 import { geographic, type CampusMap } from './campus-map.ts';
 import { createHankouGate } from './hankou-gate.ts';
@@ -47,8 +48,8 @@ export function createPriorityDetails(map: CampusMap, mats: Materials, gateFont:
   const gate = createHankouGate(map.gates.hankou, mats, gateFont); group.add(...gate.group.children.slice()); b.solids.push(...gate.solids);
   const teaching = lettering('教 学 楼', 4, .6); teaching.position.set(x, 4.65, z + 1.33); group.add(teaching);
   for (const [label, px, pz] of [['中大路', -75, 202], ['两江路', -68, 150], ['金大路', 7, 59]] as const) {
-    const sign = lettering(label, 1.55, .36, '#485b4c', '#f1ead9'); sign.position.set(px, 2.1, pz); group.add(sign);
-    const pole = new T.Mesh(new T.CylinderGeometry(.035, .04, 2.1, 6), mats.metal); pole.position.set(px, 1.05, pz); group.add(pole);
+    const sign = lettering(label, 1.55, .36, '#485b4c', '#f1ead9'); sign.position.set(px, 2.1+terrainHeight(px,pz), pz); group.add(sign);
+    const pole = new T.Mesh(new T.CylinderGeometry(.035, .04, 2.1, 6), mats.metal); pole.position.set(px, 1.05+terrainHeight(px,pz), pz); group.add(pole);
   }
   return { group, solids: b.solids };
 }

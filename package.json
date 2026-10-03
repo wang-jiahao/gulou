@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -36,7 +36,8 @@
     "test:street-trees": "node scripts/street-tree-check.mjs",
     "test:directory": "node scripts/directory-check.mjs",
     "test:songlin": "node scripts/songlin-check.mjs",
-    "test:seating": "node scripts/seating-check.mjs"
+    "test:seating": "node scripts/seating-check.mjs",
+    "test:refinement": "node scripts/refinement-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",
