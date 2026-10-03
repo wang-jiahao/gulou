@@ -11,8 +11,11 @@ const clip=(points:number[][],axis:number,value:number,side:number)=>{
 };
 const area=(points:number[][])=>Math.abs(points.reduce((sum,p,i)=>{const q=points[(i+1)%points.length];return sum+p[0]*q[1]-q[0]*p[1];},0))/2;
 export function splitTeachingFeature(f:MapFeature){
- const north=clip(f.points,1,87,-1),south=clip(f.points,1,87,1);
- return[{...f,points:north},{...f,id:'new-teaching',points:south,tags:{...f.tags,name:'新教学楼',plan_id:'36B',source:'NJU undergraduate office, 2023-02-08 location diagram; southern part of traced plan-36'}}];
+ const north=clip(f.points,1,87,-1);
+ // Hand-regularized against the 2024 plan: keep the projecting west entrance
+ // wing and the east classroom wing, without the old northward lab connector.
+ const south=[[40.35,87.24],[52.22,87.34],[52.05,90.73],[54.19,91.28],[90.8,91.3],[90.6,107.4],[52.3,107.65],[51.19,111.84],[40.16,111.94]];
+ return[{...f,points:north},{...f,id:'new-teaching',points:south,tags:{...f.tags,name:'新教学楼',plan_id:'36B',source:'NJU 2024 asset-office plan; west entrance verified in official VR scene_gl-3-16'}}];
 }
 const materialCache=new WeakMap<Materials,Map<string,T.MeshStandardMaterial>>();
 export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:CollisionMesh[],cameraSolids:T.Object3D[],doors:DoorRecord[],doorMats:ReturnType<typeof entranceMaterials>){
@@ -20,7 +23,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  let cache=materialCache.get(mats);if(!cache){cache=new Map();materialCache.set(mats,cache);}
  const mat=(name:string,color:number,glass=false)=>{if(!cache!.has(name))cache!.set(name,new T.MeshStandardMaterial({name,color,roughness:glass?.27:.88,metalness:glass?.24:0,envMapIntensity:glass?1.2:.3}));return cache!.get(name)!;};
  const pale=mat('specific-pale-frame',0xd4d4c9),dark=mat('specific-dark-frame',0x4c5555),glass=mat('specific-window-glass',0x597275,true),roof=mat('specific-roof',0x747b76);
- const food=['plan-113','plan-100','plan-117'].includes(f.id),fei=f.id==='plan-4',yifu=f.id==='plan-34',meng=f.id==='plan-71',teaching=f.id==='teaching-priority',south=f.id==='plan-73';
+ const food=['plan-113','plan-100','plan-117'].includes(f.id),fei=f.id==='plan-4',yifu=f.id==='plan-34',meng=f.id==='plan-71',teaching=f.id==='teaching-priority',south=f.id==='plan-73',newTeaching=f.id==='new-teaching';
  const color=teaching?0x969288:yifu?0xcec7af:fei?0xc4c5bd:food?0xc5baa3:0xd1d2c9;
  const wall=mat(`specific-wall-${f.id}`,color);
  const xs=f.points.map(p=>p[0]),zs=f.points.map(p=>p[1]),minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs),cx=(minX+maxX)/2,cz=(minZ+maxZ)/2;
@@ -48,7 +51,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
   for(let bay=0;bay<bays;bay++){
    const u=(bay+.5)*len/bays-len/2,x=mx+u*Math.cos(angle),z=mz-u*Math.sin(angle),height=Math.min(...[-.48,0,.48].map(t=>heightAt(x+Math.cos(angle)*len/bays*t-nx*.12,z-Math.sin(angle)*len/bays*t-nz*.12))),levels=fei&&height>40?19:meng&&height>40?18:f.id==='plan-113'?4:Math.max(2,Math.round(height/(fei?3.8:3.6))),floor=height/levels,w=Math.min(len/bays-.65,yifu?4.1:food?3.5:teaching?1.7:2.1);
    for(let level=0;level<levels;level++){
-    if(teaching&&x> -94&&x< -74&&nz>.7)continue;
+    if(teaching&&x> -94&&x< -74&&nz>.7||(south||newTeaching)&&nx<-.5)continue;
     const y=floor*(level+.58),h=teaching?2.05:yifu?1.65:food?1.65:2.05;
     put(u,y,.05,w+.18,h+.15,.12,dark);put(u,y,.14,w,h,.01,glass);
     for(const side of[-1,1]){put(u+side*w/2,y,.19,.075,h,.2,pale);put(u,y+side*h/2,.19,w+.18,.075,.2,pale);}
@@ -79,15 +82,26 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  // Pick the documented main approach, rather than reuse a randomly selected
  // generic wall. The footprints still determine the exact exterior boundary.
  const preferred=edges.filter(e=>e.len>7).sort((a,c)=>{
-  const score=(e:typeof a)=>yifu?Math.abs(e.x+320)+Math.abs(e.z-33)*2+(e.nx<.5?100:0):fei?Math.abs(e.x+210)+Math.abs(e.z+146)+(e.nz>0?0:40):meng?Math.abs(e.z-maxZ)+(e.nz>.5?0:80):f.id==='new-teaching'?Math.abs(e.x-minX)+(e.nx<-.5?0:80):south?Math.abs(e.z-minZ)+(e.nz<-.5?0:80):teaching?Math.abs(e.x+85)*2+Math.abs(e.z-136):f.id==='plan-105'?Math.abs(e.x+84)*2+Math.abs(e.z-maxZ):Math.abs(e.x-cx)+Math.abs(e.z-minZ)+(e.nz<-.5?0:80);
+  const score=(e:typeof a)=>yifu?Math.abs(e.x+320)+Math.abs(e.z-33)*2+(e.nx<.5?100:0):fei?Math.abs(e.x+210)+Math.abs(e.z+146)+(e.nz>0?0:40):meng?Math.abs(e.z-maxZ)+(e.nz>.5?0:80):newTeaching||south?Math.abs(e.x-minX)+(e.nx<-.5?0:80):teaching?Math.abs(e.x+85)*2+Math.abs(e.z-136):f.id==='plan-105'?Math.abs(e.x+84)*2+Math.abs(e.z-maxZ):Math.abs(e.x-cx)+Math.abs(e.z-minZ)+(e.nz<-.5?0:80);
   return score(a)-score(c);
  })[0];
  if(preferred){
-  const e=preferred,width=Math.min(e.len-1,yifu?7.6:fei?7.0:food?7.2:teaching?8.4:4.5),entryY=teaching?1.20:yifu?.60:fei?.75:0;
+  const e=preferred,width=Math.min(e.len-1,yifu?7.6:fei?7.0:food||newTeaching?7.2:teaching?8.4:4.5),entryY=teaching?1.20:yifu?.60:fei?.75:newTeaching?.45:0;
   addEntrance(b,meshes,doors,doorMats,f.tags.name,e.x,e.z,e.angle,width,entryY);
   const put=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material)=>b.box(w,h,d,e.x+u*Math.cos(e.angle)+v*e.nx,y,e.z-u*Math.sin(e.angle)+v*e.nz,m,false,e.angle);
   if(entryY)for(let step=0;step<Math.round(entryY/.15);step++){const h=(step+1)*.15,v=1.72+(Math.round(entryY/.15)-1-step)*.31;put(0,h/2,v,width+1,h,.34,pale);const proxy=new T.Mesh(new T.BoxGeometry(width+1,h,.34));proxy.position.set(e.x+v*e.nx,h/2,e.z+v*e.nz);proxy.rotation.y=e.angle;meshes.push(collisionMesh(proxy));}
   if(yifu){put(0,5.2,.16,Math.min(e.len,18),2.05,.25,glass);for(const u of[-6,-2,2,6])put(u,3.5,.55,.26,7,.50,pale);}
+  if(newTeaching){
+   // Official scene_gl-3-16: broad blank side bays, three central window
+   // strips, a projecting canopy, and three entrance risers at the lower grade.
+   for(let floor=1;floor<5;floor++)for(const u of[-3.0,0,3.0]){
+    put(u,floor*3.6+1.55,.10,2.75,1.85,.10,glass);
+    put(u,floor*3.6+.56,.24,2.90,.14,.40,pale);put(u,floor*3.6+1.55,.22,.055,1.85,.18,dark);
+   }
+   for(const u of[-4.6,-1.5,1.5,4.6])put(u,10.2,.21,.30,15.6,.38,pale);
+   put(0,3.66,1.15,10.5,.32,2.65,pale);
+   for(const u of[-3.9,3.9])put(u,1.95,1.13,.34,3.1,.40,pale);
+  }
   if(teaching){
    // Three arches sit in the brick crown; they are not three detached roof dormers.
    for(const u of[-4.3,0,4.3]){
@@ -102,7 +116,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
   if(fei){put(0,3.3,.8,width+2,.30,2,pale);put(0,1.4,.02,width+2,2.8,.08,dark);}
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#c9c9bd';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#957534';ctx.font=`64px "Kaiti SC","STKaiti",serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(yifu?'逸 夫 館':fei?'费 彝 民 楼':teaching?'教 学 楼':f.tags.name,512,66,980);
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const signMat=new T.MeshStandardMaterial({map:texture,roughness:.8});
-  b.add(new T.PlaneGeometry(Math.min(width+1,9),.70),signMat,e.x+e.nx*.8,teaching?4.55:yifu?3.8:3.7,e.z+e.nz*.8,new T.Euler(0,e.angle,0));
+  b.add(new T.PlaneGeometry(Math.min(width+1,9),.70),signMat,e.x+e.nx*.8,teaching?4.55:newTeaching?4.25:yifu?3.8:3.7,e.z+e.nz*.8,new T.Euler(0,e.angle,0));
  }
  if(meng){for(const x of[57,83]){b.box(3.2,4.3,4.1,x,61,310,pale);b.box(4.5,.55,5.5,x,63.4,310,roof);}b.box(28,.55,4,70,62.1,310,pale);}
  if(fei){b.box(15,2.4,11,-176,69.6,-163,roof);for(let i=0;i<6;i++)b.box(.18,.9,13,-182+i*2.4,71.4,-163,pale);}

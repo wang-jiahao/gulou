@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -39,7 +39,8 @@
     "test:seating": "node scripts/seating-check.mjs",
     "test:refinement": "node scripts/refinement-check.mjs",
     "test:landmarks-riding": "node scripts/phase18-check.mjs",
-    "test:jump-stories": "node scripts/phase19-check.mjs"
+    "test:jump-stories": "node scripts/phase19-check.mjs",
+    "test:east-teaching": "node scripts/phase20-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

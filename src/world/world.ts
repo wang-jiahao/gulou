@@ -25,7 +25,7 @@ import {splitTeachingFeature} from './specific-buildings.ts';
 import type {CampusBicycle} from './bicycle.ts';
 import {extraPlaces} from './place-index.ts';
 import {createDadaoping} from './dadaoping.ts';
-import { terrainHeight, terrainSurface, terraceHeight, createCourtyardSteps } from './courtyard-terrain.ts';
+import { terrainHeight, terrainSurface, terraceHeight, eastTerraceHeight, createCourtyardSteps, createEastTeachingSteps } from './courtyard-terrain.ts';
 import { createSonglinGarden, songlinPathOpening } from './songlin-garden.ts';
 export { bounds } from './campus-map.ts';
 
@@ -74,7 +74,12 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const groundCameraProxy = new T.Mesh(new T.PlaneGeometry(1800, 1900).rotateX(-Math.PI / 2), new T.MeshBasicMaterial({ side: T.DoubleSide })); groundCameraProxy.position.set(-130, .005, 160); groundCameraProxy.updateMatrixWorld(); cameraSolids.push(groundCameraProxy);
   const map: CampusMap = await mapResponse.json();
   const oldLabs=map.features.findIndex(f=>f.id==='plan-36');if(oldLabs>=0)map.features.splice(oldLabs,1,...splitTeachingFeature(map.features[oldLabs]));
-  const southTeaching=map.features.find(f=>f.id==='plan-73');if(southTeaching){southTeaching.tags={...southTeaching.tags,name:'南教学楼',source:'NJU undergraduate office 2023-02-08 location diagram',labelConfidence:'official location diagram; distinct from South Garden teaching building'};}
+  const southTeaching=map.features.find(f=>f.id==='plan-73');if(southTeaching){
+    // Re-traced from the 2024 official plan, registered to the existing map.
+    // The old outline extended farther onto the public-street side.
+    southTeaching.points=[[-37.238,349.617],[27.155,345.846],[26.451,354.003],[-36.879,358.441]];
+    southTeaching.tags={...southTeaching.tags,name:'南教学楼',source:'NJU asset office 2024 campus plan + official VR scene_gl-2-53',labelConfidence:'official location diagram; distinct from South Garden teaching building'};
+  }
   map.features.push(fireTowerFootprint);
   const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
   const lawnHeight = .20;
@@ -93,9 +98,12 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   // The white strokes in the schematic map are drawing outlines, not metre-wide
   // strips of pale paving. Fill only the courtyard substrate beneath its paths.
   b.add(terrainSurface({points:[[-39,13],[39,13],[39,85],[-39,85]]},.018),asphalt);
-  const terrace = new T.Mesh(terrainSurface({points:[[-43,-30],[43,-30],[43,85.85],[-43,85.85]]},.009),mats.grass);
+  // One continuous mesh avoids coplanar overlap where the east terrace meets
+  // the north garden. Roads and building foundations sample the same surface.
+  const terrace = new T.Mesh(terrainSurface({points:[[-43,-30],[72,-30],[72,85.85],[-43,85.85]]},.009),mats.grass);
   terrace.receiveShadow=true; root.add(terrace); fixedMeshes.push(collisionMesh(terrace,true));cameraSolids.push(terrace);
   const steps=createCourtyardSteps(mats);root.add(steps.group);solids.push(...steps.solids);cameraSolids.push(...steps.group.children);
+  const eastSteps=createEastTeachingSteps(mats);root.add(eastSteps.group);solids.push(...eastSteps.solids);cameraSolids.push(...eastSteps.group.children);
   // Official VR shows asphalt garden paths, rather than a continuous stone plaza.
   const addSurface = (polygon: Parameters<typeof planShape>[0], material: T.Material, y: number) => {
     const geometry = terrainSurface(polygon,y);
@@ -111,6 +119,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       b.box(.16, .12, length, x, .07 + terrainHeight(x,z), z, mats.stone, false, Math.atan2(bx - ax, bz - az));
     }
   }
+  // The lower approach in scene_gl-3-16 is asphalt right up to the stone stair.
+  addSurface({points:[[33.7,85.4],[38.3,85.4],[38.3,103],[33.7,103]]},asphalt,.041);
   for (const lawn of map.lawns) {
     const raised = raisedLawns.has(lawn);
     addSurface(lawn, mats.grass, raised ? lawnHeight : .022);
@@ -169,7 +179,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   // Keep all building collision ready before play, even on a slow connection while
   // optional facade models are still streaming.
   const landmarkCollision=await fetch(`${import.meta.env.BASE_URL}data/landmarks-collision.json`);if(!landmarkCollision.ok)throw new Error('扩展区域碰撞数据未加载');
-  solids.push(...await landmarkCollision.json() as Solid[]);
+  const landmarkSolids=await landmarkCollision.json() as Solid[];landmarkSolids.forEach(s=>{if(s.x>0)s.y+=eastTerraceHeight;});solids.push(...landmarkSolids);
   const ordinary=buildOrdinaryBuildings(map.features,mats,map.roads);fixedMeshes.push(...ordinary.fixedMeshes);vegetationUpdates.push(ordinary.updateVisibility);
   // Keep the original 13 travel entries stable, then append named entrances and
   // dormitory doors so each residence can be inspected without guessing its roof.
@@ -214,7 +224,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const moreSolids: Solid[] = [];
     root.add(ordinary.group);cameraSolids.push(...ordinary.cameraSolids);
     const landmarkAssets=await Promise.all(['east','west','auditorium'].map(name=>loader.loadAsync(`${import.meta.env.BASE_URL}assets/buildings/${name}.glb`)));
-    for(const asset of landmarkAssets){
+    for(const[index,asset]of landmarkAssets.entries()){
+      if(index===0)asset.scene.position.y+=eastTerraceHeight;
       asset.scene.traverse(o=>{if(!(o instanceof T.Mesh))return;const mat=o.material as T.MeshStandardMaterial;
         if(mat.name==='historic-brick')o.material=mats.brick;
         if(mat.name==='limestone'){mat.map=mats.textures.get('stone-grain.webp')!;mat.color.set(0xb7b5a6);}
@@ -224,7 +235,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     }
     for(const place of [{name:'东大楼',x:40.92,y:2.1,z:45.4,a:-Math.PI/2,w:.65,h:.38},{name:'西大楼',x:-40.57,y:2.1,z:43.2,a:Math.PI/2,w:.65,h:.38},{name:'大礼堂',x:-33.76,y:7.46,z:98.9,a:Math.PI/2,w:1.8,h:.48}]){
       const canvas=document.createElement('canvas');canvas.width=512;canvas.height=160;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#86784f';ctx.fillRect(0,0,512,160);ctx.strokeStyle='#b3a374';ctx.lineWidth=6;ctx.strokeRect(8,8,496,144);ctx.fillStyle='#2a2419';ctx.font='72px "Songti SC", "SimSun", serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(place.name,256,85);
-      const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const plaque=new T.Mesh(new T.PlaneGeometry(place.w,place.h),new T.MeshStandardMaterial({map:texture,roughness:.65,metalness:.22}));plaque.position.set(place.x,place.y,place.z);plaque.rotation.y=place.a;plaque.receiveShadow=true;root.add(plaque);
+      const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const plaque=new T.Mesh(new T.PlaneGeometry(place.w,place.h),new T.MeshStandardMaterial({map:texture,roughness:.65,metalness:.22}));plaque.position.set(place.x,place.y+(place.name==='东大楼'?eastTerraceHeight:0),place.z);plaque.rotation.y=place.a;plaque.receiveShadow=true;root.add(plaque);
     }
     root.add(createWestWingIvy(mats,quality));
     afterSector();
@@ -245,6 +256,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       if (farTrees.some(t => Math.hypot(t.x - x, t.z - z) < 11)) continue;
       farTrees.push({ x, z, height: 12 + rand() * 8 });
     }
+    farTrees.forEach(tree=>{tree.baseY=courtyardHeight(tree.x,tree.z);});
     root.add(createSouthTreeDetails(farTrees, map, mats));
     const far = await createModelTrees(farTrees.filter(t => !map.features.some(f => f.tags.leisure === 'track' && insideRing(t.x, t.z, f.points))), 'far', mats.leaves); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);
     const props = new Builder();

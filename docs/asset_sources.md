@@ -127,3 +127,10 @@
 - 新发现的资产管理处2024校园图、用户新增的题字/俯瞰照片用于后续几何修正，原PDF和照片留references/phase19；尚未实施的高差、建筑及运动场变更不能写成已完成。
 
 - 北大楼介绍依据南京大学校友网2020-11-20文章https://alumni.nju.edu.cn/aa/0a/c21691a502282/page.htm；东/西大楼依据南京大学官网https://www.nju.edu.cn/info/3191/152251.htm，均实际读取。大纛坪旗杆竣工月份在官方材料中有8月/10月差异，游戏只写已一致确认的1935年，不把月度差异当作定论。
+
+## Local v0.19 — east terrace and teaching buildings
+
+- Official VR [scene_gl-3-16](https://vr.nju.edu.cn/newUI/#/): directly inspected the long descent beside the new teaching entrance, retaining cheeks and central wheel channel. East Building, its physics and surrounding terrain share a raised platform. The 2.88 m rise / 18 risers are visual estimates, not surveyed dimensions.
+- [NJU Asset Office 2024 plan](https://zcc.nju.edu.cn/dzdt/glxqdt/index.html): regularized the new teaching footprint and rechecked the southern teaching strip. The latter differs little from the earlier plan; no unsupported large inward relocation was made.
+- Official VR scene_gl-2-53: south teaching entrance is on the west end; closed glass vestibule stays accessible. New teaching's visible west facade is five levels, with a projecting canopy and entrance risers. The documented two-storey auxiliary building has not yet been reliably matched to a separate footprint.
+- Both user-specified walk videos were decoded locally again, alongside the saved reference index. Source media remain excluded.
