@@ -103,7 +103,7 @@ export async function createAvatar(kind: CharacterKind = 'male') {
     kick() { kickTime = .32; },
     setGroundSampler(sampler:(x:number,z:number)=>number){groundSampler=sampler;},
     get gaitPhase(){return phase;},
-    update(dt: number, speed: number, seated: boolean, flying=false, seatHeight=.55, cyclingPhase?:number, steering=0) {
+    update(dt: number, speed: number, seated: boolean, flying=false, seatHeight=.55, cyclingPhase?:number, steering=0,airborne=false) {
       moving = T.MathUtils.damp(moving, Math.min(1, speed / .5), 12, dt);
       const running = T.MathUtils.clamp((speed - 2) / 2.2, 0, 1);
       idle.weight = 1 - moving; walk.weight = moving * (1 - running); run.weight = moving * running;
@@ -151,6 +151,7 @@ export async function createAvatar(kind: CharacterKind = 'male') {
         root.updateMatrixWorld(true);return;
       }
       if(flying){kickTime=0;model.rotation.x=-.16;for(const side of ['Left','Right']){bones[side+'Arm'].quaternion.copy(rotation(side+'Arm',-1.1));bones[side+'ForeArm'].quaternion.copy(rotation(side+'ForeArm',-.5));bones[side+'UpLeg'].quaternion.copy(rotation(side+'UpLeg',.17));bones[side+'Leg'].quaternion.copy(rotation(side+'Leg',.35));}return;}
+      if(airborne&&!seated){kickTime=0;for(const side of['Left','Right']){bones[side+'UpLeg'].quaternion.copy(rotation(side+'UpLeg',-.25));bones[side+'Leg'].quaternion.copy(rotation(side+'Leg',.5));bones[side+'Arm'].quaternion.copy(rotation(side+'Arm',-.35));bones[side+'ForeArm'].quaternion.copy(rotation(side+'ForeArm',-.55));}return;}
       if (seated) {
         kickTime=0;model.position.y=baseY+seatHeight+.08-hipRestHeight;root.updateMatrixWorld(true);
         const facing=new T.Vector3(0,0,-1).applyQuaternion(root.getWorldQuaternion(new T.Quaternion()));

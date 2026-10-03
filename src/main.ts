@@ -1,6 +1,7 @@
 import './style.css';
 import type { Game, Quality } from './game/game.ts';
 import type { OutfitStyle } from './player/avatar.ts';
+import {getPlaceStory} from './world/place-stories.ts';
 import { locationName } from './world/place-index.ts';
 import { CampusMapView } from './ui/campus-map.ts';
 import { TouchControls, touchDevice } from './ui/touch-controls.ts';
@@ -66,6 +67,7 @@ async function boot() {
     if(e.shiftKey)game.player.keys.add('ShiftLeft');
     game.player.keys.add(e.code);
     if (e.repeat) return;
+    if(e.code==='Space'&&game.mode==='playing')game.player.requestJump();
     if (e.code === 'KeyM') el('map-open').click();
     if (e.code === 'KeyT') el('world-open').click();
     if (e.code === 'KeyV') { game.cameraRig.toggle(); toast(game.cameraRig.firstPerson ? '第一人称' : '第三人称'); }
@@ -145,6 +147,18 @@ async function boot() {
   el('football-reset').onclick = () => game.football.resetBall();
   el('football-help').textContent = touchDevice ? '靠近球点踢球 · 快走时可加力' : '靠近球按 E 踢球 · Shift 加力 · R 回球';
   if (!touchDevice) el('football-reset').setAttribute('aria-keyshortcuts', 'R');
+  const nearbyPlace=()=>{
+    const pos=game.player.position;
+    if(Math.hypot(pos.x+246,pos.z-112)<12&&pos.y<5)return{name:'大纛坪',description:''};
+    return game.world.doors.find(d=>Math.hypot(d.x-pos.x,d.z-pos.z)<7&&Math.abs(pos.y-d.y)<5)??campusPlaces.find(p=>Math.hypot(pos.x-p.x,pos.z-p.z)<9);
+  };
+  function showPlaceInfo(name:string,fallback=''){
+    const content=getPlaceStory(name,fallback),paragraphs=info.querySelectorAll('p');el('info-title').textContent=name;paragraphs[0].textContent=content.summary;paragraphs[1].textContent=content.detail;
+    const link=info.querySelector('a')!;link.href=content.source;link.textContent=content.sourceLabel+' ↗';game.mode='paused';game.player.clearInput();document.exitPointerLock?.();info.showModal();
+  }
+  const showNearbyInfo=()=>{const place=nearbyPlace();if(game.mode==='playing'&&place)showPlaceInfo(place.name,'description'in place?place.description:'');};
+  el('place-about').onclick=showNearbyInfo;
+  window.addEventListener('keydown',e=>{if(e.code==='KeyI'&&!e.repeat)showNearbyInfo();});
   function interact() {
     if(game.mode !== 'playing' || game.player.flying)return;
     if(game.player.riding){if(!game.player.dismount())toast('两侧空间不足，请移到开阔处再下车。');return;}
@@ -163,17 +177,19 @@ async function boot() {
     else {
       const entry=game.world.doors.find(d=>Math.hypot(d.x-game.player.position.x,d.z-game.player.position.z)<4&&Math.abs(game.player.position.y-d.y)<4);
       const place=(entry?{name:entry.name,description:'可以透过玻璃门看到门厅与门禁。室内暂未开放，后续将逐步加入进入建筑与室内探索。'}:undefined)??campusPlaces.find(p=>Math.hypot(game.player.position.x-p.x,game.player.position.z-p.z)<5.5);
-      if(place){el('info-title').textContent=place.name;const paragraphs=info.querySelectorAll('p');paragraphs[0].textContent=place.description;paragraphs[1].textContent='沿着树荫和道路继续走，还会遇见更多熟悉的地方。';const link=info.querySelector('a')!;link.href=place.name==='北大楼'?'https://zh.wikipedia.org/wiki/北大楼':'https://vr.nju.edu.cn/';game.mode='paused';game.player.clearInput();document.exitPointerLock?.();info.showModal();}
+      if(place)showPlaceInfo(place.name,place.description);
     }
   }
   el('interact').onclick = interact;
   game.onTick = () => {
     touchControls?.update(game.mode === 'playing' && !uiHidden, game.player.flying);
+    el('space-label').textContent=game.player.riding?'刹车':game.player.flying?'上升':'跳跃';
     if (++tick % 15) return;
     const pos = game.player.position, onBench = game.player.seated || (game.world.sectors >= 3 && (benchLocations.some(p => p.distanceTo(pos) < 2.4)||Boolean(game.world.garden.nearby(pos))));
     const nearBuilding = game.world.doors.find(d=>Math.hypot(d.x-pos.x,d.z-pos.z)<4&&Math.abs(pos.y-d.y)<4)??campusPlaces.find(p=>Math.hypot(pos.x-p.x,pos.z-p.z)<5.5);
     const nearBicycle=game.world.bicycles.some(b=>b.group.position.distanceTo(pos)<2.3);
     const nearFlag=game.world.dadaoping.nearby(pos);
+    const about=nearbyPlace();el('place-about').hidden=!about||game.mode!=='playing'||game.player.flying;el('place-about').textContent=about?`了解${about.name}${touchDevice?'':' · I'}`:'';
     const flagState=game.world.dadaoping.snapshot();
     const nearDirectory = game.world.directory.nearby(pos);
     el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!nearFlag && !game.player.riding && !nearBicycle && !onBench && !nearBuilding && !nearDirectory && !game.football.canKick);

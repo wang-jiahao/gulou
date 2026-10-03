@@ -17,7 +17,10 @@ export class Player {
   readonly position = spawn.clone();
   keys = new Set<string>();
   readonly moveInput = new T.Vector2();
-  clearInput() { this.keys.clear(); this.moveInput.set(0, 0); }
+  clearInput() { this.keys.clear(); this.moveInput.set(0, 0); this.jumpRequest=0; }
+  grounded=false;
+  private jumpRequest=0;
+  requestJump(){if(!this.riding&&!this.flying&&!this.seated)this.jumpRequest=.12;}
   velocityY = 0;
   speed = 0;
   riding:CampusBicycle|null=null;
@@ -137,6 +140,7 @@ export class Player {
   private finishFlight(){this.flightState='walking';this.flightVelocity.set(0,0,0);this.velocityY=0;this.motor.enableAutostep(.3,.2,false);this.motor.enableSnapToGround(.4);this.glider.visible=false;this.avatar.root.rotation.z=0;}
   reset() { this.parkBicycle();this.finishFlight();this.teleport(spawn.x, spawn.y, spawn.z); this.seated = false; this.clearInput(); this.avatar.root.rotation.y = 0; }
   teleport(x: number, y: number, z: number) {
+    this.grounded=false;this.jumpRequest=0;
     this.position.set(T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), Math.max(.03, terrainHeight(x,z)+.035, y), T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1));
     this.body.setTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }, true);
     this.body.setNextKinematicTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }); this.velocityY = 0; this.previous.copy(this.position); this.avatar.root.position.copy(this.position);
@@ -177,11 +181,15 @@ export class Player {
     this.accumulated = Math.min(this.accumulated + dt, .1); this.previous.copy(this.position);
     while (this.accumulated >= 1 / 60) {
       const step = 1 / 60; this.accumulated -= step;
-      this.velocityY = Math.max(-18, this.velocityY - 9.81 * step);
-      const movement = this.flying?{x:active?this.flightVelocity.x*step:0,y:active?this.flightVelocity.y*step:0,z:active?this.flightVelocity.z*step:0}:{ x: this.direction.x * desired * step, y: this.velocityY * step, z: this.direction.z * desired * step };
+      if(active){
+        if(this.jumpRequest>0&&this.grounded&&!this.riding&&!this.flying&&!this.seated){this.velocityY=4.8;this.grounded=false;this.jumpRequest=0;}
+        this.jumpRequest=Math.max(0,this.jumpRequest-step);
+        this.velocityY = Math.max(-18, this.velocityY - 9.81 * step);
+      }
+      const movement = !active?{x:0,y:0,z:0}:this.flying?{x:this.flightVelocity.x*step,y:this.flightVelocity.y*step,z:this.flightVelocity.z*step}:{ x: this.direction.x * desired * step, y: this.velocityY * step, z: this.direction.z * desired * step };
       if (this.noclip) { movement.y = (Number(this.keys.has('Space')) - Number(this.keys.has('ControlLeft'))) * desired * step; this.velocityY = 0; }
       let move = movement;
-      if (!this.noclip && !this.seated) { this.motor.computeColliderMovement(this.collider, movement); move = this.motor.computedMovement(); if (this.motor.computedGrounded()) {this.velocityY = -.5;if(this.flying&&movement.y<0)this.finishFlight();} }
+      if (!this.noclip && !this.seated) { this.motor.computeColliderMovement(this.collider, movement); move = this.motor.computedMovement(); if(active)this.grounded=this.motor.computedGrounded();if(this.grounded&&movement.y<=0&&active) {this.velocityY = -.5;if(this.flying&&movement.y<0)this.finishFlight();}if(active&&movement.y>0&&move.y<movement.y*.25)this.velocityY=Math.min(0,this.velocityY); }
       if (this.seated) move = { x: 0, y: 0, z: 0 };
       const current = this.body.translation();
       const next = { x: T.MathUtils.clamp(current.x + move.x, bounds.minX + .75, bounds.maxX - .75), y: Math.min(current.y + move.y,maxFlightAltitude+.86), z: T.MathUtils.clamp(current.z + move.z, bounds.minZ + .75, bounds.maxZ - .75) };
@@ -200,6 +208,6 @@ export class Player {
     if(this.riding){
       this.pedalPhase+=this.speed*dt*1.6*Math.sign(this.rideSpeed);this.riding.group.position.copy(this.position);this.riding.group.rotation.y=this.rideYaw;this.avatar.root.rotation.y=this.rideYaw;this.riding.update(this.speed*dt*Math.sign(this.rideSpeed),this.pedalPhase,this.rideSteering);
     }
-    this.avatar.update(dt, this.speed, this.seated,this.flying,this.seatHeight-this.position.y,this.riding?this.pedalPhase:undefined,this.rideSteering);
+    this.avatar.update(dt, this.speed, this.seated,this.flying,this.seatHeight-this.position.y,this.riding?this.pedalPhase:undefined,this.rideSteering,!this.grounded&&Math.abs(this.velocityY)>.6);
   }
 }

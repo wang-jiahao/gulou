@@ -27,9 +27,10 @@
         <div class="location"><span class="location-line"></span><div><span id="location-name">北大楼</span><small>南京大学 · 鼓楼校区</small></div></div>
         <nav class="hud-actions" aria-label="游戏操作"><button id="map-open" aria-label="校园地图">⌖<span>地图 M</span></button><button id="flight-toggle" aria-label="起飞或降落">↗<span id="flight-label">起飞 F</span></button><button id="world-open" aria-label="时间与天气" title="时间与天气 T">◷<span id="clock-chip">15:00 · 晴</span></button><button id="photo-open" title="拍照模式 P" aria-label="拍照模式">▣<span>拍照</span></button><button id="settings-open" aria-label="打开设置">☷<span>设置</span></button></nav>
         <div class="compass" aria-label="方向"><span id="compass-arrow">↑</span><small>N</small></div>
-        <div id="hint" class="hint"><kbd>W A S D</kbd> <span id="movement-label">行走</span> <span>·</span> <kbd>Shift</kbd> 加速 <span>·</span> <kbd>V</kbd> 视角 <span>·</span> <kbd>P</kbd> 拍照</div>
+        <div id="hint" class="hint"><kbd>W A S D</kbd> <span id="movement-label">行走</span> <span>·</span> <kbd>Shift</kbd> 加速 <span>·</span> <kbd>Space</kbd> <span id="space-label">跳跃</span> <span>·</span> <kbd>V</kbd> 视角 <span>·</span> <kbd>P</kbd> 拍照</div>
         <div id="flight-hud" class="flight-hud" hidden><span id="flight-state">滑翔中</span><strong id="flight-altitude">26 m</strong><small>空格上升 · Ctrl 下降 · F 降落</small></div>
         <div id="boundary-hint" class="boundary-hint" hidden>已接近当前开放区域边缘，请转向校园</div>
+        <button id="place-about" class="place-about" hidden></button>
         <button id="interact" class="interact" hidden><kbd>E</kbd> <span>坐一会儿</span></button>
         <button id="resume" class="resume" hidden>点击画面，继续漫步</button>
 <div id="football-hud" hidden><span>苏浙球场练习 · 进球 <strong id="football-score">0</strong></span><button id="football-reset">球回中场</button><small id="football-help">靠近球按 E 踢球 · Shift 加力</small></div>
@@ -38,7 +39,7 @@
       <div id="touch-controls" hidden aria-label="触屏游戏操作">
         <div id="touch-stick" role="application" aria-label="移动摇杆"><div id="touch-knob"></div><span>移动</span></div>
         <span class="touch-look-hint">拖动画面环顾校园</span>
-        <div class="touch-buttons"><button id="touch-view" aria-label="切换第一第三人称">视角</button><button id="touch-run" aria-pressed="false">快走</button><button id="touch-fly">起飞</button></div>
+        <div class="touch-buttons"><button id="touch-view" aria-label="切换第一第三人称">视角</button><button id="touch-run" aria-pressed="false">快走</button><button id="touch-fly">起飞</button><button id="touch-jump">跳跃</button></div>
         <div id="touch-altitude" hidden><button data-hold-key="Space" aria-label="上升">↑</button><button data-hold-key="ControlLeft" aria-label="下降">↓</button></div>
       </div>
       <dialog id="settings" aria-labelledby="settings-title">
@@ -66,7 +67,7 @@
         <div class="dialog-actions"><button id="world-reset" class="subtle">恢复默认</button><button id="world-resume" class="primary">回到校园 →</button></div>
       </dialog>
       <dialog id="campus-map" aria-labelledby="map-title"><form method="dialog"><div class="dialog-heading"><div><small>WALK A LITTLE FURTHER</small><h2 id="map-title">一张校园地图</h2></div><button class="close" aria-label="关闭校园地图">×</button></div></form><div class="world-presets"><button data-map-region="all">全校</button><button data-map-region="core" aria-pressed="true">重点漫步路线</button><button data-map-region="south">南园</button></div><div class="map-travel"><select id="travel-place" aria-label="选择传送地点"><option value="">选一个熟悉的地方</option></select><button id="travel-place-go" class="subtle">前往</button></div><canvas id="map-canvas" aria-label="校园建筑道路与当前位置"></canvas><p id="map-selection"></p><div class="map-travel-actions"><button id="map-teleport" class="primary" disabled>传送到此处</button><button id="map-resume" class="subtle">继续漫步 →</button></div></dialog>
-      <dialog id="info" aria-labelledby="info-title"><form method="dialog"><button class="close" aria-label="关闭介绍">×</button></form><small>一处熟悉的风景</small><h2 id="info-title">北大楼</h2><p>长长的灰瓦屋面，在中央塔楼处向天空升起。中式屋顶与西式楼体在这里相遇，爬藤沿着砖墙舒展。</p><p>北大楼是金陵大学旧址的组成部分，也是南大学生与校友记忆中的校园地标。</p><a href="https://zh.wikipedia.org/wiki/北大楼" target="_blank" rel="noreferrer">阅读建筑资料 ↗</a></dialog>
+      <dialog id="info" aria-labelledby="info-title"><form method="dialog"><button class="close" aria-label="关闭介绍">×</button></form><small>校园介绍</small><h2 id="info-title">北大楼</h2><p>长长的灰瓦屋面，在中央塔楼处向天空升起。中式屋顶与西式楼体在这里相遇，爬藤沿着砖墙舒展。</p><p>北大楼是金陵大学旧址的组成部分，也是南大学生与校友记忆中的校园地标。</p><a href="https://zh.wikipedia.org/wiki/北大楼" target="_blank" rel="noreferrer">阅读建筑资料 ↗</a></dialog>
       <section id="photo-panel" hidden aria-label="拍照模式">
         <div class="photo-top"><span>留住这一刻 <small>PHOTO MODE</small></span><button id="photo-close">返回漫步 ×</button></div>
         <div class="photo-frame" aria-hidden="true"></div>

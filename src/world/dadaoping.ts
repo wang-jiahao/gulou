@@ -24,9 +24,9 @@ export function createDadaoping(mats:Materials){
   for(const[dx,dz]of[[-3.8,-3],[3.8,-3],[0,4]])b.cylinder(new T.Vector3(x,11.8,z),new T.Vector3(x+dx,.18,z+dz),.009,.009,mats.metal,4);
   const group=b.finish('大纛坪 · flagpole and stone square');
   group.userData.reference='official gl-2-07/47; local walk 29:00; dimensions estimated';
-  const clock={value:0},flag=nationalFlag(clock);flag.scale.setScalar(1.35);flag.position.set(x+.14,2.10,z);group.add(flag);
+  const clock={value:0},flag=nationalFlag(clock);flag.scale.setScalar(1.35);flag.position.set(x+.14,12.90,z);group.add(flag);
   const rope=new T.Mesh(new T.CylinderGeometry(.009,.009,12.5,5),mats.wood);rope.position.set(x+.16,7.45,z-.12);group.add(rope);
-  let progress=0,target=0;
+  let progress=1,target=1;
   const nearby=(p:{x:number;y:number;z:number})=>p.y<.7&&Math.hypot(p.x-x,p.z-z)<3.7;
   const toggle=()=>{target=target===1?0:1;return target===1;};
   const update=(dt:number,active:boolean)=>{if(!active)return;clock.value+=dt;progress=T.MathUtils.clamp(progress+Math.sign(target-progress)*Math.min(Math.abs(target-progress),dt/12),0,1);flag.position.y=2.10+progress*10.8;};

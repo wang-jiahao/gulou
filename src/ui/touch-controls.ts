@@ -17,6 +17,7 @@ export class TouchControls {
   constructor(private player: Player, camera: WalkCamera, canvas: HTMLCanvasElement) {
     if (!touchDevice) return;
     document.documentElement.classList.add('touch-device');
+    document.getElementById('touch-jump')!.onclick=()=>{if(this.active)this.player.requestJump();};
     const move = (e: PointerEvent) => {
       const r = this.stick.getBoundingClientRect(), radius = r.width * .34;
       let x = (e.clientX - r.left - r.width / 2) / radius, y = (e.clientY - r.top - r.height / 2) / radius;
@@ -62,6 +63,7 @@ export class TouchControls {
     if (!touchDevice) return;
     if (this.active && !active) this.releaseAll(); this.active = active; this.root.hidden = !active;
     if(active&&this.running)this.player.keys.add('ShiftLeft');
+    document.getElementById('touch-jump')!.hidden=flying||Boolean(this.player.riding)||this.player.seated;
     document.getElementById('touch-run')!.textContent=this.player.riding?'加速':'快走';
     document.getElementById('touch-altitude')!.hidden = !flying;
     document.getElementById('touch-fly')!.textContent = flying ? '降落' : '起飞';
