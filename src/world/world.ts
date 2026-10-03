@@ -18,6 +18,10 @@ import { createDormitoryAmenities } from './dormitory-amenities.ts';
 import { createSouthRoadDetails } from './south-road-details.ts';
 import { createSouthTreeDetails } from './south-tree-details.ts';
 import { createCampusDirectory } from './campus-directory.ts';
+import {createPublicStreets} from './public-streets.ts';
+import {createGuangzhouGate} from './guangzhou-gate.ts';
+import {createLampBanners} from './lamp-banners.ts';
+import {splitTeachingFeature} from './specific-buildings.ts';
 import type {CampusBicycle} from './bicycle.ts';
 import {extraPlaces} from './place-index.ts';
 import {createDadaoping} from './dadaoping.ts';
@@ -64,11 +68,13 @@ export type CampusWorld = Awaited<ReturnType<typeof createWorld>>;
 export async function createWorld(scene: T.Scene, mats: Materials, quality = 'medium') {
   const bicycles:CampusBicycle[]=[];
   const root = new T.Group(); root.name = 'core-campus'; scene.add(root);
-  const solids: Solid[] = [], cameraSolids: T.Object3D[] = [], fixedMeshes: CollisionMesh[] = [], lampPositions:T.Vector3[]=[], vegetationUpdates: ((position: T.Vector3, quality: string, flying: boolean) => void)[] = [];
+  const solids: Solid[] = [], cameraSolids: T.Object3D[] = [], fixedMeshes: CollisionMesh[] = [], lampPositions:T.Vector3[]=[], vegetationUpdates: ((position: T.Vector3, quality: string, flying: boolean, camera?:T.Vector3) => void)[] = [];
   const mapResponse = await fetch(`${import.meta.env.BASE_URL}data/campus-layout.json`);
   if (!mapResponse.ok) throw new Error('校园地图加载失败');
   const groundCameraProxy = new T.Mesh(new T.PlaneGeometry(1800, 1900).rotateX(-Math.PI / 2), new T.MeshBasicMaterial({ side: T.DoubleSide })); groundCameraProxy.position.set(-130, .005, 160); groundCameraProxy.updateMatrixWorld(); cameraSolids.push(groundCameraProxy);
   const map: CampusMap = await mapResponse.json();
+  const oldLabs=map.features.findIndex(f=>f.id==='plan-36');if(oldLabs>=0)map.features.splice(oldLabs,1,...splitTeachingFeature(map.features[oldLabs]));
+  const southTeaching=map.features.find(f=>f.id==='plan-73');if(southTeaching){southTeaching.tags={...southTeaching.tags,name:'南教学楼',source:'NJU undergraduate office 2023-02-08 location diagram',labelConfidence:'official location diagram; distinct from South Garden teaching building'};}
   map.features.push(fireTowerFootprint);
   const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
   const lawnHeight = .20;
@@ -128,12 +134,14 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   b.box(12, .06, 5, 0, .025 + terraceHeight, 16.4, mats.path);
   b.box(8.5, .06, 6.5, -31, .025, 99, mats.path);
   const ground = b.finish('registered campus roads lawns and playing fields'); root.add(ground); solids.push(...b.solids);
+  root.add(createPublicStreets(mats));
   const southRoads = createSouthRoadDetails(map, mats,[songlinPathOpening]); root.add(southRoads.group); solids.push(...southRoads.solids);
   const garden = createSonglinGarden(mats); root.add(garden.group); solids.push(...garden.solids); fixedMeshes.push(...garden.fixedMeshes);cameraSolids.push(...garden.group.children);
   const dadaoping=createDadaoping(mats);root.add(dadaoping.group);solids.push(...dadaoping.solids);cameraSolids.push(...dadaoping.group.children);
   const directory = createCampusDirectory(map, mats); root.add(directory.group); solids.push(...directory.solids); cameraSolids.push(...directory.group.children);
   const gateFont = await new FontLoader().loadAsync(`${import.meta.env.BASE_URL}assets/fonts/gate-lettering.typeface.json`);
   const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);
+  const guangzhou=createGuangzhouGate(mats);root.add(guangzhou.group);solids.push(...guangzhou.solids);cameraSolids.push(...guangzhou.group.children);
   const access=createAccessControls(mats);root.add(access.group);solids.push(...access.solids);
   cameraSolids.push(...priority.group.children);
   root.add(createSkyline());
@@ -223,7 +231,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     sectors++;
     await new Promise<void>(resolve => setTimeout(resolve, 50));
     const rand = rng(88), farTrees: TreeSpot[] = [];
-    const clear = (x: number, z: number) => !map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
+    const clear = (x: number, z: number) => !ordinary.doors.some(d=>Math.hypot(d.x-x,d.z-z)<5)&&!map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
     // Avenue planting uses the traced road edge; other trees stay within plan lawns.
     for (let z = 156; z < 342; z += 15) for (const side of [-1, 1]) {
       const x = -85 - (z - 182) * .035 + side * 8;
@@ -267,12 +275,13 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       }
       props.solids.push({ x, y: 1.8+floor, z, w: .18, h: 3.6, d: .18 });
     }
+    root.add(createLampBanners(lampSpots.filter(([,z])=>z>=165&&z<=389),mats.metal));
     const propGroup = props.finish('benches lamps and boundary'); root.add(propGroup); moreSolids.push(...props.solids); cameraSolids.push(...propGroup.children);
     const amenities=createDormitoryAmenities(map,ordinary.records,mats,[...solids,...moreSolids]);root.add(amenities.group);bicycles.push(...amenities.bicycles);moreSolids.push(...amenities.solids);lampPositions.push(...amenities.lamps);cameraSolids.push(...amenities.group.children);
     afterSector();
     sectors++;
     return moreSolids;
   }
-  const updateVegetation = (position: T.Vector3, quality: string, flying: boolean) => vegetationUpdates.forEach(update => update(position, quality, flying));
-  return { root, map, bicycles, access, directory, garden, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
+  const updateVegetation = (position: T.Vector3, quality: string, flying: boolean, camera=position) => vegetationUpdates.forEach(update => update(position, quality, flying,camera));
+  return { root, map, doors:ordinary.doors, bicycles, dadaoping, access, directory, garden, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
 }

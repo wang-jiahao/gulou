@@ -7,7 +7,7 @@ export type CampusMap = {
   spawn: number[]; priorityRoute: { name: string; point: number[] }[];
   gates: { hankou: number[]; guangzhou: number[] };
 };
-export const bounds = { minX: -615, maxX: 155, minZ: -275, maxZ: 745 };
+export const bounds = { minX: -615, maxX: 155, minZ: -275, maxZ: 765 };
 export function planShape(polygon: MapPolygon) {
   const shape = new T.Shape(polygon.points.map(([x, z]) => new T.Vector2(x, -z)));
   for (const hole of polygon.holes ?? []) shape.holes.push(new T.Path(hole.map(([x, z]) => new T.Vector2(x, -z))));

@@ -35,6 +35,7 @@ const definitions=[
  ['Hips','pelvis',null],['Spine','spine-4','Hips'],['Spine1','spine-3','Spine'],['Spine2','spine-1','Spine1'],['Neck','neck','Spine2'],['Head','head','Neck'],
  ...['Left','Right'].flatMap(side=>{const s=side==='Left'?'l':'r';return [[side+'Arm',s+'-shoulder','Spine2'],[side+'ForeArm',s+'-elbow',side+'Arm'],[side+'Hand',s+'-hand',side+'ForeArm'],[side+'UpLeg',s+'-upper-leg','Hips'],[side+'Leg',s+'-knee',side+'UpLeg'],[side+'Foot',s+'-ankle',side+'Leg']];}),
 ];
+for(const side of ['Left','Right'])for(let digit=1;digit<=5;digit++)for(let part=1;part<=4;part++)definitions.push([`${side}Finger${digit}${part}`,`${side==='Left'?'l':'r'}-finger-${digit}-${part}`,part===1?side+'Hand':`${side}Finger${digit}${part-1}`]);
 const bones={},positions={},indices={};
 definitions.forEach(([name,j,p],i)=>{const bone=new T.Bone();bone.name='mixamorig'+name;positions[name]=joint(j);bone.position.copy(positions[name]);if(p){bone.position.sub(positions[p]);bones[p].add(bone);}else root.add(bone);bones[name]=bone;indices[name]=i;});
 root.updateMatrixWorld(true);const skeleton=new T.Skeleton(definitions.map(([name])=>bones[name]));
@@ -44,6 +45,11 @@ const skin=mat('student-skin',0xffffff,.7),shirt=mat('student-cotton',female?0xc
 const hipY=positions.Hips.y,neckY=positions.Neck.y;
 const segments=definitions.filter(d=>d[2]).map(([name,,parent])=>({name:parent,tip:name,a:positions[parent],b:positions[name]}));
 const segmentDistance=(point,segment)=>{const d=segment.b.clone().sub(segment.a);const t=T.MathUtils.clamp(point.clone().sub(segment.a).dot(d)/d.lengthSq(),0,1);return point.distanceTo(segment.a.clone().addScaledVector(d,t));};
+function handWeights(point,side){
+ const nearest=segments.filter(s=>s.name.startsWith(side+'Finger')).map(s=>({s,d:segmentDistance(point,s)})).sort((a,b)=>a.d-b.d)[0];
+ if(nearest&&nearest.d<.022)return [[indices[nearest.s.name],1]];
+ return [[indices[side+'Hand'],1]];
+}
 function weights(point,force){
   if(force==='torso'&&point.y<hipY+.10)return [[indices.Hips,1]];
   if(force&&force!=='torso')return [[indices[force],1]];
@@ -51,11 +57,11 @@ function weights(point,force){
   if(point.y>neckY+.015)return [[indices.Head,1]];
   const armDistance=Math.min(...segments.filter(s=>[side+'Arm',side+'ForeArm'].includes(s.name)).map(s=>segmentDistance(point,s)));
   const torsoDistance=Math.hypot(point.x,point.z-.025);
-  if(Math.abs(point.x)>.32&&point.y>hipY+.02&&(point.distanceTo(positions[side+'Hand'])<.15||Math.abs(point.x)>.42))return [[indices[side+'Hand'],1]];
+  if(Math.abs(point.x)>.32&&point.y>hipY+.02&&(point.distanceTo(positions[side+'Hand'])<.15||Math.abs(point.x)>.42))return handWeights(point,side);
   const limb=force==='torso'?'body':point.y<hipY+.1&&armDistance>.11?'leg':armDistance<torsoDistance*.8&&point.y>hipY+.07?'arm':'body';
   if(limb==='arm'&&point.distanceTo(positions[side+'Arm'])<.15){const w=T.MathUtils.smoothstep((side==='Left'?1:-1)*(point.x-positions[side+'Arm'].x),-.055,.07);return [[indices[side+'Arm'],w],[indices.Spine2,1-w]];}
   if(limb==='arm'){
-    const wrist=positions[side+'Hand'];if(point.distanceTo(wrist)<.09||Math.abs(point.x)>Math.abs(wrist.x))return [[indices[side+'Hand'],1]];
+    const wrist=positions[side+'Hand'];if(point.distanceTo(wrist)<.09||Math.abs(point.x)>Math.abs(wrist.x))return handWeights(point,side);
   }
   const candidates=segments.filter(s=>limb==='arm'?[side+'Arm',side+'ForeArm'].includes(s.name):limb==='leg'?[side+'UpLeg',side+'Leg',side+'Foot'].includes(s.name):['Hips','Spine','Spine1','Spine2','Neck'].includes(s.name));
   const nearest=candidates.map(s=>({i:indices[s.name],distance:segmentDistance(point,s)})).sort((a,b)=>a.distance-b.distance).slice(0,2);

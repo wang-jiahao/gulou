@@ -17,36 +17,8 @@ function lettering(text: string, width: number, height: number, background = '#a
 /** Facade proportions follow the official VR; heights and details remain approximate. */
 export function createPriorityDetails(map: CampusMap, mats: Materials, gateFont: Font) {
   const b = new Builder();
-  const plaster = new T.MeshStandardMaterial({ color: 0xc9c2ac, roughness: .9 });
-  const roof = new T.MeshStandardMaterial({ name: 'teaching-roof', color: 0x494c46, roughness: .9 });
-  const glass = new T.MeshStandardMaterial({ name: 'window-glass-warm', color: 0x263b42, metalness: .32, roughness: .22 });
-  const x = -85, z = 136.4;
-  // Central teaching-building bay: columns, recessed glazing, cornice, roof dormers.
-  b.box(14, 15.9, 1, x, 8.1, z - .35, plaster);
-  for (const dx of [-4.6, 0, 4.6]) {
-    b.box(2.65, 3.2, .22, x + dx, 2.3, z + .25, glass);
-    b.box(2.5, 9.1, .14, x + dx, 9.1, z + .3, glass);
-    for (const y of [5.8, 9, 12.2]) b.box(2.7, .16, .3, x + dx, y, z + .45, plaster);
-  }
-  for (const dx of [-6.9, -2.25, 2.25, 6.9]) {
-    b.box(.55, 14.2, .58, x + dx, 8, z + .45, plaster);
-    b.box(.8, .3, .85, x + dx, 1, z + .45, mats.stone);
-    b.box(.85, .25, .9, x + dx, 15.1, z + .45, plaster);
-  }
-  b.box(14.7, .55, 1.8, x, 4.6, z + .4, plaster);
-  b.box(15, .45, 2.1, x, 15.8, z + .15, plaster);
-  b.box(15, .32, 19.5, x, 16.75, 127.1, roof);
-  for (const dx of [-4.4, 0, 4.4]) {
-    const arch = new T.Shape(); arch.moveTo(-1.35, 0); arch.lineTo(-1.35, 1.2); arch.absarc(0, 1.2, 1.35, Math.PI, 0, true); arch.lineTo(1.35, 0);
-    b.add(new T.ExtrudeGeometry(arch, { depth: .65, bevelEnabled: false }), plaster, x + dx, 16.7, z - .2);
-    b.box(1.6, 1.6, .15, x + dx, 17.6, z + .5, glass);
-    b.box(.12, 1.7, .19, x + dx, 17.6, z + .59, plaster);
-  }
-  // Three shallow steps remain within the plan's forecourt, clear of 两江路.
-  for (let i = 0; i < 3; i++) b.box(13.5, .14, 1.4 - i * .32, x, .07 + i * .14, z + 1 - i * .16, mats.stone, true);
-  const group = b.finish('teaching building entrance details');
+  const group = b.finish('campus gates and street signs');
   const gate = createHankouGate(map.gates.hankou, mats, gateFont); group.add(...gate.group.children.slice()); b.solids.push(...gate.solids);
-  const teaching = lettering('教 学 楼', 4, .6); teaching.position.set(x, 4.65, z + 1.33); group.add(teaching);
   for (const [label, px, pz] of [['中大路', -75, 202], ['两江路', -68, 150], ['金大路', 7, 59]] as const) {
     const sign = lettering(label, 1.55, .36, '#485b4c', '#f1ead9'); sign.position.set(px, 2.1+terrainHeight(px,pz), pz); group.add(sign);
     const pole = new T.Mesh(new T.CylinderGeometry(.035, .04, 2.1, 6), mats.metal); pole.position.set(px, 1.05+terrainHeight(px,pz), pz); group.add(pole);

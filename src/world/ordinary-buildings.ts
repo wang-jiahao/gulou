@@ -4,10 +4,13 @@ import type { Materials } from './materials.ts';
 import type { CollisionMesh } from './collision-mesh.ts';
 import { collisionMesh } from './collision-mesh.ts';
 import { insidePolygon, planShape, type MapFeature, type MapPolygon } from './campus-map.ts';
+import {buildSpecific} from './specific-buildings.ts';
+import {entranceMaterials,addEntrance,type DoorRecord} from './building-entrances.ts';
 import { getBuildingProfile } from './building-profiles.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
 export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, roads:MapPolygon[] = []) {
+  const doors:DoorRecord[]=[],doorMaterials=entranceMaterials();
   const b = new Builder(), fixedMeshes: CollisionMesh[] = [], cameraSolids: T.Object3D[] = [];
   const occupiedBounds=features.filter(f=>f.tags.building).map(f=>({f,minX:Math.min(...f.points.map(p=>p[0])),maxX:Math.max(...f.points.map(p=>p[0])),minZ:Math.min(...f.points.map(p=>p[1])),maxZ:Math.max(...f.points.map(p=>p[1]))}));
   const occupied=(x:number,z:number)=>occupiedBounds.some(a=>x>=a.minX&&x<=a.maxX&&z>=a.minZ&&z<=a.maxZ&&insidePolygon(x,z,a.f));
@@ -26,6 +29,11 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const recess = new T.MeshStandardMaterial({name:'window-reveal',color:0x303a37,roughness:.95});
   const glass = [0x4d6362,0x5d706d,0x3d5357].map((color,i)=>new T.MeshStandardMaterial({name:i===1?'window-glass-warm':'window-glass-cool',color,roughness:.32,metalness:.32,envMapIntensity:.7}));
   const gardenGlass = new T.MeshStandardMaterial({name:'songlin-garden-glazing',color:0x769ba3,roughness:.34,metalness:.22,envMapIntensity:1.1});
+  const blindCanvas=document.createElement('canvas');blindCanvas.width=32;blindCanvas.height=384;const bc=blindCanvas.getContext('2d')!;
+  for(let y=0;y<384;y+=12){bc.fillStyle='#b4b9b5';bc.fillRect(0,y,32,12);bc.fillStyle='#e4e7df';bc.fillRect(0,y,32,7);bc.fillStyle='#8a948f';bc.fillRect(0,y+9,32,2);}
+  const blindTexture=new T.CanvasTexture(blindCanvas);blindTexture.colorSpace=T.SRGBColorSpace;blindTexture.anisotropy=8;
+  const libraryBlind=new T.MeshStandardMaterial({name:'library-white-louvre',map:blindTexture,roughness:.9});
+  const libraryPane=new T.MeshStandardMaterial({name:'library-diffuse-glazing',color:0xacb9b5,roughness:.47,metalness:.10});
   const utility = new T.MeshStandardMaterial({name:'utility-casing',color:0xbdbfb1,roughness:.85});
   const louvre = new T.MeshStandardMaterial({name:'utility-grille',color:0x727a73,roughness:.78});
   const windowGuard = new T.MeshStandardMaterial({name:'window-guard',color:0x87908b,roughness:.65,metalness:.35});
@@ -41,6 +49,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[]}[]=[];
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
+    const specific=buildSpecific(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials);if(specific){records.push(specific);continue;}
     const profile=getBuildingProfile(f),teaching=f.id==='teaching-priority',points=f.points,shape=planShape(f);
     const height=teaching?16.6:profile.levels*3.25, floorHeight=height/profile.levels;
     const wall=paint(profile.wall,profile.style==='historic'||profile.style==='villa'),defaultFrame=paint(profile.frame);
@@ -103,18 +112,18 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       // Official archive photo 28: modern library has tall pale vertical fins,
       // paired slender mullions, and glazed panels, unlike the red historic core.
       if(f.id==='plan-66'&&!museumCore(mx,mz)){
-        const bays=Math.max(1,Math.floor(len/2.25)),pitch=len/bays;
-        for(let floor=0;floor<3;floor++){
-          const y=floorHeight*(floor+.52),wh=floorHeight-.50;
+        const bays=Math.max(1,Math.floor(len/2.35)),pitch=len/bays;
+        const rows=[[1.4,2.45],[4.30,1.15],[6.05,2.10],[8.35,2.10]];
+        for(const[y,wh]of rows){
           for(let bay=0;bay<bays;bay++){
             const u=(bay+.5)*pitch-len/2;
-            put(b,u,y,.075,pitch-.32,wh,.025,glass[1]);
-            for(const side of[-1,1])put(detail,u+side*(pitch/2-.08),y,.25,.14,wh+.42,.52,paint(0xd1d3c9));
-            for(const fraction of[-.20,.20])put(detail,u+pitch*fraction,y,.12,.045,wh,.12,paint(0xc6cbc4));
-            put(detail,u,y+.30,.13,pitch-.30,.045,.13,paint(0xc6cbc4));windows++;
+            put(b,u,y,.055,pitch-.28,wh,.12,paint(0xa7ada7));
+            const pane=new T.PlaneGeometry(pitch*.46,wh);b.add(pane,libraryPane,mx+(u+pitch*.17)*Math.cos(angle)+nx*.13,y,mz-(u+pitch*.17)*Math.sin(angle)+nz*.13,new T.Euler(0,angle,0));
+            const slats=new T.PlaneGeometry(pitch*.32,wh);b.add(slats,libraryBlind,mx+(u-pitch*.28)*Math.cos(angle)+nx*.20,y,mz-(u-pitch*.28)*Math.sin(angle)+nz*.20,new T.Euler(0,angle,0));
+            for(const side of[-1,1])put(detail,u+side*(pitch/2-.05),y,.26,.12,wh+.16,.50,paint(0xe0e2d8));windows++;
           }
-          put(b,0,(floor+1)*floorHeight-.04,.18,len,.20,.42,paint(0xd1d3c9));
         }
+        put(b,0,9.5,.17,len,.48,.38,paint(0xdaddd2));
         continue;
       }
       const bays=Math.floor((len-.8)/profile.bays);
@@ -217,7 +226,6 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       }
     }
     if(!teaching){
-      const frame=defaultFrame;
       // Choose a long exterior facade facing the nearest public route, rather
       // than putting a doorway onto an inner hole or a two-metre return wall.
       const candidates=edges.filter(e=>e.len>7&&(f.id!=='plan-66'||(e.nx<-.8&&e.z>278&&e.z<296))),scores=new Map<typeof edges[number],number>();const frontage=candidates.sort((a,c)=>{
@@ -237,15 +245,16 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       })[0];
       if(frontage){
         frontView=[frontage.x,frontage.z,frontage.nx,frontage.nz];
-        const e=frontage,w=Math.min(3.8,e.len*.38),h=2.5;
+        const e=frontage,w=Math.min(3.8,e.len*.38);
         const put=(u:number,y:number,v:number,bw:number,bh:number,bd:number,mat:T.Material)=>detail.box(bw,bh,bd,e.x+u*Math.cos(e.angle)+v*e.nx,y,e.z-u*Math.sin(e.angle)+v*e.nz,mat,false,e.angle);
-        put(0,1.32,.13,w,h,.16,recess);put(0,1.32,.23,w-.22,h-.18,.05,profile.style==='historic'||profile.style==='villa'?frame:glass[0]);
-        for(const side of[-1,1]){put(side*(w/2+.16),1.44,.18,.28,2.88,.45,stone);put(side*.12,1.25,.30,.035,.28,.05,utility);}
-        put(0,1.32,.28,.06,h,.08,frame);put(0,2.98,.28,w+.65,.22,.65,stone);
+        addEntrance(b,fixedMeshes,doors,doorMaterials,f.tags.name,e.x,e.z,e.angle,f.id==='plan-66'?6.2:w,f.id==='plan-66'?.60:0);
         if(f.id==='plan-66'){
-          put(0,1.35,.32,10.8,2.7,.08,glass[0]);
-          for(const u of[-5.5,-3.6,0,3.6,5.5])put(u,1.45,.50,.16,2.9,.4,paint(0xd1d3c9));
-          put(0,3.10,1.25,12.0,.26,2.6,paint(0xd1d3c9));
+          for(const u of[-5.5,-3.6,3.6,5.5])put(u,1.8,.70,.15,2.5,.30,paint(0xd5d8cf));
+          put(0,3.53,1.3,12.0,.42,2.8,paint(0xcbd0c7));
+          for(let step=0;step<4;step++){
+            const h=(step+1)*.15,v=2.65-step*.30;put(0,h/2,v,12.2,h,.31,stone);
+            const proxy=new T.Mesh(new T.BoxGeometry(12.2,h,.31));proxy.position.set(e.x+e.nx*v,h/2,e.z+e.nz*v);proxy.rotation.y=e.angle;fixedMeshes.push(collisionMesh(proxy));
+          }
         }
         const depth=profile.portal==='glass'?1.1:.7;put(0,3.17,depth*.4,w+1.05,.15,depth,stone);
         if(profile.portal==='columns')for(const side of[-1,1])put(side*(w/2+.3),1.52,.5,.18,2.9,.22,stone);
@@ -253,9 +262,9 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         if(['plan-66','plan-34','plan-4','plan-71','plan-113','plan-117','plan-100'].includes(f.id)){
           const name=f.id==='plan-4'?'费彝民楼':f.tags.name;
           const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;const ctx=canvas.getContext('2d')!;
-          ctx.fillStyle=f.id==='plan-66'?'#d0d2c9':'#b9b8ac';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#776339';ctx.font='56px "Songti SC", serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(name,512,68,990);
+          if(f.id!=='plan-66'){ctx.fillStyle='#b9b8ac';ctx.fillRect(0,0,1024,128);}ctx.fillStyle='#776339';ctx.font='76px "Kaiti SC","STKaiti",serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(name,512,68,990);
           const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
-          const sign=new T.Mesh(new T.PlaneGeometry(f.id==='plan-66'?7:5,.62),new T.MeshStandardMaterial({map:texture,roughness:.8}));const projection=f.id==='plan-66'?2.60:.52;sign.position.set(e.x+e.nx*projection,f.id==='plan-66'?3.10:3.65,e.z+e.nz*projection);sign.rotation.y=e.angle;plaques.add(sign);
+          const sign=new T.Mesh(new T.PlaneGeometry(f.id==='plan-66'?7:5,.62),new T.MeshStandardMaterial({map:texture,roughness:.6,transparent:true,depthWrite:false}));const projection=f.id==='plan-66'?.65:.52;sign.position.set(e.x+e.nx*projection,f.id==='plan-66'?4.35:3.65,e.z+e.nz*projection);sign.rotation.y=e.angle;plaques.add(sign);
         }
         if(profile.style==='dormitory'){
           const numbers=['零','一','二','三','四','五','六','七','八','九','十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','二十一'];
@@ -289,5 +298,5 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     const range=flying?(quality==='high'?125:85):quality==='high'?200:quality==='low'?85:115;
     for(const cell of detailCells.values())cell.group!.visible=position.distanceTo(cell.center)<range;
   };
-  return {group,fixedMeshes,cameraSolids,updateVisibility,records};
+  return {group,fixedMeshes,cameraSolids,updateVisibility,records,doors};
 }

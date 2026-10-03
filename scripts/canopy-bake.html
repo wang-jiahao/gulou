@@ -1,0 +1,14 @@
+<!doctype html><html><body><script type="module">
+import * as T from 'three';import{GLTFLoader}from'three/addons/loaders/GLTFLoader.js';import{MeshoptDecoder}from'three/addons/libs/meshopt_decoder.module.js';
+const renderer=new T.WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});renderer.setSize(512,512);renderer.setClearColor(0x000000,0);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;document.body.append(renderer.domElement);
+const scene=new T.Scene();scene.add(new T.HemisphereLight(0xf2f1dc,0x667050,2.5));const sun=new T.DirectionalLight(0xffffff,2.2);sun.position.set(-5,8,5);scene.add(sun);
+const gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('/assets/vegetation/tree-near.glb');const alpha=await new T.TextureLoader().loadAsync('/assets/textures/campus-canopy-alpha.webp');alpha.flipY=false;
+gltf.scene.traverse(o=>{if(o.isMesh){if(o.material.name.includes('trunk'))o.visible=false;const m=o.material;if(m.name.includes('leaves')){m.alphaMap=alpha;m.alphaTest=.16;m.side=T.DoubleSide;m.color.set(0xd6dcc9);}m.roughness=1;}});scene.add(gltf.scene);gltf.scene.updateMatrixWorld(true);
+const leafMap=await new T.TextureLoader().loadAsync('/assets/textures/campus-leaf-spray.png');leafMap.colorSpace=T.SRGBColorSpace;
+const leafMat=new T.MeshStandardMaterial({map:leafMap,alphaTest:.12,side:T.DoubleSide,roughness:1,color:0xc2cbb2});
+const sprays=new T.InstancedMesh(new T.PlaneGeometry(1,1.6),leafMat,3200),dummy=new T.Object3D();let seed=822;const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+for(let i=0;i<3200;i++){let x,y,z;do{x=rand()*2-1;y=rand()*2-1;z=rand()*2-1;}while(x*x+y*y+z*z>1);dummy.position.set(x*4.545*.31,4.545*(.75+y*.25),z*4.545*.32);dummy.rotation.set(rand()*3,rand()*6.28,rand()*3);dummy.scale.setScalar((.50+rand()*.40)*4.545/15);dummy.updateMatrix();sprays.setMatrixAt(i,dummy.matrix);}scene.add(sprays);
+const box=new T.Box3();gltf.scene.traverse(o=>{if(o.isMesh&&o.visible){o.geometry.computeBoundingBox();box.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));}});box.expandByObject(sprays);const size=box.getSize(new T.Vector3()),center=box.getCenter(new T.Vector3());const extent=size.length()*1.02;
+const camera=new T.OrthographicCamera(-extent/2,extent/2,extent/2,-extent/2,.1,100);window.bakes=[];
+for(let i=0;i<9;i++){const a=(i%4)*Math.PI/2,e=i===8?Math.PI/2:i>=4?Math.PI/4:0;camera.position.copy(center).add(new T.Vector3(Math.sin(a)*Math.cos(e)*20,Math.sin(e)*20,Math.cos(a)*Math.cos(e)*20+.001));camera.lookAt(center);renderer.render(scene,camera);window.bakes.push(renderer.domElement.toDataURL('image/png'));}window.bakeMetadata={size:size.toArray(),center:center.toArray(),extent,frames:9,elevations:[0,45,90]};window.ready=true;
+</script></body></html>

@@ -71,7 +71,7 @@ export function createAccessControls(mats:Materials){
   const arm=new T.Mesh(new T.BoxGeometry(6.0,.095,.09),white);arm.position.x=-3.0;pivot.add(arm);
   for(let x=-.4;x>-5.9;x-=.65){const stripe=new T.Mesh(new T.BoxGeometry(.25,.1,.096),red);stripe.position.x=x;stripe.rotation.z=.22;pivot.add(stripe);}
   local.add(pivot);booms.push({entrance:e.id,...world(0,-1.45),pivot,progress:0});
-  if(e.id!=='hankou'){
+  if(e.id!=='hankou'&&e.id!=='guangzhou'){
    for(const side of[-1,1]){base.box(.32,2.1,.32,side*6.0,1.05,0,mats.stone,true);base.box(.35,.13,.35,side*6,2.13,0,steel);}
    const name=label(e.name,2.6,.42);name.position.set(3.7,2.35,-1.8);local.add(name);base.box(.07,2.30,.07,3.7,1.15,-1.84,steel);
   }

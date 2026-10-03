@@ -6,6 +6,7 @@
 - **MakeHuman**: CC0 base mesh and helper geometry used for the student. The project does not include MakeHuman application code. https://github.com/makehumancommunity/makehuman/blob/master/LICENSE.md
 - **Three.js, Vite, Meshoptimizer, glTF Transform**: MIT. **Rapier**: Apache-2.0. Dependencies retain their respective notices.
 - **Nanjing University official VR, campus plan and public building photographs**: modeling references. Original photographs, panorama tiles and the source plan are excluded from this repository and deployment. Current gate lettering is reconstructed from the user-supplied photo contours; this does not confer new rights in the original calligraphy. Reconstructed geometry and building dimensions are approximate; no endorsement by the university is implied.
+- **Nanjing University emblem**: cropped from the official website header at https://www.nju.edu.cn/images/logo.png for campus identification on the welcome page. Rights remain with Nanjing University; this emblem is not covered by the project's original-asset license and does not imply official endorsement.
 - **Rain field recording — ezwa / PDSounds**: [Rain (1).ogg](https://commons.wikimedia.org/wiki/File:Rain_(1).ogg), Public domain (Commons metadata). Converted, level-adjusted and loop-crossfaded as public/assets/audio/rain-field.wav.
 - **C418 / Minecraft music**: optional personal local files only. The five locally prepared tracks are not included in the repository or public build. No third-party-game music redistribution permission is claimed.
 

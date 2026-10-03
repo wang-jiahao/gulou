@@ -24,6 +24,9 @@ export class Player {
   rideYaw=0;
   rideSpeed=0;
   pedalPhase=0;
+  rideCameraTurn=0;
+  rideSteering=0;
+  private rideViewYaw=0;
   private solidColliders=new Map<Solid,RAPIER.Collider>();
   yaw = 0;
   seated = false;
@@ -77,7 +80,7 @@ export class Player {
     const rotation={x:0,y:Math.sin(bike.angle/2),z:0,w:Math.cos(bike.angle/2)};
     if(this.physics.intersectionWithShape({x:p.x,y:p.y+.90,z:p.z},rotation,shape,undefined,undefined,this.collider,this.body)){parked.setEnabled(true);return false;}
     this.teleport(p.x,p.y+.045,p.z);this.collider.setShape(shape);this.collider.setRotationWrtParent(rotation);
-    this.riding=bike;this.rideYaw=bike.angle;this.rideSpeed=0;this.pedalPhase=0;this.clearInput();this.motor.enableAutostep(.16,.2,false);this.motor.enableSnapToGround(.4);return true;
+    this.riding=bike;this.rideYaw=bike.angle;this.rideViewYaw=bike.angle;this.rideSteering=0;this.rideSpeed=0;this.pedalPhase=0;this.clearInput();this.motor.enableAutostep(.16,.2,false);this.motor.enableSnapToGround(.4);return true;
   }
   dismount(){
     const bike=this.riding;if(!bike)return true;
@@ -145,10 +148,16 @@ export class Player {
     this.direction.set(right * Math.cos(yaw) - forward * Math.sin(yaw), 0, -forward * Math.cos(yaw) - right * Math.sin(yaw));
     if (this.direction.lengthSq() > 1) this.direction.normalize();
     let desired = (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) ? 4.2 : 1.65;
+    this.rideCameraTurn=0;
     if(this.riding){
-      const braking=this.keys.has('Space')||forward<0;
-      this.rideSpeed=active?T.MathUtils.damp(this.rideSpeed,braking?0:forward>0?(desired>4?7:4.8):0,braking?9:forward>0?1.7:1.1,dt):0;
-      this.rideYaw-=right*1.4*dt*Math.min(1,this.rideSpeed/1.5);
+      const boost=this.keys.has('ShiftLeft')||this.keys.has('ShiftRight'),braking=this.keys.has('Space');
+      const target=braking?0:forward<0?-1.5:forward>0||boost?(boost?9:4.5)*Math.max(forward,boost?1:0):0;
+      this.rideSpeed=active?T.MathUtils.damp(this.rideSpeed,target,braking?10:target<0?3:2.4,dt):0;
+      const look=Math.atan2(Math.sin(yaw-this.rideViewYaw),Math.cos(yaw-this.rideViewYaw));
+      this.rideCameraTurn=active?-right*(Math.abs(this.rideSpeed)>6?1.7:2.4)*dt*(this.rideSpeed<-.15?-1:1):0;
+      this.rideYaw+=(active?look:0)+this.rideCameraTurn;
+      this.rideViewYaw=yaw+this.rideCameraTurn;
+      this.rideSteering=T.MathUtils.damp(this.rideSteering,active?T.MathUtils.clamp(-right*.42+look*3,-.55,.55):0,10,dt);
       this.collider.setRotationWrtParent({x:0,y:Math.sin(this.rideYaw/2),z:0,w:Math.cos(this.rideYaw/2)});
       this.direction.set(-Math.sin(this.rideYaw),0,-Math.cos(this.rideYaw));desired=this.rideSpeed;
     }
@@ -189,8 +198,8 @@ export class Player {
     }
     this.avatar.root.rotation.z=this.flying?this.flightBank:0;
     if(this.riding){
-      this.pedalPhase+=this.speed*dt*2.7;this.riding.group.position.copy(this.position);this.riding.group.rotation.y=this.rideYaw;this.avatar.root.rotation.y=this.rideYaw;this.riding.update(this.speed*dt,this.pedalPhase);
+      this.pedalPhase+=this.speed*dt*1.6*Math.sign(this.rideSpeed);this.riding.group.position.copy(this.position);this.riding.group.rotation.y=this.rideYaw;this.avatar.root.rotation.y=this.rideYaw;this.riding.update(this.speed*dt*Math.sign(this.rideSpeed),this.pedalPhase,this.rideSteering);
     }
-    this.avatar.update(dt, this.speed, this.seated,this.flying,this.seatHeight-this.position.y,this.riding?this.pedalPhase:undefined);
+    this.avatar.update(dt, this.speed, this.seated,this.flying,this.seatHeight-this.position.y,this.riding?this.pedalPhase:undefined,this.rideSteering);
   }
 }

@@ -21,7 +21,7 @@ function lettering(font: Font, text: string, width: number, height: number, colo
   return group;
 }
 
-function nationalFlag(time: { value: number }) {
+export function nationalFlag(time: { value: number }) {
   const canvas = document.createElement('canvas'); canvas.width = 600; canvas.height = 400;
   const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#bb1828'; ctx.fillRect(0, 0, 600, 400);
   const star = (x: number, y: number, r: number, rotation: number) => {

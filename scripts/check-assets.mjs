@@ -25,6 +25,16 @@ for (const path of await files('public')) {
   } else if (path.endsWith('.wav')) { const b = await readFile(path); assert.equal(b.toString('ascii',0,4),'RIFF'); assert.equal(b.toString('ascii',8,12),'WAVE'); assert.equal(b.readUInt32LE(4)+8,b.length); count++;
   } else if (path.endsWith('.json')) {
     const data = JSON.parse(await readFile(path,'utf8'));
+    if (path.endsWith('/canopy-impostor.json')) {
+      const atlas=path.replace('.json','.webp'),meta=await sharp(atlas).metadata();
+      assert.equal(meta.width,meta.height*data.frames,'Canopy atlas must have one square per view');
+      assert.ok(data.center.every(Number.isFinite)&&data.extent>0);
+      for(let frame=0;frame<data.frames;frame++){
+        const {data:pixels,info}=await sharp(atlas).extract({left:frame*meta.height,top:0,width:meta.height,height:meta.height}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+        let opaque=0;for(let i=3;i<pixels.length;i+=info.channels)if(pixels[i]>80)opaque++;
+        const coverage=opaque/(info.width*info.height);assert.ok(coverage>.03&&coverage<.75,`Canopy view ${frame} must contain foliage and transparent margins`);
+      }
+    }
     if (path.endsWith('/gate-lettering.typeface.json')) {
       const font = new FontLoader().parse(data);
       for (const letter of '南京大学严肃活泼团结紧张') {

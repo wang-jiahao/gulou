@@ -18,3 +18,5 @@
 
 .map-travel input[type=search]{min-width:0;width:190px;border:1px solid #bac6b6;border-radius:6px;background:#fffdf5;color:#314b38;padding:10px;font:inherit;font-size:13px}
 @media(max-width:650px){.map-travel{flex-wrap:wrap}.map-travel input[type=search]{flex-basis:100%;width:100%}.map-travel select{width:calc(100% - 64px)}}
+
+.university-emblem{width:44px;height:67px;object-fit:contain;flex:none}.masthead .wordmark{gap:16px}

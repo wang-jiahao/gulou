@@ -2,6 +2,7 @@ import * as T from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { rng, type Solid } from './geometry.ts';
+import {createCanopyCover,loadCanopyCoverAssets} from './canopy-cover.ts';
 import type { TreeSpot } from './vegetation.ts';
 
 type TreeLOD = 'near' | 'far' | 'distant';
@@ -54,14 +55,15 @@ function loadTree(lod: TreeLOD, foliage: T.Material): Promise<TreeAsset> {
       }
       geometry.applyMatrix4(node.matrixWorld);
       let material = node.material as T.MeshStandardMaterial;
-      const shared = materials.get(material.name);
+      const materialKey=material.name.includes('leaves')?`${material.name}:${lod}`:material.name;
+      const shared = materials.get(materialKey);
       if (shared) material = shared;
       else {
         material.roughness = .91;
         if (material.name.includes('leaves')) {
           // The atlas includes transparent leaf margins. Opaque triangles made
           // the canopy look like angular cardboard even close to the landmark.
-          material.alphaTest = .38; material.alphaToCoverage = true; material.side = T.DoubleSide;
+          material.alphaTest = lod==='near'?.38:lod==='far'?.18:.06; material.alphaToCoverage = true; material.side = T.DoubleSide;
           material.alphaMap = foliage.userData.canopyAlpha;
           material.color.set(0xd6dcc9);
           material.onBeforeCompile = shader => {
@@ -72,7 +74,7 @@ function loadTree(lod: TreeLOD, foliage: T.Material): Promise<TreeAsset> {
           material.customProgramCacheKey = () => 'gulou-canopy-translucency';
         }
         if (material.map) material.map.anisotropy = 8;
-        materials.set(material.name, material);
+        materials.set(materialKey, material);
       }
       if (lod !== 'near' && material.name.includes('trunk')) {
         const curve = new T.CatmullRomCurve3([new T.Vector3(0, 0, 0), new T.Vector3(.1, .9, .18), new T.Vector3(-.03, 2.1, .61), new T.Vector3(.12, 3.6, 1.4)]);
@@ -93,12 +95,12 @@ function loadTree(lod: TreeLOD, foliage: T.Material): Promise<TreeAsset> {
 
 export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', foliage: T.Material) {
   const names: TreeLOD[] = lod === 'near' ? ['near', 'far', 'distant'] : ['far', 'distant'];
-  const assets = await Promise.all(names.map(name => loadTree(name, foliage)));
+  const [assets,crownAssets] = await Promise.all([Promise.all(names.map(name => loadTree(name, foliage))),loadCanopyCoverAssets()]);
   const box = assets[0].box, h = box.max.y - box.min.y, rand = rng(lod === 'near' ? 318 : 981);
   const solids: Solid[] = [], dummy = new T.Object3D(), group = new T.Group();
   group.name = `broadleaf trees ${lod} — CC0 model, approximate species`;
   group.userData.trees = spots.map(tree => ({...tree}));
-  const cells = new Map<string, { trees: TreeSpot[]; group: T.Group; levels: T.Group[]; center: T.Vector3; active: number }>();
+  const cells = new Map<string, { trees: TreeSpot[]; group: T.Group; levels: T.Group[]; center: T.Vector3; active: number;cover?:ReturnType<typeof createCanopyCover> }>();
   for (const tree of spots) {
     const gx = Math.floor(tree.x / 60), gz = Math.floor(tree.z / 60), key = `${gx}:${gz}`;
     if (!cells.has(key)) {
@@ -115,6 +117,7 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
       dummy.position.set(tree.x, -box.min.y * scale + (tree.baseY ?? 0), tree.z); dummy.rotation.set(0, rand() * Math.PI * 2, 0);
       dummy.scale.set(scale * (.9 + rand() * .3), scale, scale * (.9 + rand() * .3)); dummy.updateMatrix(); return dummy.matrix.clone();
     });
+    cell.cover=createCanopyCover(cell.trees,foliage.userData.foliageLight,transforms,crownAssets);cell.group.add(cell.cover.mesh);
     assets.forEach((asset, level) => {
       const layer = cell.levels[level]; layer.visible = level === 0;
       for (const { geometry, material } of asset.sources) {
@@ -146,13 +149,16 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
       leaves.castShadow = names[level] === 'near'; leaves.receiveShadow = true; leaves.computeBoundingSphere(); layer.add(leaves);
     });
   }
-  const updateVisibility = (position: T.Vector3, quality: string, flying: boolean) => {
+  const updateVisibility = (position: T.Vector3, quality: string, flying: boolean, camera=position) => {
     const range = flying ? 850 : quality === 'high' ? 550 : quality === 'low' ? 300 : 420;
     const near = flying ? (quality === 'high' ? 90 : 55) : quality === 'high' ? 125 : quality === 'low' ? 55 : 90;
     const middle = flying ? (quality === 'high' ? 155 : quality === 'low' ? 80 : 105) : quality === 'high' ? 240 : quality === 'low' ? 120 : 180;
     for (const cell of cells.values()) {
       const distance = cell.center.distanceTo(position);
       cell.group.visible = distance < range;
+      // Finish crown coverage before the first sparse LOD can be selected.
+      // The short overlap also avoids a long region of screen-door speckling.
+      cell.cover!.fade.value=T.MathUtils.smoothstep(distance,35,52);cell.cover!.mesh.visible=distance>35;if(cell.group.visible&&distance>35)cell.cover!.update(camera);
       const limits = lod === 'near' ? [near, middle] : [middle];
       let next = cell.active;
       while (next < limits.length && distance > limits[next] + 8) next++;

@@ -61,6 +61,8 @@ export class TouchControls {
   update(active: boolean, flying: boolean) {
     if (!touchDevice) return;
     if (this.active && !active) this.releaseAll(); this.active = active; this.root.hidden = !active;
+    if(active&&this.running)this.player.keys.add('ShiftLeft');
+    document.getElementById('touch-run')!.textContent=this.player.riding?'加速':'快走';
     document.getElementById('touch-altitude')!.hidden = !flying;
     document.getElementById('touch-fly')!.textContent = flying ? '降落' : '起飞';
   }

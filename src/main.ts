@@ -63,8 +63,9 @@ async function boot() {
     if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
     if (e.code === 'Escape') { if (game.mode === 'photo') togglePhoto(); else if (!settings.open && !info.open&&!worldSettings.open&&!mapDialog.open) openSettings(); return; }
     if (settings.open || info.open||worldSettings.open||mapDialog.open) return;
-    if (e.repeat) return;
+    if(e.shiftKey)game.player.keys.add('ShiftLeft');
     game.player.keys.add(e.code);
+    if (e.repeat) return;
     if (e.code === 'KeyM') el('map-open').click();
     if (e.code === 'KeyT') el('world-open').click();
     if (e.code === 'KeyV') { game.cameraRig.toggle(); toast(game.cameraRig.firstPerson ? '第一人称' : '第三人称'); }
@@ -75,7 +76,7 @@ async function boot() {
     if (e.code === 'KeyR' && game.mode === 'playing' && game.football.nearby) game.football.resetBall();
     if (e.code === 'Backquote' && import.meta.env.DEV) el('debug').hidden = !el('debug').hidden;
   });
-  window.addEventListener('keyup', e => game.player.keys.delete(e.code));
+  window.addEventListener('keyup', e => {game.player.keys.delete(e.code);if(!e.shiftKey){game.player.keys.delete('ShiftLeft');game.player.keys.delete('ShiftRight');}});
   el('resume').onclick = resume; el('settings-open').onclick = openSettings; el('photo-open').onclick = togglePhoto; el('photo-close').onclick = togglePhoto;
   el('settings-resume').onclick = resume;
   el('flight-toggle').onclick=()=>{if(game.mode==='paused')resume();if(game.mode==='playing')game.toggleFlight();};
@@ -148,7 +149,8 @@ async function boot() {
     if(game.mode !== 'playing' || game.player.flying)return;
     if(game.player.riding){if(!game.player.dismount())toast('两侧空间不足，请移到开阔处再下车。');return;}
     const bicycle=game.world.bicycles.find(b=>b.group.position.distanceTo(game.player.position)<2.3);
-    if(bicycle&&!game.player.seated){if(game.player.mount(bicycle)){game.cameraRig.yaw=game.player.rideYaw;toast(touchDevice?'摇杆向前骑行，左右转向；点提示下车。':'W 骑行 · A/D 转向 · S/空格刹车 · Shift 加速 · E 下车');}else toast('车旁空间不足，请从另一侧靠近。');return;}
+    if(bicycle&&!game.player.seated){if(game.player.mount(bicycle)){game.cameraRig.yaw=game.player.rideYaw;toast(touchDevice?'摇杆向前骑行，左右转向；点提示下车。':'W 骑行 · 鼠标/A/D 转向 · Shift 加速 · S 倒车/减速 · 空格刹车 · E 下车');}else toast('车旁空间不足，请从另一侧靠近。');return;}
+    if(!game.player.seated&&game.world.dadaoping.nearby(game.player.position)){toast(game.world.dadaoping.toggle()?'国旗正在升起。':'国旗正在降下。');return;}
     if (game.football.inReach) { game.football.kick(game.cameraRig.yaw, game.player.keys.has('ShiftLeft') || game.player.keys.has('ShiftRight')); return; }
     if (game.player.seated) { const exit=seatExit??{x:game.player.position.x,z:game.player.position.z-1};if(game.player.travelTo(exit.x,exit.z))seatExit=null;else toast('这里暂时无法起身，可以从地图选择附近位置。');return; }
     if(game.world.directory.nearby(game.player.position)){
@@ -159,7 +161,8 @@ async function boot() {
     const bench = benchLocations.find(p => p.distanceTo(game.player.position) < 2.4);
     if (bench && game.world.sectors >= 3) { game.player.teleport(bench.x, bench.y+.03, bench.z); game.player.seatHeight=bench.y+.5575;game.player.seated = true; game.player.avatar.root.rotation.y = 0;seatExit={x:bench.x,z:bench.z-1.1};toast(touchDevice?'坐一会儿，点提示即可起身。':'坐一会儿。按 E 起身。'); }
     else {
-      const place=campusPlaces.find(p=>Math.hypot(game.player.position.x-p.x,game.player.position.z-p.z)<5.5);
+      const entry=game.world.doors.find(d=>Math.hypot(d.x-game.player.position.x,d.z-game.player.position.z)<4&&Math.abs(game.player.position.y-d.y)<4);
+      const place=(entry?{name:entry.name,description:'可以透过玻璃门看到门厅与门禁。室内暂未开放，后续将逐步加入进入建筑与室内探索。'}:undefined)??campusPlaces.find(p=>Math.hypot(game.player.position.x-p.x,game.player.position.z-p.z)<5.5);
       if(place){el('info-title').textContent=place.name;const paragraphs=info.querySelectorAll('p');paragraphs[0].textContent=place.description;paragraphs[1].textContent='沿着树荫和道路继续走，还会遇见更多熟悉的地方。';const link=info.querySelector('a')!;link.href=place.name==='北大楼'?'https://zh.wikipedia.org/wiki/北大楼':'https://vr.nju.edu.cn/';game.mode='paused';game.player.clearInput();document.exitPointerLock?.();info.showModal();}
     }
   }
@@ -168,12 +171,14 @@ async function boot() {
     touchControls?.update(game.mode === 'playing' && !uiHidden, game.player.flying);
     if (++tick % 15) return;
     const pos = game.player.position, onBench = game.player.seated || (game.world.sectors >= 3 && (benchLocations.some(p => p.distanceTo(pos) < 2.4)||Boolean(game.world.garden.nearby(pos))));
-    const nearBuilding = campusPlaces.find(p=>Math.hypot(pos.x-p.x,pos.z-p.z)<5.5);
+    const nearBuilding = game.world.doors.find(d=>Math.hypot(d.x-pos.x,d.z-pos.z)<4&&Math.abs(pos.y-d.y)<4)??campusPlaces.find(p=>Math.hypot(pos.x-p.x,pos.z-p.z)<5.5);
     const nearBicycle=game.world.bicycles.some(b=>b.group.position.distanceTo(pos)<2.3);
+    const nearFlag=game.world.dadaoping.nearby(pos);
+    const flagState=game.world.dadaoping.snapshot();
     const nearDirectory = game.world.directory.nearby(pos);
-    el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!game.player.riding && !nearBicycle && !onBench && !nearBuilding && !nearDirectory && !game.football.canKick);
-    el('interact').querySelector('span')!.textContent = game.player.riding ? '下自行车' : nearBicycle&&!game.player.seated ? '骑自行车' : game.football.canKick ? '踢球' : game.player.seated ? '起身' : onBench ? '坐一会儿' : nearDirectory ? '查看校园地图' : `认识${nearBuilding?.name??'校园'}`;
-    el('movement-label').textContent=game.player.riding?'骑行 · 空格刹车 · E 下车':'行走';
+    el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!nearFlag && !game.player.riding && !nearBicycle && !onBench && !nearBuilding && !nearDirectory && !game.football.canKick);
+    el('interact').querySelector('span')!.textContent = game.player.riding ? '下自行车' : nearBicycle&&!game.player.seated ? '骑自行车' : nearFlag ? (flagState.state==='raising'?`升旗中 ${Math.round(flagState.progress*100)}% · 点击降旗`:flagState.state==='lowering'?'降旗中 · 点击升旗':flagState.state==='raised'?'降下国旗':'升起国旗') : game.football.canKick ? '踢球' : game.player.seated ? '起身' : onBench ? '坐一会儿' : nearDirectory ? '查看校园地图' : `认识${nearBuilding?.name??'校园'}`;
+    el('movement-label').textContent=game.player.riding?`骑行 ${Math.round(game.player.speed*3.6)} km/h · 空格刹车 · E 下车`:'行走';
     el('location-name').textContent = locationName(game.world.map,pos.x,pos.z,game.player.flying);
     el('football-hud').hidden = Boolean(game.player.riding) || !game.football.nearby || game.mode !== 'playing'; el('football-score').textContent = String(game.football.goals);
     if (mapDialog.open) mapView.update(pos.x, pos.z, game.cameraRig.yaw);

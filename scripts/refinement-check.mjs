@@ -1,7 +1,7 @@
 import {chromium,devices} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
-const out='docs/validation/phase17';await mkdir(out,{recursive:true});await mkdir('docs/screenshots/phase17',{recursive:true});
+const out=process.env.VALIDATION_DIR??'docs/validation/phase17';await mkdir(out,{recursive:true});await mkdir('docs/screenshots/phase17',{recursive:true});
 const browser=await chromium.launch({channel:'chrome'}),errors=[],missing=[],report={};let p;
 async function start(page){page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)missing.push(r.url());});await page.goto('http://localhost:4173/?debug=1');await page.waitForFunction(()=>window.__GULOU__&&!document.querySelector('#enter').disabled,{}, {timeout:60000});await page.click('#enter');await page.waitForFunction(()=>window.__GULOU__.stats().sectors===3);await page.evaluate(()=>{const g=window.__GULOU__.game;g.setTime(14);g.atmosphere.state.autoTime=false;g.atmosphere.state.setWeather('clear');});}
 async function move(ms,...keys){for(const key of keys)await p.keyboard.down(key);await p.waitForTimeout(ms);for(const key of keys)await p.keyboard.up(key);return p.evaluate(()=>window.__GULOU__.stats().position);}
@@ -27,7 +27,7 @@ try{
  await p.evaluate(()=>{const g=window.__GULOU__.game,b=g.world.bicycles[0];g.player.travelTo(b.group.position.x-Math.sin(b.angle)*2,b.group.position.z-Math.cos(b.angle)*2);g.cameraRig.firstPerson=false;g.cameraRig.yaw=b.angle;g.mode='playing';});await p.keyboard.press('KeyE');assert.ok(await p.evaluate(()=>window.__GULOU__.stats().bicycle));
  report.poses=[];
  for(const kind of['male','female']){
-  await p.evaluate(k=>window.__GULOU__.game.setCharacter(k),kind);await p.waitForTimeout(350);const s=await pose();report.poses.push(s);assert.ok(Math.abs(s.bones.Hips[1]-.99)<.02);for(const side of ['Left','Right']){const h=s.bones[side+'Hand'];assert.ok(Math.hypot(Math.abs(h[0])-.23,h[1]-1.03,h[2]+.43)<.025,'hands contact handlebars');}
+  await p.evaluate(k=>window.__GULOU__.game.setCharacter(k),kind);await p.waitForTimeout(350);const s=await pose();report.poses.push(s);assert.ok(Math.abs(s.bones.Hips[1]-.99)<.02);for(const side of ['Left','Right']){const h=s.bones[side+'Hand'];assert.ok(Math.hypot(Math.abs(h[0])-.24,h[1]-1.24,h[2]+.06)<.025,'hands contact handlebars');}
   await p.evaluate(()=>{const g=window.__GULOU__.game;g.cameraRig.yaw=g.player.rideYaw+1.6;g.cameraRig.pitch=.1;g.cameraRig.distance=3;g.mode='photo';document.querySelector('#hud').hidden=true;});await p.waitForTimeout(250);await p.screenshot({path:`docs/screenshots/phase17/bicycle-${kind}.png`});await p.evaluate(()=>{const g=window.__GULOU__.game;g.mode='playing';g.cameraRig.yaw=g.player.rideYaw;document.querySelector('#hud').hidden=false;});
  }
  const from=await p.evaluate(()=>window.__GULOU__.stats().position);report.cycleEnd=await move(2400,'KeyW');report.distance=Math.hypot(report.cycleEnd[0]-from[0],report.cycleEnd[2]-from[2]);assert.ok(report.distance>4,'ride out of shelter');
@@ -35,9 +35,11 @@ try{
  await p.keyboard.press('KeyF');assert.equal(await p.evaluate(()=>window.__GULOU__.stats().flight),'walking');
  await p.keyboard.press('Escape');if(!await p.locator('#settings').isVisible())await p.click('#settings-open');const paused=await p.evaluate(()=>window.__GULOU__.stats().position);await p.waitForTimeout(300);const stopped=await p.evaluate(()=>window.__GULOU__.stats().position);assert.ok(Math.hypot(stopped[0]-paused[0],stopped[2]-paused[2])<.001);await p.click('#settings-resume');
  await p.keyboard.press('KeyE');assert.equal(await p.evaluate(()=>window.__GULOU__.stats().bicycle),null);report.dismounted=await p.evaluate(()=>window.__GULOU__.stats().position);assert.ok(report.dismounted[1]<.3);
- // Ride into a known library wall: the cycle-sized collider must stop before it.
- report.wall=await p.evaluate(()=>{const g=window.__GULOU__.game,b=g.world.bicycles[0];g.player.travelTo(b.group.position.x+Math.cos(b.angle)*1.2,b.group.position.z-Math.sin(b.angle)*1.2);g.player.mount(b);g.player.teleport(-75,.06,286);g.player.rideYaw=-Math.PI/2;g.cameraRig.yaw=-Math.PI/2;return g.player.riding?.id;});assert.ok(report.wall);
- report.wallStop=await move(4000,'KeyW','ShiftLeft');const wallX=-63.271+(report.wallStop[2]-279.232)/(293.096-279.232)*(-64.223+63.271);report.wallClearance=wallX-report.wallStop[0];assert.ok(report.wallClearance>.80&&report.wallClearance<1.2,'cycle collider stops its nose at the traced slanted wall');
+ // Ride into the current closed library entry. Its vestibule now projects
+ // 1.5 m from the old wall, so measure clearance against the actual door plane.
+ report.wall=await p.evaluate(()=>{const g=window.__GULOU__.game,b=g.world.bicycles[0],d=g.world.doors.find(d=>d.name==='图书馆');g.player.travelTo(b.group.position.x+Math.cos(b.angle)*1.2,b.group.position.z-Math.sin(b.angle)*1.2);g.player.mount(b);g.player.teleport(d.x+Math.sin(d.yaw)*9,.06,d.z+Math.cos(d.yaw)*9);g.cameraRig.yaw=d.yaw;return{bike:g.player.riding?.id,door:d};});assert.ok(report.wall.bike);
+ report.wallStop=await move(4000,'KeyW','ShiftLeft');const d=report.wall.door;report.wallClearance=(report.wallStop[0]-d.x)*Math.sin(d.yaw)+(report.wallStop[2]-d.z)*Math.cos(d.yaw);assert.ok(report.wallClearance>.80&&report.wallClearance<1.2,'cycle collider stops its nose before the closed door');
+
  const travel=await p.evaluate(()=>{const g=window.__GULOU__.game;const p=g.player.travelTo(0,60);return{p,bike:g.player.riding};});assert.ok(travel.p&&travel.bike===null);
  assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);report.stats=await p.evaluate(()=>window.__GULOU__.stats());await p.close();
  const context=await browser.newContext({...devices['Pixel 7']});p=await context.newPage();await start(p);await p.evaluate(()=>{const g=window.__GULOU__.game,b=g.world.bicycles[1];g.player.travelTo(b.group.position.x-Math.sin(b.angle)*2,b.group.position.z-Math.cos(b.angle)*2);});await p.waitForFunction(()=>!document.querySelector('#interact').hidden);await p.locator('#interact').tap();assert.ok(await p.evaluate(()=>window.__GULOU__.stats().bicycle));await p.locator('#interact').tap();assert.equal(await p.evaluate(()=>window.__GULOU__.stats().bicycle),null);

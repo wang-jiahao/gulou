@@ -25,7 +25,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-1': profile(modern,'gl-4-04','pale stone grid, dark blue vertical glazing, glazed ground floor',{levels:7,wall:0xc1b6a4,style:'glass',windowHeight:2.2}),
   'plan-2': profile(modern,'gl-4-02','light rectangular wings, rooftop service enclosure',{levels:6,wall:0xd1d0c4}),
   'plan-3': profile(modern,'gl-3-18','wide horizontal window bands, warm stone piers, deep entrance canopy',{levels:7,wall:0xc7baa5,bays:3.6,windowWidth:2.7}),
-  'plan-4': profile(modern,'gl-3 / gl-4-02','aerial pale academic blocks with recessed roof equipment',{levels:8,wall:0xc6c1b4}),
+  'plan-4': profile(modern,'gl-3 / gl-4-02','19-storey B tower plus low A wings; separated in specific-buildings using official description and VR',{levels:19,wall:0xc6c1b4}),
   'plan-5': profile(modern,'gl-4-02','tall pale academic facade; aerial view supports massing only',{levels:12,wall:0xcac5b6}),
   'plan-6': profile(modern,'gl-3-17','low sports building with broad glazing under flat roof',{levels:3,windowWidth:2.6,bays:3.2}),
   'plan-8': profile(modern,'gl-4-02','pale academic block beside northwest entrance, aerial reference',{levels:8}),
