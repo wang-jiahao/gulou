@@ -11,3 +11,5 @@
 - **C418 / Minecraft music**: optional personal local files only. The five locally prepared tracks are not included in the repository or public build. No third-party-game music redistribution permission is claimed.
 
 See docs/asset_sources.md for the asset inventory and public/credits.html for the in-game credits.
+
+- **Library, history museum and new-teaching sign contours**: reconstructed from NJU archival / official VR photographs for this local campus model. These are approximate derived silhouettes, not original vector calligraphy. Source photos remain excluded; no separate copyright claim or university endorsement is implied.

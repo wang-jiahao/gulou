@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {addBuildingLettering} from './building-lettering.ts';
 import {Builder,curvedRoof} from './geometry.ts';
 import {insidePolygon,planShape,type MapFeature} from './campus-map.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
@@ -114,9 +115,12 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
    put(0,4.05,1.0,14.8,.40,2.2,pale);put(0,15.6,.52,14.6,.34,1.1,pale);
   }
   if(fei){put(0,3.3,.8,width+2,.30,2,pale);put(0,1.4,.02,width+2,2.8,.08,dark);}
+  if(newTeaching){addBuildingLettering(b,'newTeaching',e.x+e.nx*.48,4.65,e.z+e.nz*.48,5.6,e.angle);}
+  else {
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#c9c9bd';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#957534';ctx.font=`64px "Kaiti SC","STKaiti",serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(yifu?'逸 夫 館':fei?'费 彝 民 楼':teaching?'教 学 楼':f.tags.name,512,66,980);
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const signMat=new T.MeshStandardMaterial({map:texture,roughness:.8});
-  b.add(new T.PlaneGeometry(Math.min(width+1,9),.70),signMat,e.x+e.nx*.8,teaching?4.55:newTeaching?4.25:yifu?3.8:3.7,e.z+e.nz*.8,new T.Euler(0,e.angle,0));
+  b.add(new T.PlaneGeometry(Math.min(width+1,9),.70),signMat,e.x+e.nx*.8,teaching?4.55:yifu?3.8:3.7,e.z+e.nz*.8,new T.Euler(0,e.angle,0));
+  }
  }
  if(meng){for(const x of[57,83]){b.box(3.2,4.3,4.1,x,61,310,pale);b.box(4.5,.55,5.5,x,63.4,310,roof);}b.box(28,.55,4,70,62.1,310,pale);}
  if(fei){b.box(15,2.4,11,-176,69.6,-163,roof);for(let i=0;i<6;i++)b.box(.18,.9,13,-182+i*2.4,71.4,-163,pale);}

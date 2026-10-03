@@ -134,3 +134,10 @@
 - [NJU Asset Office 2024 plan](https://zcc.nju.edu.cn/dzdt/glxqdt/index.html): regularized the new teaching footprint and rechecked the southern teaching strip. The latter differs little from the earlier plan; no unsupported large inward relocation was made.
 - Official VR scene_gl-2-53: south teaching entrance is on the west end; closed glass vestibule stays accessible. New teaching's visible west facade is five levels, with a projecting canopy and entrance risers. The documented two-storey auxiliary building has not yet been reliably matched to a separate footprint.
 - Both user-specified walk videos were decoded locally again, alongside the saved reference index. Source media remain excluded.
+
+## Local v0.20 — library complex and individual lettering
+
+- User-provided overhead photo (local only), the [2024 official campus map](https://zcc.nju.edu.cn/dzdt/glxqdt/index.html), [NJU Archives](https://dawww.nju.edu.cn/info/1201/10631.htm), and official VR scene_gl-2-21 were inspected together. The northern historic building has the traditional roof; the central reading-room mass is flat. The modern west/south wings and elevated west connector leave a real open courtyard. Vertical dimensions and hidden facades remain estimates.
+- The history museum entrance faces north toward Jin Da Road; its travel destination and area label follow the corrected entrance. Both museum and modern library have separately collidable, closed entrances and visible stairs.
+- `scripts/trace-building-lettering.py` reconstructs contour-only geometry from the archive library frontage, official museum VR face and new-teaching VR face. Distinctive forms and spacing are retained per sign. The output is an approximate reconstruction, not original calligraphy artwork or a claim of ownership. No source photographs or panorama tiles are distributed.
+- The user's library photo agrees with the wide-spaced lettering above the west canopy. Other facade/year variants of a high-left sign remain unverified; this does not establish that such a sign never existed.
