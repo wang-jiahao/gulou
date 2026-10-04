@@ -49,7 +49,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-41': profile(historic,'gl-2-45 / gl-4-06','grey brick, pale windows, three arched entrance bays, observatory dome',{levels:3,roof:'flat',frame:0xd0d1c6,dome:true,portal:'stone'}),
   'plan-44': profile(historic,'gl-2-12','three-storey grey masonry, red door, tiled hip roof and raised stone portal',{levels:3,roof:'heritage'}),
   'plan-45': profile(modern,'gl-2-03','plain pale engineering facade behind boundary gate',{levels:3,wall:0xc8cac0}),
-  'plan-50': profile(historic,'gl-2-05','academic wing behind memorial residence: grey brick and pale horizontal trim',{levels:3,roof:'hip',frame:0xc9c7bb}),
+  'plan-50': profile(historic,'gl-2-05 / NJU Archives 2023-12-24','Pearl S. Buck memorial residence, confirmed by labelled campus plan: grey brick, red shutters, columned east porch',{levels:2,roof:'hip',frame:0x532e30}),
   'plan-51': profile(historic,'gl-2-06','wide three-storey masonry front, tiled roof and central stone entrance',{levels:3,roof:'heritage',portal:'stone',windowWidth:1.6}),
   'plan-52': profile(historic,'gl-2-09 / gl-2-35 / gl-2-49','low chapel, pale arched window surrounds and dark roof',{levels:1,roof:'hip',windowHeight:2.5,wall:0x969381,arched:true}),
   'plan-56': profile(modern,'gl-2-13','three-storey cream tiled facade with recessed horizontal bays',{levels:3,wall:0xc9c2a7,windowWidth:2.8,bays:3.8,balcony:true}),

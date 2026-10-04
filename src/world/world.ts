@@ -8,6 +8,7 @@ import type { Materials } from './materials.ts';
 import { createModelTrees } from './model-trees.ts';
 import { collisionMesh, type CollisionMesh } from './collision-mesh.ts';
 import { buildOrdinaryBuildings } from './ordinary-buildings.ts';
+import {memorialPlantingClearance} from './pearl-memorial.ts';
 import { planShape, insidePolygon, insideRing, type CampusMap } from './campus-map.ts';
 import { createPriorityDetails, createSkyline, createFireTower } from './priority-details.ts';
 import { createFootballPitch } from './football-pitch.ts';
@@ -81,6 +82,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   if (!mapResponse.ok) throw new Error('校园地图加载失败');
   const groundCameraProxy = new T.Mesh(new T.PlaneGeometry(1800, 1900).rotateX(-Math.PI / 2), new T.MeshBasicMaterial({ side: T.DoubleSide })); groundCameraProxy.position.set(-130, .005, 160); groundCameraProxy.updateMatrixWorld(); cameraSolids.push(groundCameraProxy);
   const map: CampusMap = await mapResponse.json();
+  const memorial=map.features.find(f=>f.id==='plan-50');if(memorial){memorial.tags={...memorial.tags,name:'赛珍珠纪念馆','building:levels':'2',source:'NJU Archives 2023-12-24 + user campus plan labelled 赛珍珠楼 + gl-2-05'};}
   const oldLabs=map.features.findIndex(f=>f.id==='plan-36');if(oldLabs>=0)map.features.splice(oldLabs,1,...splitTeachingFeature(map.features[oldLabs]));
   const southTeaching=map.features.find(f=>f.id==='plan-73');if(southTeaching){
     // Re-traced from the 2024 official plan, registered to the existing map.
@@ -262,7 +264,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     sectors++;
     await new Promise<void>(resolve => setTimeout(resolve, 50));
     const rand = rng(88), farTrees: TreeSpot[] = [], avenueTrees: TreeSpot[] = [];
-    const clear = (x: number, z: number) => !sportsClearance(x,z)&&!teachingParkingClearance(x,z)&&!ordinary.doors.some(d=>Math.hypot(d.x-x,d.z-z)<5)&&!map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
+    const plantingDoors=ordinary.doors.map(d=>d.name==='赛珍珠纪念馆'?memorialPlantingClearance:d);
+    const clear = (x: number, z: number) => !sportsClearance(x,z)&&!teachingParkingClearance(x,z)&&!plantingDoors.some(d=>Math.hypot(d.x-x,d.z-z)<5)&&!map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
     // Avenue planting uses the traced road edge; other trees stay within plan lawns.
     for (let z = 156; z < 342; z += 15) for (const side of [-1, 1]) {
       const x = -85 - (z - 182) * .035 + side * 8;

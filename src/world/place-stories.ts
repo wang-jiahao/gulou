@@ -4,6 +4,7 @@ const story=(summary:string,detail:string,source=vr,sourceLabel='南京大学官
 /** Concise paraphrases of the named official source. Unverified places fall
  * back to existing wayfinding text; no invented dates or building histories. */
 export const placeStories:Record<string,PlaceStory>={
+ '赛珍珠纪念馆':story('赛珍珠故居位于鼓楼校区北园西墙附近、西南楼西侧。灰砖住宅包含半地下室和阁楼，建筑面积约600平方米。','据南京大学档案馆记载，这座住宅建于1912年，2011年启动修复，2012年5月19日建成纪念馆。校园地图亦称“赛珍珠楼”；当前模型的平面配准和未见部分为近似重建。','https://dawww.nju.edu.cn/info/1201/10661.htm','南京大学档案馆 · 筑言·鼓楼：赛珍珠故居'),
  '软件学院':story('软件学院官网将鼓楼通讯地址列为汉口路22号南京大学费彝民楼。','从庭院一侧可到达学院入口，穿过南翼底层通道则能走向运动场一侧。','https://software.nju.edu.cn/','南京大学软件学院官网 · 通讯地址'),
  '北大楼':story('北大楼建成于1919年，又称赛弗伦斯楼，最初是金陵大学行政楼，后来用于文学院教学。赛珍珠、胡小石等学者曾在这里执教。','中央塔楼、中式屋顶和西式体量相结合。百余年里，这座楼既是校园的视觉中心，也成为许多南大人与母校联结的记忆。','https://alumni.nju.edu.cn/aa/0a/c21691a502282/page.htm','南京大学校友网 · 北大楼百年故事'),
  '东大楼':story('东大楼的前身是金陵大学科学馆，建成于1912年，是鼓楼校园早期建筑之一。','它与西大楼分列北大楼前庭两侧。中式屋顶和近代教学楼的结构组合，体现了金陵大学早期校园建筑的共同风格。','https://www.nju.edu.cn/info/3191/152251.htm','南京大学官网 · 金陵大学光阴的故事'),

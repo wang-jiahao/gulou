@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.44.0",
+  "version": "0.45.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -71,7 +71,8 @@
     "test:north-boundary-layout": "node --experimental-strip-types scripts/north-boundary-layout-check.mjs",
     "test:north-boundary": "node --experimental-strip-types scripts/north-boundary-check.mjs",
     "test:hankou-lettering": "node scripts/hankou-lettering-check.mjs",
-    "test:zhongda-avenue": "node scripts/zhongda-avenue-check.mjs"
+    "test:zhongda-avenue": "node scripts/zhongda-avenue-check.mjs",
+    "test:pearl-memorial": "node scripts/pearl-memorial-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",
