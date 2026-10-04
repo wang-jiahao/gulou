@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -42,7 +42,8 @@
     "test:jump-stories": "node scripts/phase19-check.mjs",
     "test:east-teaching": "node scripts/phase20-check.mjs",
     "test:library-complex": "node scripts/phase21-check.mjs",
-    "test:sports": "node scripts/phase22-check.mjs"
+    "test:sports": "node scripts/phase22-check.mjs",
+    "test:teaching-parking": "node scripts/phase23-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

@@ -16,6 +16,7 @@ import { createCampusSign, photoSpot } from './campus-sign.ts';
 import { fireTowerFootprint } from './surroundings.ts';
 import { createAccessControls, campusEntrances } from './access-controls.ts';
 import { createDormitoryAmenities } from './dormitory-amenities.ts';
+import { createTeachingBicycleParking, teachingParkingClearance } from './teaching-bicycle-parking.ts';
 import { createSouthRoadDetails } from './south-road-details.ts';
 import { createSouthTreeDetails } from './south-tree-details.ts';
 import { createCampusDirectory } from './campus-directory.ts';
@@ -244,7 +245,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     sectors++;
     await new Promise<void>(resolve => setTimeout(resolve, 50));
     const rand = rng(88), farTrees: TreeSpot[] = [];
-    const clear = (x: number, z: number) => !sportsClearance(x,z)&&!ordinary.doors.some(d=>Math.hypot(d.x-x,d.z-z)<5)&&!map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
+    const clear = (x: number, z: number) => !sportsClearance(x,z)&&!teachingParkingClearance(x,z)&&!ordinary.doors.some(d=>Math.hypot(d.x-x,d.z-z)<5)&&!map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
     // Avenue planting uses the traced road edge; other trees stay within plan lawns.
     for (let z = 156; z < 342; z += 15) for (const side of [-1, 1]) {
       const x = -85 - (z - 182) * .035 + side * 8;
@@ -292,6 +293,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     root.add(createLampBanners(lampSpots.filter(([,z])=>z>=165&&z<=389),mats.metal));
     const propGroup = props.finish('benches lamps and boundary'); root.add(propGroup); moreSolids.push(...props.solids); cameraSolids.push(...propGroup.children);
     const amenities=createDormitoryAmenities(map,ordinary.records,mats,[...solids,...moreSolids]);root.add(amenities.group);bicycles.push(...amenities.bicycles);moreSolids.push(...amenities.solids);lampPositions.push(...amenities.lamps);cameraSolids.push(...amenities.group.children);
+    const parking=createTeachingBicycleParking(mats);root.add(parking.group);bicycles.push(...parking.bicycles);moreSolids.push(...parking.solids);cameraSolids.push(...parking.group.children);
     afterSector();
     sectors++;
     return moreSolids;

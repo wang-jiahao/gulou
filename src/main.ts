@@ -162,7 +162,8 @@ async function boot() {
   function interact() {
     if(game.mode !== 'playing' || game.player.flying)return;
     if(game.player.riding){if(!game.player.dismount())toast('两侧空间不足，请移到开阔处再下车。');return;}
-    const bicycle=game.world.bicycles.find(b=>b.group.position.distanceTo(game.player.position)<2.3);
+    let bicycle:typeof game.world.bicycles[number]|undefined,nearestDistance=2.3;
+    for(const candidate of game.world.bicycles){const distance=candidate.group.position.distanceTo(game.player.position);if(distance<nearestDistance){bicycle=candidate;nearestDistance=distance;}}
     if(bicycle&&!game.player.seated){if(game.player.mount(bicycle)){game.cameraRig.yaw=game.player.rideYaw;toast(touchDevice?'摇杆向前骑行，左右转向；点提示下车。':'W 骑行 · 鼠标/A/D 转向 · Shift 加速 · S 倒车/减速 · 空格刹车 · E 下车');}else toast('车旁空间不足，请从另一侧靠近。');return;}
     if(!game.player.seated&&game.world.dadaoping.nearby(game.player.position)){toast(game.world.dadaoping.toggle()?'国旗正在升起。':'国旗正在降下。');return;}
     if (game.football.inReach) { game.football.kick(game.cameraRig.yaw, game.player.keys.has('ShiftLeft') || game.player.keys.has('ShiftRight')); return; }
