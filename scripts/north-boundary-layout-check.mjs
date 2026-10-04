@@ -42,9 +42,26 @@ for(const road of [...publicStreets,xiaofen]) {
 }
 const gateWidths=[Math.hypot(...runs[0].at(-1).map((x,i)=>x-runs[1][0][i])),Math.hypot(...runs[1].at(-1).map((x,i)=>x-runs[2][0][i]))];
 assert.deepEqual(gateWidths.map(x=>Math.round(x*100)/100),[12,12]);
-// No additional western segment may extend into Jinyin Street or Nanxiu Village.
-assert.equal(runs.length,4);assert.deepEqual(runs[3],[[-106.20,343.85],[-115,346.7],[-138.7,347.4]]);
-const report={status:'passed',northComplete:false,buildingCount,segments:segments.length,minimumBuildingClearance,roads,gateWidths};
-await mkdir('docs/validation/phase43',{recursive:true});
-await writeFile('docs/validation/phase43/layout.json',JSON.stringify(report,null,2));
+assert.equal(runs.length,5);assert.deepEqual(runs[3],[[-106.20,343.85],[-115,346.7],[-138.7,347.4]]);
+// Keep the mapped public street and the transport-centre entrance open.
+// Corridor widths are conservative model checks, not surveyed road dimensions.
+const westCorridors=[
+ {name:'金银街',halfWidth:3.5,points:[[-379.413,-117.376],[-383.808,-91.037],[-382.43,-65.765]]},
+ {name:'运输中心旁入口',halfWidth:3,points:[[-380.343,-128.314],[-356.589,-129.646]]},
+ {name:'西北校门东西通路',halfWidth:3,points:[[-382.046,-149.323],[-317.467,-142.129]]},
+];
+for(const corridor of westCorridors){
+ let minimum=Infinity;
+ for(const [a,b] of segments)for(let i=1;i<corridor.points.length;i++){
+  const c=corridor.points[i-1],d=corridor.points[i];
+  assert.ok(!intersects(a,b,c,d),`${corridor.name}: fence crosses corridor`);
+  minimum=Math.min(minimum,distance(a,c,d),distance(b,c,d),distance(c,a,b),distance(d,a,b));
+ }
+ corridor.minimumClearance=minimum-corridor.halfWidth;
+ assert.ok(corridor.minimumClearance>.35,`${corridor.name}: corridor remains open`);
+}
+const report={status:'passed',northComplete:false,buildingCount,segments:segments.length,minimumBuildingClearance,roads,gateWidths,westCorridors};
+const out=process.env.BOUNDARY_LAYOUT_OUT||'docs/validation/phase55';
+await mkdir(out,{recursive:true});
+await writeFile(`${out}/layout.json`,JSON.stringify(report,null,2));
 console.log(report);

@@ -29,15 +29,16 @@ export function createCampusBoundaries(mats: Materials) {
   const panels: { x: number; y: number; z: number; w: number; h: number; d: number; angle: number }[] = [];
   let bays = 0, emblems = 0;
   for (const run of [...southBoundaryRuns, ...northBoundaryRuns]) {
+    const baseHeight = 'baseHeight' in run && typeof run.baseHeight === 'number' ? run.baseHeight : .46;
     let bayIndex = 0;
     for (let i = 1; i < run.points.length; i++) {
       const [ax, az] = run.points[i - 1], [bx, bz] = run.points[i];
       const length = Math.hypot(bx - ax, bz - az), angle = Math.atan2(az - bz, bx - ax);
       const put = (u: number, y: number, w: number, h: number, d: number, mat: T.Material, v = 0, face = 0) =>
         add(mat === badge ? badgeGeometry : boxGeometry, mat, ax + u * Math.cos(angle) + v * Math.sin(angle), y, az - u * Math.sin(angle) + v * Math.cos(angle), w, h, d, angle + face);
-      put(length / 2, .23, length + .10, .46, .4, stone);
-      put(length / 2, .50, length + .12, .08, .48, cap);
-      for (const y of [.72, 2.65, 2.96]) put(length / 2, y, length + .06, .06, .075, iron);
+      put(length / 2, baseHeight / 2, length + .10, baseHeight, .4, stone);
+      put(length / 2, baseHeight + .04, length + .12, .08, .48, cap);
+      for (const y of [baseHeight + .26, 2.65, 2.96]) put(length / 2, y, length + .06, .06, .075, iron);
       const count = Math.ceil(length / 4.8), width = length / count;
       for (let j = 0; j <= count; j++) {
         // The next segment supplies its starting pillar, keeping joins closed.
@@ -47,7 +48,7 @@ export function createCampusBoundaries(mats: Materials) {
       }
       for (let j = 0; j < count; j++, bayIndex++, bays++) {
         const n = Math.ceil(width / .18);
-        for (let k = 1; k < n; k++) put(j * width + k * width / n, 1.79, .032, 2.50, .032, iron);
+        for (let k = 1; k < n; k++) put(j * width + k * width / n, 1.79 + (baseHeight - .46) / 2, .032, 2.50 - (baseHeight - .46), .032, iron);
         if (bayIndex % 2 === 0) {
           const u = (j + .5) * width;
           put(u, 1.91, .69, .71, .07, iron);

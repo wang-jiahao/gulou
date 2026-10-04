@@ -1,5 +1,5 @@
 // Eastern north-campus perimeter traced from the registered campus plan.
-// Western public streets and detached parcels await field-reference verification.
+// Most western public streets and detached parcels await field-reference verification.
 // Position, height and gate joins are approximate; this is NOT a complete north enclosure.
 export const northBoundaryRuns = [
   {
@@ -114,6 +114,19 @@ export const northBoundaryRuns = [
       [-106.2, 343.85],
       [-115, 346.7],
       [-138.7, 347.4],
+    ],
+  },
+  {
+    name: "jinyin-suzhe-west",
+    // User plan + official gl-4-05 street views: leave the transport entrance
+    // north of this run open. The higher pale plinth is a visual approximation.
+    baseHeight: 1.1,
+    pixelControls: [[951, 990], [949, 1088], [958, 1140], [974, 1177]],
+    points: [
+      [-368.601, -116.506],
+      [-372.993, -90.176],
+      [-372.537, -75.934],
+      [-369.552, -65.569],
     ],
   },
 ];
