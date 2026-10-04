@@ -1,10 +1,11 @@
 import * as T from 'three';
 import { Builder, type Solid } from './geometry.ts';
+import { southEastGate } from './south-boundary-layout.ts';
 import type { Materials } from './materials.ts';
 
 export type CampusEntrance={id:string;name:string;x:number;z:number;angle:number;pedestrians:number[];source:string};
-/** Positions follow gate symbols on the registered plan, with the east service
- * entrance cross-checked against OSM. Equipment layouts are gameplay approximations. */
+/** Positions follow gate symbols on the registered plan, with the south east gate
+ * corrected to the Xiaofenqiao gate symbol. Equipment layouts are gameplay approximations. */
 export const campusEntrances:CampusEntrance[]=[
  {id:'hankou',name:'汉口路校门',x:-91.0546,z:344.25,angle:0,pedestrians:[-7.6,7.6],source:'campus plan + official VR gl-2-01'},
  {id:'guangzhou',name:'广州路校门',x:-35.067,z:715.04,angle:0,pedestrians:[-5.2,5.2],source:'campus plan + official VR gl-1-12'},
@@ -14,7 +15,7 @@ export const campusEntrances:CampusEntrance[]=[
  {id:'northwest',name:'西北校门',x:-368.66,z:-146.88,angle:Math.PI/2,pedestrians:[-4.8,4.8],source:'campus plan [935,878]; official VR gl-4-02'},
  {id:'west',name:'西校门',x:-275.74,z:97.06,angle:Math.PI/2,pedestrians:[-4.8,4.8],source:'campus plan [1391,1732]; OSM 1030348723'},
  {id:'tianjin',name:'天津路门',x:76.29,z:-50.86,angle:-Math.PI/2,pedestrians:[-4.8,4.8],source:'campus plan [2570,1063]; OSM 1615452151'},
- {id:'south-east',name:'南园东侧出入口',x:143,z:562,angle:-Math.PI/2,pedestrians:[-4.8],source:'OSM 1615452141 aligned approximately to plan-side access road; descriptive name'},
+ {id:'south-east',name:'小粉桥校门',x:southEastGate[0],z:southEastGate[1],angle:-Math.PI/2,pedestrians:[-4.8],source:'campus plan gate symbol [3037,3212]; equipment approximate'},
 ];
 
 function label(text:string,w:number,h:number,bg='#263c39',color='#edf2de'){

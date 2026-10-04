@@ -161,7 +161,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);
   const guangzhou=createGuangzhouGate(mats);root.add(guangzhou.group);solids.push(...guangzhou.solids);cameraSolids.push(...guangzhou.group.children);
   const access=createAccessControls(mats);root.add(access.group);solids.push(...access.solids);
-  const boundary=createCampusBoundaries(mats);root.add(boundary.group);solids.push(...boundary.solids);cameraSolids.push(...boundary.group.children);
+  const boundary=createCampusBoundaries(mats);root.add(boundary.group);solids.push(...boundary.solids);cameraSolids.push(...boundary.cameraSolids);
   cameraSolids.push(...priority.group.children);
   root.add(createSkyline());
   const sports=createSportsGround(mats);root.add(sports.group);solids.push(...sports.solids);cameraSolids.push(...sports.group.children);

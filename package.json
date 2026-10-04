@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -65,7 +65,9 @@
     "test:sports-hall-forecourts": "node scripts/sports-hall-forecourts-check.mjs",
     "test:purple-bicycle": "node scripts/purple-bicycle-check.mjs",
     "test:planar-cutout": "node --experimental-strip-types scripts/planar-cutout-check.mjs",
-    "test:sports-paving": "node scripts/sports-paving-check.mjs"
+    "test:sports-paving": "node scripts/sports-paving-check.mjs",
+    "test:south-boundary-layout": "node --experimental-strip-types scripts/south-boundary-layout-check.mjs",
+    "test:south-boundary": "node --experimental-strip-types scripts/south-boundary-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

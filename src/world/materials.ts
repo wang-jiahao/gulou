@@ -8,8 +8,11 @@ export async function loadMaterials(onProgress: (n: number) => void) {
     const t = await loader.loadAsync(`${import.meta.env.BASE_URL}assets/textures/${name}`);
     t.colorSpace = name.includes('nor_') || name.includes('height') || name.includes('alpha') ? T.NoColorSpace : T.SRGBColorSpace;
     if(name==='campus-canopy-alpha.webp')t.flipY=false; // Match the GLTF atlas UV origin.
-    t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 16; textures.set(name, t); onProgress(++loaded / names.length);
+    t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 16; textures.set(name, t); onProgress(++loaded / (names.length + 1));
   }));
+  const emblem = await loader.loadAsync(`${import.meta.env.BASE_URL}assets/branding/nju-emblem.png`);
+  emblem.colorSpace = T.SRGBColorSpace; emblem.wrapS = emblem.wrapT = T.ClampToEdgeWrapping;
+  textures.set('nju-emblem.png', emblem); onProgress(1);
   const grass = new T.MeshStandardMaterial({ color: 0xc7ceae, map: textures.get('lawn.webp'), normalMap: textures.get('grass_ground_nor_gl.jpg'), normalScale: new T.Vector2(0.3, 0.3), roughness: 1 });
   grass.onBeforeCompile=shader=>{
     shader.vertexShader='varying vec2 vLawnWorld;\n'+shader.vertexShader;
