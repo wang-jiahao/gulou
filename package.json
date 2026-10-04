@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.32.0",
+  "version": "0.33.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -56,7 +56,8 @@
     "test:museum-forecourt": "node scripts/phase31-check.mjs",
     "test:teaching-facade": "node scripts/phase32-check.mjs",
     "metrics": "node scripts/update-work-metrics.mjs",
-    "test:entry-landing": "node scripts/entry-landing-check.mjs"
+    "test:entry-landing": "node scripts/entry-landing-check.mjs",
+    "test:camera-bounds": "node scripts/camera-bounds-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",
