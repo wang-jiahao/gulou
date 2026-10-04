@@ -1,10 +1,11 @@
 import * as T from 'three';
 import {Builder} from './geometry.ts';
+import {tangPortal} from './tang-entrance.ts';
 
 type Edge={len:number;x:number;z:number;angle:number;nx:number;nz:number};
 /** gl-4-05 f/r shows the stone wings and glazed connector of the north
  * courtyard. The traced plan and approximate scene location resolve its side.
- * Keep the existing shell until the recessed entrance can be positioned. */
+ * The ground-level portico is built separately from the four upper facades. */
 export function createTangFacade(){
  const mat=(name:string,color:number)=>new T.MeshStandardMaterial({name:`tang-${name}`,color,roughness:.87});
  const stone=mat('pale-stone',0xd3d3c8),reveal=mat('window-reveal',0x535e59),frame=mat('silver-frame',0x99aaa8),glass=mat('blue-grey-glazing',0x739498),ledge=mat('stone-sill',0xb9bdb3);
@@ -33,12 +34,24 @@ export function createTangFacade(){
   return bays*6;
  };
  return{
-  metadata:{source:'official VR gl-4-05 f/r + user campus plan',dimensions:'approximate; existing 19.5m shell retained',entrance:'recess and precise location pending; existing access retained',faces},
+  materials:{stone,panels,glass,frame},
+  metadata:{source:'official VR gl-4-05 f/r + user campus plan',dimensions:'approximate; 19.5m upper shell retained',entrance:'north courtyard recess; depth approximate, rear glazed boundary',faces},
   accepts(e:Edge){return (e.x>-420&&e.x<-400&&e.z>-69&&e.z<-50&&Math.abs(e.nz)>.98)||(e.nx>.98&&e.z>-78&&e.z<-56&&e.len>14&&e.len<18);},
   face(b:Builder,detail:Builder,e:Edge,height:number){
    const connector=e.nx>.98&&e.x<-410,end=e.nx>.98&&!connector,role=connector?'west-glass-connector':end?'north-wing-east-glass':e.nz<0?'middle-wing-north-stone':'north-wing-south-stone';
-   plane(b,e,0,height/2,.015,e.len,height,panels);
-   box(b,e,0,.22,.04,e.len,.44,.13,ledge);
+   const portico=role==='middle-wing-north-stone',p=tangPortal;
+   const rectangles=(u:number,y:number,w:number,h:number)=>{
+    if(w<=0||h<=0)return[];
+    if(!portico||y-h/2>=p.clearance||u+w/2<=p.left||u-w/2>=p.glassRight)return[{u,y,w,h}];
+    const result=[];
+    const left=u-w/2,right=u+w/2,bottom=y-h/2,top=y+h/2;
+    if(left<p.left)result.push({u:(left+p.left)/2,y,w:p.left-left,h});
+    if(right>p.glassRight)result.push({u:(right+p.glassRight)/2,y,w:right-p.glassRight,h});
+    if(top>p.clearance){const a=Math.max(left,p.left),c=Math.min(right,p.glassRight);result.push({u:(a+c)/2,y:(p.clearance+top)/2,w:c-a,h:top-Math.max(bottom,p.clearance)});}
+    return result;
+   };
+   for(const r of rectangles(0,height/2,e.len,height))plane(b,e,r.u,r.y,.015,r.w,r.h,panels);
+   for(const r of rectangles(0,.22,e.len,.44))box(b,e,r.u,r.y,.04,r.w,r.h,.13,ledge);
    box(b,e,0,height+.10,.04,e.len,.20,.24,stone);
    let windows=0,bays=0;
    if(connector||end){
@@ -57,9 +70,10 @@ export function createTangFacade(){
     // The stone face stays continuous. Glass and slim frames sit behind it;
     // isolated projecting picture frames would misread the real recessed bays.
     const patch=(u:number,y:number,w:number,h:number)=>{
-     if(w<=0||h<=0)return;
-     box(b,e,u,y,.235,w,h,.43,stone);
-     plane(b,e,u,y,.452,w,h,panels);
+     for(const r of rectangles(u,y,w,h)){
+      box(b,e,r.u,r.y,.235,r.w,r.h,.43,stone);
+      plane(b,e,r.u,r.y,.452,r.w,r.h,panels);
+     }
     };
     for(let col=0;col<=bays;col++){
      const left=col===0?-e.len/2:(col-1-(bays-1)/2)*step+.67;
@@ -73,6 +87,7 @@ export function createTangFacade(){
       patch(u,(bottom+lower)/2,1.34,lower-bottom);
       if(w<1.34)for(const sign of[-1,1])patch(u+sign*(w+1.34)/4,y,(1.34-w)/2,h);
       bottom=upper;
+      if(portico&&lower<p.clearance&&u+.67>p.left&&u-.67<p.glassRight){patch(u,y,1.34,h);continue;}
       box(b,e,u,y,.055,w+.06,h+.06,.08,reveal);
       plane(b,e,u,y,.105,w,h,glass);
       for(const sign of[-1,1]){

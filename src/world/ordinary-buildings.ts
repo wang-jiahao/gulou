@@ -21,6 +21,7 @@ import {createTianFacade} from './tian-facade.ts';
 import {createTangFacade} from './tang-facade.ts';
 import {buildYifuTower,yifuTower} from './yifu-tower.ts';
 import {buildYifuEntrance} from './yifu-entrance.ts';
+import {buildTangEntrance} from './tang-entrance.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
 export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, roads:MapPolygon[] = []) {
@@ -58,6 +59,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const sufute=createSufuteFacade(),tian=createTianFacade(),tang=createTangFacade();
   let yifu:ReturnType<typeof buildYifuEntrance>|undefined;
   let yifuUpper:ReturnType<typeof buildYifuTower>|undefined;
+  let tangEntrance:ReturnType<typeof buildTangEntrance>|undefined;
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
@@ -77,6 +79,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(!detailCells.has(key))detailCells.set(key,{b:new Builder(),center:new T.Vector3((Math.floor(cx/100)+.5)*100,0,(Math.floor(cz/100)+.5)*100)});
     const detail=detailCells.get(key)!.b;
     if(f.id==='plan-10')yifu=buildYifuEntrance(f,b,fixedMeshes,cameraSolids,doors,height,wall,roof);
+    else if(f.id==='plan-22')tangEntrance=buildTangEntrance(f,b,detail,fixedMeshes,cameraSolids,doors,height,wall,roof,tang.materials);
     else{
     const geometry = new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false,steps:1}).rotateX(-Math.PI/2);
     const uv=geometry.getAttribute('uv');for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/2.4,uv.getY(i)/2.4);
@@ -228,7 +231,8 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       }
     }
     if(f.id==='plan-10')frontView=yifu!.frontage;
-    if(!teaching&&f.id!=='plan-10'){
+    if(f.id==='plan-22')frontView=tangEntrance!.frontage;
+    if(!teaching&&f.id!=='plan-10'&&f.id!=='plan-22'){
       // Choose a long exterior facade facing the nearest public route, rather
       // than putting a doorway onto an inner hole or a two-metre return wall.
       const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):candidates.sort((a,c)=>{
@@ -293,6 +297,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.sufuteFacade=sufute.metadata;
   group.userData.tianFacade=tian.metadata;
   group.userData.tangFacade=tang.metadata;
+  group.userData.tangEntrance=tangEntrance;
   if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;group.userData.yifuTower=yifuUpper;}
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
   let detailShadows=false;
