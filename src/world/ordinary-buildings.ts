@@ -22,6 +22,7 @@ import {createTangFacade} from './tang-facade.ts';
 import {buildYifuTower,yifuTower} from './yifu-tower.ts';
 import {buildYifuEntrance} from './yifu-entrance.ts';
 import {buildTangEntrance} from './tang-entrance.ts';
+import {buildNanyuanDining} from './nanyuan-dining.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
 export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, roads:MapPolygon[] = []) {
@@ -69,6 +70,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(f.id==='plan-50'){records.push(buildPearlMemorial(f,mats,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-128'){records.push(buildRabeHouse(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-77'){records.push(buildZhongshan(f,b,fixedMeshes,cameraSolids,doors));continue;}
+    if(f.id==='plan-113'){records.push(buildNanyuanDining(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-6'||f.id==='plan-13'){records.push(buildSportsHall(f,b,fixedMeshes,cameraSolids,doors));continue;}
     const specific=buildSpecific(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials);if(specific){records.push(specific);continue;}
     const profile=getBuildingProfile(f),teaching=f.id==='teaching-priority',points=f.points,shape=planShape(f);
