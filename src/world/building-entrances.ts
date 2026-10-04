@@ -4,8 +4,6 @@ import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
 
 export type DoorRecord={name:string;x:number;y:number;z:number;yaw:number;width:number};
 export function entranceMaterials(){
-  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=96;const c=canvas.getContext('2d')!;c.fillStyle='#263d38';c.fillRect(0,0,512,96);c.fillStyle='#ebeada';c.font='32px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText('室内暂未开放',256,48);
-  const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;
   return{
     glass:new T.MeshStandardMaterial({name:'entry-clear-glass',color:0xb4d0cd,transparent:true,opacity:.18,roughness:.13,metalness:.05,depthWrite:false,side:T.DoubleSide}),
     frame:new T.MeshStandardMaterial({name:'door-frame',color:0x7f8b85,metalness:.6,roughness:.38}),
@@ -13,7 +11,6 @@ export function entranceMaterials(){
     inside:new T.MeshStandardMaterial({name:'entry-background',color:0x404c47,roughness:1}),
     floor:new T.MeshStandardMaterial({name:'entry-floor',color:0xc2bfb0,roughness:.9}),
     screen:new T.MeshStandardMaterial({name:'entry-reader',color:0x122f28,emissive:0x377359,emissiveIntensity:.5,roughness:.4}),
-    notice:new T.MeshBasicMaterial({map,toneMapped:false,side:T.DoubleSide}),
   };
 }
 /** A shallow visible vestibule outside the solid building envelope. Closed
@@ -28,6 +25,5 @@ export function addEntrance(b:Builder,meshes:CollisionMesh[],doors:DoorRecord[],
   for(const u of[-width*.29,0,width*.29]){box(u,.51,.68,.22,1.0,.55,m.steel);box(u,1.19,.77,.14,.28,.08,m.screen);}
   for(const u of[-width*.145,width*.145])box(u,.65,.92,width*.20,.50,.025,m.glass);
   const[p,q]=point(0,1.50);const collision=new T.Mesh(new T.BoxGeometry(width,2.7,.06));collision.position.set(p,y+1.4,q);collision.rotation.y=yaw;meshes.push(collisionMesh(collision));
-  b.add(new T.PlaneGeometry(Math.min(2.2,width-.3),.38),m.notice,p,y+2.18,q+.005*nz,new T.Euler(0,yaw,0));
   doors.push({name,x:p,y,z:q,yaw,width});
 }

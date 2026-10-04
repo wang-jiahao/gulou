@@ -6,7 +6,7 @@ import sys,json,argparse
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'.tools/python'))
 import cv2,numpy as np
 parser=argparse.ArgumentParser()
-parser.add_argument('--only',choices=['library','museum','newTeaching','southTeaching','teaching'])
+parser.add_argument('--only',choices=['library','museum','newTeaching','southTeaching','teaching','physics'])
 args=parser.parse_args()
 jobs=[
  ('teaching','教学楼','references/phase18/scene_gl-2-10-f-full.jpg',(1230,1004,1516,1053)),
@@ -14,6 +14,7 @@ jobs=[
  ('museum','南京大学校史博物馆','references/phase20/scene_gl-2-21-f-full.jpg',(1007,953,1355,1009)),
  ('newTeaching','新教学楼','references/phase19/scene_gl-3-16-f-full.jpg',(1000,770,1630,931)),
  ('southTeaching','南教学楼','references/phase19/scene_gl-2-53-r-full.jpg',None),
+ ('physics','物理楼','references/phase36/physics-front-full.jpg',(1010,850,1350,940)),
 ]
 output=Path('src/world/building-lettering.json')
 result=json.loads(output.read_text()) if args.only and output.exists() else {};tiles=[]
@@ -40,6 +41,26 @@ for name,text,path,bounds in jobs:
  hsv=cv2.cvtColor(crop,cv2.COLOR_BGR2HSV)
  r=crop[:,:,2].astype(float);g=crop[:,:,1].astype(float);blue=crop[:,:,0].astype(float)
  mask=((r-blue>40)&(g-blue>12)&(r>105)).astype(np.uint8)*255
+ if name=='physics':
+  # Gold strokes overlap beige cages and window reflections. Trace their
+  # visible centre lines at 3x crop scale rather than retaining those blobs.
+  # These are a manual photographic reconstruction, not original calligraphy.
+  strokes=[
+   [(151,31),(144,50),(132,72)],[(132,68),(175,63)],[(167,34),(163,98),(154,173)],[(174,96),(146,119),(114,147)],
+   [(207,32),(197,56),(181,85)],[(195,79),(239,78),(245,92),(234,159),(223,174),(208,161)],
+   [(207,88),(186,120),(157,151)],[(224,97),(199,139),(168,172)],
+   [(456,35),(492,32)],[(479,37),(474,114)],[(457,68),(491,64)],[(455,104),(469,114),(499,96)],
+   [(514,33),(539,29),(570,31),(578,37),(565,86),(515,91),(512,34)],
+   [(515,62),(569,59)],[(542,33),(536,105)],[(516,115),(568,106)],
+   [(537,92),(522,119),(492,145),(453,158)],[(555,111),(543,136),(522,155),(571,150)],
+   [(786,25),(830,23)],[(809,25),(803,111),(775,147)],[(781,58),(835,53)],[(777,85),(825,75)],
+   [(806,82),(783,115),(763,145)],[(837,24),(851,42)],[(878,16),(862,45)],
+   [(842,53),(893,44)],[(865,34),(852,86)],[(851,58),(834,82)],[(864,62),(887,71)],
+   [(827,98),(891,87)],[(852,84),(824,122),(871,147),(902,158)],
+   [(889,102),(873,127),(842,149),(802,163)],[(819,132),(855,139)],
+  ]
+  mask=np.zeros((270,1020),np.uint8)
+  for stroke in strokes:cv2.polylines(mask,[np.array(stroke,np.int32)],False,255,7,cv2.LINE_AA)
  if name=='newTeaching':mask=((hsv[:,:,1]>100)&(hsv[:,:,0]>10)&(hsv[:,:,0]<42)&(hsv[:,:,2]>100)).astype(np.uint8)*255
  if name=='museum':mask=((hsv[:,:,1]>115)&(hsv[:,:,0]>10)&(hsv[:,:,0]<42)).astype(np.uint8)*255
  if name=='southTeaching':
@@ -92,9 +113,9 @@ for name,text,path,bounds in jobs:
    if cv2.contourArea(contours[child])>8:holes.append(ring(contours[child]))
    child=hierarchy[0,child,0]
   shapes.append({'outline':ring(c),'holes':holes})
- result[name]={'text':text,'heightRatio':round((bottom-top)*scale,5),'shapes':shapes,'method':('perspective-rectified photo silhouette reconstruction; proportions approximate; original photograph excluded' if name in ['southTeaching','teaching'] else 'photo silhouette reconstruction; original photograph excluded')}
+ result[name]={'text':text,'heightRatio':round((bottom-top)*scale,5),'shapes':shapes,'method':('manual photo stroke reconstruction; proportions approximate; original photograph excluded' if name=='physics' else 'perspective-rectified photo silhouette reconstruction; proportions approximate; original photograph excluded' if name in ['southTeaching','teaching'] else 'photo silhouette reconstruction; original photograph excluded')}
  tile=np.full((200,1000,3),245,np.uint8);fit=min(960/clean.shape[1],155/clean.shape[0]);small=cv2.resize(clean,None,fx=fit,fy=fit,interpolation=cv2.INTER_AREA);tile[10:10+small.shape[0],20:20+small.shape[1]][small>120]=(55,145,185);cv2.putText(tile,name,(20,190),0,.65,(0,0,0),1);tiles.append(tile)
 output.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')))
-review='references/phase32/teaching-lettering-review.png' if args.only=='teaching' else 'references/phase28/south-lettering-review.png' if args.only=='southTeaching' else 'references/phase20/building-lettering-review.png'
+review='references/phase36/physics-lettering-review.png' if args.only=='physics' else 'references/phase32/teaching-lettering-review.png' if args.only=='teaching' else 'references/phase28/south-lettering-review.png' if args.only=='southTeaching' else 'references/phase20/building-lettering-review.png'
 cv2.imwrite(review,np.concatenate(tiles))
 print({key:{'shapes':len(value['shapes']),'heightRatio':value['heightRatio']} for key,value in result.items()})

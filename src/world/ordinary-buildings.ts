@@ -6,6 +6,7 @@ import type { CollisionMesh } from './collision-mesh.ts';
 import { collisionMesh } from './collision-mesh.ts';
 import { insidePolygon, planShape, type MapFeature, type MapPolygon } from './campus-map.ts';
 import {buildFeiYimin} from './fei-yimin.ts';
+import {buildPhysicsBuilding} from './physics-building.ts';
 import {buildLibraryComplex} from './library-complex.ts';
 import {buildSpecific} from './specific-buildings.ts';
 import {entranceMaterials,addEntrance,type DoorRecord} from './building-entrances.ts';
@@ -49,6 +50,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
     if(f.id==='plan-66'){records.push(buildLibraryComplex(mats,b,fixedMeshes,cameraSolids,doors,doorMaterials));continue;}
     if(f.id==='plan-4'){records.push(buildFeiYimin(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials));continue;}
+    if(f.id==='plan-70'){records.push(buildPhysicsBuilding(f,b,fixedMeshes,cameraSolids,doors));continue;}
     const specific=buildSpecific(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials);if(specific){records.push(specific);continue;}
     const profile=getBuildingProfile(f),teaching=f.id==='teaching-priority',points=f.points,shape=planShape(f);
     const height=teaching?16.6:profile.levels*3.25, floorHeight=height/profile.levels;
