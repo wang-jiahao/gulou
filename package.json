@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.54.0",
+  "version": "0.55.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -82,7 +82,8 @@
     "test:hospital": "node scripts/hospital-check.mjs",
     "test:parcel": "node scripts/parcel-check.mjs",
     "test:jinyin-boundary": "node scripts/jinyin-boundary-check.mjs",
-    "test:jinyin-trees": "node scripts/jinyin-trees-check.mjs"
+    "test:jinyin-trees": "node scripts/jinyin-trees-check.mjs",
+    "test:sufute-facade": "node scripts/sufute-facade-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

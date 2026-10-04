@@ -16,6 +16,7 @@ import {buildLibraryComplex} from './library-complex.ts';
 import {buildSpecific} from './specific-buildings.ts';
 import {entranceMaterials,addEntrance,type DoorRecord} from './building-entrances.ts';
 import { getBuildingProfile } from './building-profiles.ts';
+import {createSufuteFacade} from './sufute-facade.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
 export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, roads:MapPolygon[] = []) {
@@ -50,6 +51,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   };
   const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group}>();
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
+  const sufute=createSufuteFacade();
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
@@ -89,6 +91,9 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         else target.box(w,h,d,x,y,z,mat,false,angle);
       };
       if(!ri)edges.push({len,x:mx,z:mz,angle,nx,nz});
+      if(f.id==='plan-12'&&!ri&&nx>.98&&len>8){
+        windows+=sufute.face(b,detail,{len,x:mx,z:mz,angle,nx,nz},height);continue;
+      }
       put(b,0,.42,.025,len,.84,.12,plinth);
       // A thin finish stays behind the existing reveals and glass, so the
       // darker storey cannot cover windows or alter the physical footprint.
@@ -223,6 +228,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       if(frontage){
         frontView=[frontage.x,frontage.z,frontage.nx,frontage.nz];
         const e=frontage,w=Math.min(3.8,e.len*.38);
+        if(f.id==='plan-12')sufute.name(plaques,e);
         const put=(u:number,y:number,v:number,bw:number,bh:number,bd:number,mat:T.Material)=>detail.box(bw,bh,bd,e.x+u*Math.cos(e.angle)+v*e.nx,y,e.z-u*Math.sin(e.angle)+v*e.nz,mat,false,e.angle);
         if(f.id==='plan-80')entrance=buildHospitalEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e.x,e.z,e.angle);
         else{
@@ -262,6 +268,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.add(plaques);
   for(const mesh of group.children)if(mesh instanceof T.Mesh&&(glass.includes(mesh.material as T.MeshStandardMaterial)||mesh.material===gardenGlass)){mesh.receiveShadow=false;mesh.castShadow=false;}
   group.userData.buildings=records;
+  group.userData.sufuteFacade=sufute.metadata;
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
   let detailShadows=false;
   const updateVisibility=(position:T.Vector3,quality:string,flying:boolean)=>{

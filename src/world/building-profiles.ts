@@ -31,7 +31,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-6': profile(modern,'gl-3-17','low sports building with broad glazing under flat roof',{levels:3,windowWidth:2.6,bays:3.2}),
   'plan-8': profile(modern,'gl-4-02','pale academic block beside northwest entrance, aerial reference',{levels:8}),
   'plan-10': profile(modern,'gl-4-10','beige piers, large recessed entrance and projecting canopy',{levels:10,wall:0xc0b29a,portal:'columns',windowWidth:2.1}),
-  'plan-12': profile(modern,'gl-4-10','cream academic block with horizontal slab lines and roof parapet',{levels:6,wall:0xc6c4af}),
+  'plan-12': profile(modern,'gl-4-10 l + user campus plan','west side of Yifu forecourt: pale six-level block, horizontal window ledges, slender vertical piers, plain northern stair bay with paired small windows; hidden faces and dimensions approximate',{levels:6,wall:0xd0d0c8}),
   'plan-13': profile(modern,'gl-3-03','pool hall, rounded-looking corner banding and horizontal glazing',{levels:4,wall:0xd3d2c5,windowWidth:2.7,bays:3.3}),
   'plan-14': profile(modern,'gl-3-02','three-level pale facade, narrow upright windows and modest entrance',{levels:3,windowWidth:1.2,windowHeight:1.65,ac:true}),
   'plan-16': profile(villa,'gl-2-28','brick residence behind wall, pitched roof, recessed windows',{wall:0x9e8970,portal:'stone'}),
