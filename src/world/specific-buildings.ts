@@ -6,6 +6,7 @@ import {Builder,curvedRoof} from './geometry.ts';
 import {insidePolygon,planShape,type MapFeature} from './campus-map.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
 import {addEntrance,type DoorRecord,entranceMaterials} from './building-entrances.ts';
+import {buildParcelEntrance} from './parcel-entrance.ts';
 import type {Materials} from './materials.ts';
 
 const ids=new Set(['plan-34','plan-71','teaching-priority','new-teaching','plan-73','plan-105','plan-113','plan-100','plan-117']);
@@ -45,6 +46,8 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
   sections.push({height,area:area(points),points,bounds:[xbreak[ix],xbreak[ix+1],zbreak[iz],zbreak[iz+1]]});
  }
  let windows=0;
+ const parcel=f.id==='plan-100';
+ let parcelEntrance:ReturnType<typeof buildParcelEntrance>|undefined;
  const edges:{x:number;z:number;nx:number;nz:number;angle:number;len:number}[]=[];
  for(let edge=0;edge<f.points.length;edge++){
   const a=f.points[edge],c=f.points[(edge+1)%f.points.length],dx=c[0]-a[0],dz=c[1]-a[1],len=Math.hypot(dx,dz);if(len<.3)continue;
@@ -54,9 +57,11 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
   put(0,.35,.045,len,.7,.12,roof);
   const bayWidth=yifu?5.2:food?4.3:meng?2.9:teaching?3.25:3.4,bays=Math.max(1,Math.floor(len/bayWidth));
   for(let bay=0;bay<bays;bay++){
-   const u=(bay+.5)*len/bays-len/2,x=mx+u*Math.cos(angle),z=mz-u*Math.sin(angle),height=Math.min(...[-.48,0,.48].map(t=>heightAt(x+Math.cos(angle)*len/bays*t-nx*.12,z-Math.sin(angle)*len/bays*t-nz*.12))),levels=meng&&height>40?18:f.id==='plan-113'?4:Math.max(2,Math.round(height/3.6)),floor=height/levels,w=Math.min(len/bays-.65,yifu?4.1:food?3.5:teaching?1.7:2.1);
+   const u=(bay+.5)*len/bays-len/2,x=mx+u*Math.cos(angle),z=mz-u*Math.sin(angle),height=Math.min(...[-.48,0,.48].map(t=>heightAt(x+Math.cos(angle)*len/bays*t-nx*.12,z-Math.sin(angle)*len/bays*t-nz*.12))),levels=meng&&height>40?18:f.id==='plan-113'?4:Math.max(2,Math.round(height/3.6)),floor=height/levels;
    for(let level=0;level<levels;level++){
     if(teaching&&x> -94&&x< -74&&nz>.7||(south||newTeaching)&&nx<-.5)continue;
+    // Keep both window bays while leaving the user-confirmed east door clear.
+    const w=parcel&&nx>.9&&level===0?2.2:Math.min(len/bays-.65,yifu?4.1:food?3.5:teaching?1.7:2.1);
     const y=floor*(level+.58),h=teaching?2.05:yifu?1.65:food?1.65:2.05;
     put(u,y,.05,w+.18,h+.15,.12,dark);put(u,y,.14,w,h,.01,glass);
     for(const side of[-1,1]){put(u+side*w/2,y,.19,.075,h,.2,pale);put(u,y+side*h/2,.19,w+.18,.075,.2,pale);}
@@ -88,12 +93,13 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  let lettering:ReturnType<typeof addBuildingLettering>|undefined;
  let facade:ReturnType<typeof teachingFacade>['facade']|undefined;
  const preferred=edges.filter(e=>e.len>7).sort((a,c)=>{
-  const score=(e:typeof a)=>yifu?Math.abs(e.x+320)+Math.abs(e.z-33)*2+(e.nx<.5?100:0):meng?Math.abs(e.z-maxZ)+(e.nz>.5?0:80):newTeaching||south?Math.abs(e.x-minX)+(e.nx<-.5?0:80):teaching?Math.abs(e.x+85)*2+Math.abs(e.z-136):f.id==='plan-105'?Math.abs(e.x+84)*2+Math.abs(e.z-maxZ):Math.abs(e.x-cx)+Math.abs(e.z-minZ)+(e.nz<-.5?0:80);
+  const score=(e:typeof a)=>parcel?Math.abs(e.x-maxX)+(e.nx>.9?0:100):yifu?Math.abs(e.x+320)+Math.abs(e.z-33)*2+(e.nx<.5?100:0):meng?Math.abs(e.z-maxZ)+(e.nz>.5?0:80):newTeaching||south?Math.abs(e.x-minX)+(e.nx<-.5?0:80):teaching?Math.abs(e.x+85)*2+Math.abs(e.z-136):f.id==='plan-105'?Math.abs(e.x+84)*2+Math.abs(e.z-maxZ):Math.abs(e.x-cx)+Math.abs(e.z-minZ)+(e.nz<-.5?0:80);
   return score(a)-score(c);
  })[0];
  if(preferred){
   const e=preferred,width=Math.min(e.len-1,yifu?7.6:food||newTeaching?7.2:teaching?8.4:4.5),entryY=teaching?1.20:yifu?.60:newTeaching?.45:0;
-  if(!teaching)addEntrance(b,meshes,doors,doorMats,f.tags.name,e.x,e.z,e.angle,width,entryY);
+  if(parcel)parcelEntrance=buildParcelEntrance(b,meshes,cameraSolids,doors,f.tags.name,e.x,e.z,e.angle);
+  else if(!teaching)addEntrance(b,meshes,doors,doorMats,f.tags.name,e.x,e.z,e.angle,width,entryY);
   const put=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material)=>b.box(w,h,d,e.x+u*Math.cos(e.angle)+v*e.nx,y,e.z-u*Math.sin(e.angle)+v*e.nz,m,false,e.angle);
   if(entryY&&!teaching)for(let step=0;step<Math.round(entryY/.15);step++){const h=(step+1)*.15,v=1.72+(Math.round(entryY/.15)-1-step)*.31;put(0,h/2,v,width+1,h,.34,pale);const proxy=new T.Mesh(new T.BoxGeometry(width+1,h,.34));proxy.position.set(e.x+v*e.nx,h/2,e.z+v*e.nz);proxy.rotation.y=e.angle;meshes.push(collisionMesh(proxy));}
   if(yifu){put(0,5.2,.16,Math.min(e.len,18),2.05,.25,glass);for(const u of[-6,-2,2,6])put(u,3.5,.55,.26,7,.50,pale);}
@@ -120,7 +126,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
    lettering=addBuildingLettering(b,'southTeaching',e.x+e.nx*1.62,3.18,e.z+e.nz*1.62,5.3,e.angle);
   }
   else if(newTeaching){lettering=addBuildingLettering(b,'newTeaching',e.x+e.nx*.48,4.65,e.z+e.nz*.48,5.6,e.angle);}
-  else if(!teaching){
+  else if(!teaching&&!parcel){
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#c9c9bd';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#957534';ctx.font=`64px "Kaiti SC","STKaiti",serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(yifu?'逸 夫 館':teaching?'教 学 楼':f.tags.name,512,66,980);
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const signMat=new T.MeshStandardMaterial({map:texture,roughness:.8});
   b.add(new T.PlaneGeometry(Math.min(width+1,9),.70),signMat,e.x+e.nx*.8,teaching?4.55:yifu?3.8:3.7,e.z+e.nz*.8,new T.Euler(0,e.angle,0));
@@ -130,5 +136,5 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  if(f.id==='plan-105'){const rb=new Builder();curvedRoof(rb,cx,cz,maxX-minX+1,19,10.3,2.4,roof,pale,false);const g=rb.finish('south garden teaching roof');for(const child of g.children)if(child instanceof T.Mesh){meshes.push(collisionMesh(child,true));cameraSolids.push(child);b.add(child.geometry.clone(),child.material as T.Material);}}
  if(food){for(const x of[minX+1,maxX-1])for(const z of[minZ+1,maxZ-1])b.box(.55,heightAt(x,z),.55,x,heightAt(x,z)/2,z,pale);}
  const height=Math.max(...sections.map(s=>s.height));
- return{id:f.id,name:f.tags.name,source:yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'user photograph; official VR gl-2-10; map footprint; dimensions and hidden faces approximate':south?'NJU official VR gl-2-53 west entry; 2024 map; dimensions and hidden faces approximate':f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,lettering,facade,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
+ return{id:f.id,name:f.tags.name,source:parcel?'User parcel-point correction + matching screenshot; east door design, dimensions and sign approximate':yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'user photograph; official VR gl-2-10; map footprint; dimensions and hidden faces approximate':south?'NJU official VR gl-2-53 west entry; 2024 map; dimensions and hidden faces approximate':f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,lettering,facade,parcelEntrance,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
 }

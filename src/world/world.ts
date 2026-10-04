@@ -87,6 +87,9 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const groundCameraProxy = new T.Mesh(new T.PlaneGeometry(1800, 1900).rotateX(-Math.PI / 2), new T.MeshBasicMaterial({ side: T.DoubleSide })); groundCameraProxy.position.set(-130, .005, 160); groundCameraProxy.updateMatrixWorld(); cameraSolids.push(groundCameraProxy);
   const map: CampusMap = await mapResponse.json();
   const memorial=map.features.find(f=>f.id==='plan-50');if(memorial){memorial.tags={...memorial.tags,name:'赛珍珠纪念馆','building:levels':'2',source:'NJU Archives 2023-12-24 + user campus plan labelled 赛珍珠楼 + gl-2-05'};}
+  const parcel=map.features.find(f=>f.id==='plan-100');if(parcel){
+    parcel.tags={...parcel.tags,old_name:parcel.tags.name,name:'南园快递取件点',source:'User correction and matching screenshot; descriptive label, official service name unverified'};
+  }
   const oldLabs=map.features.findIndex(f=>f.id==='plan-36');if(oldLabs>=0)map.features.splice(oldLabs,1,...splitTeachingFeature(map.features[oldLabs]));
   const southTeaching=map.features.find(f=>f.id==='plan-73');if(southTeaching){
     // Re-traced from the 2024 official plan, registered to the existing map.
