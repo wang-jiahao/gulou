@@ -27,6 +27,7 @@ import {createGuangzhouGate} from './guangzhou-gate.ts';
 import {createLampBanners} from './lamp-banners.ts';
 import {createSportsHallForecourts} from './sports-hall-forecourts.ts';
 import {createSportsHallPaving, sportsHallPavingLayout} from './sports-hall-paving.ts';
+import {createZhongdaAvenue, zhongdaAvenueLayout, trimAvenueCurb, avenueTreePosition} from './zhongda-avenue.ts';
 import {createPlanarCutout} from './planar-cutout.ts';
 import {splitTeachingFeature} from './specific-buildings.ts';
 import type {CampusBicycle} from './bicycle.ts';
@@ -89,6 +90,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   }
   map.features.push(fireTowerFootprint);
   const sportsPaving = sportsHallPavingLayout(map), sportsPavingCutout = createPlanarCutout(sportsPaving.outline);
+  const avenue = zhongdaAvenueLayout(), surfaceCutouts = [sportsPavingCutout,...avenue.outlines.map(createPlanarCutout)];
   const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
   const lawnHeight = .20;
   const courtyardHeight = (x: number, z: number) => terrainHeight(x,z) + ([...raisedLawns].some(lawn => insidePolygon(x, z, lawn)) ? lawnHeight : .022);
@@ -116,8 +118,12 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const addSurface = (polygon: Parameters<typeof planShape>[0], material: T.Material, y: number) => {
     let geometry = terrainSurface(polygon,y);
     if (material === asphalt) { const proxy = new T.Mesh(geometry); proxy.updateMatrixWorld(); fixedMeshes.push(collisionMesh(proxy, false)); }
-    if (sportsPavingCutout.intersects(polygon.points)) {
-      geometry.dispose(); geometry = terrainSurface(polygon,y,sportsPavingCutout);
+    const cuts = surfaceCutouts.filter(c=>c.intersects(polygon.points));
+    if (cuts.length) {
+      geometry.dispose(); geometry = terrainSurface(polygon,y,{
+        intersects: ring=>cuts.some(c=>c.intersects(ring)),
+        subtract: ring=>cuts.reduce((fragments,c)=>fragments.flatMap(p=>c.subtract(p)),[ring]),
+      });
     }
     b.add(geometry, material);
   };
@@ -127,7 +133,9 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], x = (ax + bx) / 2, z = (az + bz) / 2, length = Math.hypot(bx - ax, bz - az);
       if (length < 1 || x < -163 || x > 85 || z < -27 || z > 350) continue;
       if (Math.abs(x) < 39 && z > 14 && z < 84) continue;
-      b.box(.16, .12, length, x, .07 + terrainHeight(x,z), z, mats.stone, false, Math.atan2(bx - ax, bz - az));
+      for(const [[cx,cz],[dx,dz]] of trimAvenueCurb([ax,az],[bx,bz],avenue.outlines)) {
+        b.box(.16,.12,Math.hypot(dx-cx,dz-cz),(cx+dx)/2,.07+terrainHeight((cx+dx)/2,(cz+dz)/2),(cz+dz)/2,mats.stone,false,Math.atan2(dx-cx,dz-cz));
+      }
     }
   }
   // The lower approach in scene_gl-3-16 is asphalt right up to the stone stair.
@@ -152,6 +160,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   b.box(8.5, .06, 6.5, -31, .025, 99, mats.path);
   const ground = b.finish('registered campus roads lawns and playing fields'); root.add(ground); solids.push(...b.solids);
   root.add(createSportsHallPaving(sportsPaving,mats));
+  root.add(createZhongdaAvenue(avenue,mats,asphalt));
   root.add(createPublicStreets(mats));
   const southRoads = createSouthRoadDetails(map, mats,[songlinPathOpening]); root.add(southRoads.group); solids.push(...southRoads.solids);
   const garden = createSonglinGarden(mats); root.add(garden.group); solids.push(...garden.solids); fixedMeshes.push(...garden.fixedMeshes);cameraSolids.push(...garden.group.children);
@@ -252,12 +261,12 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     afterSector();
     sectors++;
     await new Promise<void>(resolve => setTimeout(resolve, 50));
-    const rand = rng(88), farTrees: TreeSpot[] = [];
+    const rand = rng(88), farTrees: TreeSpot[] = [], avenueTrees: TreeSpot[] = [];
     const clear = (x: number, z: number) => !sportsClearance(x,z)&&!teachingParkingClearance(x,z)&&!ordinary.doors.some(d=>Math.hypot(d.x-x,d.z-z)<5)&&!map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
     // Avenue planting uses the traced road edge; other trees stay within plan lawns.
     for (let z = 156; z < 342; z += 15) for (const side of [-1, 1]) {
       const x = -85 - (z - 182) * .035 + side * 8;
-      if (clear(x, z)) farTrees.push({ x, z, height: 15 + rand() * 5 });
+      if (clear(x, z)) { const tree={x,z,height:15+rand()*5};farTrees.push(tree);avenueTrees.push(tree); }
     }
     for (let attempt = 0; attempt < 6500 && farTrees.length < 190; attempt++) {
       const x = -575 + rand() * 705, z = -240 + rand() * 960;
@@ -267,6 +276,14 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       if (farTrees.some(t => Math.hypot(t.x - x, t.z - z) < 11)) continue;
       farTrees.push({ x, z, height: 12 + rand() * 8 });
     }
+    // Adjust only the avenue trees after all sampling, preserving the random
+    // sequence and positions of every unrelated tree across campus.
+    const avenueTreeMoves = avenueTrees.flatMap(tree=>{
+      const next=avenueTreePosition(tree.x,tree.z,avenue);
+      if(Math.abs(next.z-tree.z)<.001)return [];
+      const before=[tree.x,tree.z];Object.assign(tree,next);return [{before,after:[tree.x,tree.z]}];
+    });
+    root.getObjectByName('zhongda avenue walks and planted strips')!.userData.treeMoves=avenueTreeMoves;
     // Filter after sampling so correcting this forecourt never reshuffles
     // the seeded avenue/woodland planting elsewhere on campus.
     for (let i=farTrees.length-1;i>=0;i--) if (insidePolygon(farTrees[i].x,farTrees[i].z,sportsPaving.surface)) farTrees.splice(i,1);
