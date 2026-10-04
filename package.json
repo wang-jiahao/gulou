@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.49.0",
+  "version": "0.50.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -75,7 +75,10 @@
     "test:pearl-memorial": "node scripts/pearl-memorial-check.mjs",
     "test:zhongshan": "node scripts/zhongshan-check.mjs",
     "test:rabe": "node scripts/rabe-check.mjs",
-    "test:rabe-courtyard": "RABE_COURTYARD=1 node --experimental-strip-types scripts/rabe-check.mjs"
+    "test:rabe-courtyard": "RABE_COURTYARD=1 node --experimental-strip-types scripts/rabe-check.mjs",
+    "test:indexed-geometry": "node scripts/indexed-geometry-check.mjs",
+    "test:indexed-behavior": "node scripts/indexed-behavior-check.mjs",
+    "test:indexed-render": "node scripts/indexed-render-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

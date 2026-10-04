@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export type Solid = { x: number; y: number; z: number; w: number; h: number; d: number; angle?: number };
 export const rng = (seed: number) => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-const unitBox = new T.BoxGeometry(1,1,1).toNonIndexed();
+const unitBox = new T.BoxGeometry(1,1,1);
 
 /** All decorative architecture is merged by material; collision has separate simple solids. */
 export class Builder {
@@ -15,8 +15,7 @@ export class Builder {
     const a = this.buckets.get(mat) ?? []; a.push(g); this.buckets.set(mat, a);
   }
   box(w: number, h: number, d: number, x: number, y: number, z: number, mat: T.Material, solid = false, angle = 0, textureScale = 2) {
-    // Reuse the topology instead of rebuilding indices and six faces for every
-    // small window component, then expanding all of them again at merge time.
+    // Share each face's four vertices while keeping its own normals and UVs.
     const g=unitBox.clone(),uv=g.getAttribute('uv'),position=g.getAttribute('position'),normal=g.getAttribute('normal');
     const cos=Math.cos(angle),sin=Math.sin(angle);
     for(let i=0;i<position.count;i++){
@@ -26,7 +25,7 @@ export class Builder {
     }
     for (let face = 0; face < 6; face++) {
       const u = (face < 2 ? d : w) / textureScale, v = (face === 2 || face === 3 ? d : h) / textureScale;
-      for (let j = 0; j < 6; j++) { const i = face * 6 + j; uv.setXY(i, uv.getX(i) * u, uv.getY(i) * v); }
+      for (let j = 0; j < 4; j++) { const i = face * 4 + j; uv.setXY(i, uv.getX(i) * u, uv.getY(i) * v); }
     }
     g.userData={builderCenter:[x,z]};
     const geometries=this.buckets.get(mat)??[];geometries.push(g);this.buckets.set(mat,geometries);
@@ -53,8 +52,15 @@ export class Builder {
         }
       }else cells.set('all',geometries);
       for(const [key,cell]of cells){
-        const parts=cell.map(g=>g.index?g.toNonIndexed():g),geo=mergeGeometries(parts);
-        for(let i=0;i<parts.length;i++)if(parts[i]!==cell[i])parts[i].dispose();
+        // Preserve primitive indices; give triangle soup an identity index so
+        // mixed inputs can merge without changing any triangle or attribute.
+        for(const g of cell)if(!g.index){
+          const count=g.getAttribute('position').count;
+          const index=count>65535?new Uint32Array(count):new Uint16Array(count);
+          for(let i=0;i<count;i++)index[i]=i;
+          g.setIndex(new T.BufferAttribute(index,1));
+        }
+        const geo=mergeGeometries(cell);
         for(const g of cell)g.dispose();
         if(!geo)continue;
         geo.computeBoundingSphere();const mesh=new T.Mesh(geo,mat);mesh.castShadow=mesh.receiveShadow=true;mesh.name=mat.name;mesh.userData.spatialCell=key;group.add(mesh);
