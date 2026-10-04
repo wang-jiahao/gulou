@@ -83,6 +83,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  }
  // Pick the documented main approach, rather than reuse a randomly selected
  // generic wall. The footprints still determine the exact exterior boundary.
+ let lettering:ReturnType<typeof addBuildingLettering>|undefined;
  const preferred=edges.filter(e=>e.len>7).sort((a,c)=>{
   const score=(e:typeof a)=>yifu?Math.abs(e.x+320)+Math.abs(e.z-33)*2+(e.nx<.5?100:0):meng?Math.abs(e.z-maxZ)+(e.nz>.5?0:80):newTeaching||south?Math.abs(e.x-minX)+(e.nx<-.5?0:80):teaching?Math.abs(e.x+85)*2+Math.abs(e.z-136):f.id==='plan-105'?Math.abs(e.x+84)*2+Math.abs(e.z-maxZ):Math.abs(e.x-cx)+Math.abs(e.z-minZ)+(e.nz<-.5?0:80);
   return score(a)-score(c);
@@ -115,7 +116,17 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
    for(const u of[-6.7,-2.2,2.2,6.7])put(u,9.3,.53,.45,12.8,.65,pale);
    put(0,4.05,1.0,14.8,.40,2.2,pale);put(0,15.6,.52,14.6,.34,1.1,pale);
   }
-  if(newTeaching){addBuildingLettering(b,'newTeaching',e.x+e.nx*.48,4.65,e.z+e.nz*.48,5.6,e.angle);}
+  if(south){
+   // gl-2-53-r: west-entry gold characters stand above a narrow dark canopy,
+   // with slim supports against jointed pale stone. Dimensions are approximate.
+   const joint=mat('south-teaching-stone-joint',0x9b9e95);
+   for(let y=3.1;y<7.6;y+=.65)put(0,y,.015,e.len-.12,.018,.02,joint);
+   for(let u=-e.len/2+1.8;u<e.len/2;u+=1.8)put(u,5.35,.015,.014,4.5,.02,joint);
+   put(0,2.86,.86,6.8,.18,1.95,dark);
+   for(const u of[-2.15,-.70,.75,2.12])put(u,3.23,1.57,.04,.58,.05,dark);
+   lettering=addBuildingLettering(b,'southTeaching',e.x+e.nx*1.62,3.18,e.z+e.nz*1.62,5.3,e.angle);
+  }
+  else if(newTeaching){lettering=addBuildingLettering(b,'newTeaching',e.x+e.nx*.48,4.65,e.z+e.nz*.48,5.6,e.angle);}
   else {
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#c9c9bd';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#957534';ctx.font=`64px "Kaiti SC","STKaiti",serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(yifu?'逸 夫 館':teaching?'教 学 楼':f.tags.name,512,66,980);
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const signMat=new T.MeshStandardMaterial({map:texture,roughness:.8});
@@ -126,5 +137,5 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  if(f.id==='plan-105'){const rb=new Builder();curvedRoof(rb,cx,cz,maxX-minX+1,19,10.3,2.4,roof,pale,false);const g=rb.finish('south garden teaching roof');for(const child of g.children)if(child instanceof T.Mesh){meshes.push(collisionMesh(child,true));cameraSolids.push(child);b.add(child.geometry.clone(),child.material as T.Material);}}
  if(food){for(const x of[minX+1,maxX-1])for(const z of[minZ+1,maxZ-1])b.box(.55,heightAt(x,z),.55,x,heightAt(x,z)/2,z,pale);}
  const height=Math.max(...sections.map(s=>s.height));
- return{id:f.id,name:f.tags.name,source:yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'VR gl-2-10; local video':south||f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
+ return{id:f.id,name:f.tags.name,source:yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'VR gl-2-10; local video':south?'NJU official VR gl-2-53 west entry; 2024 map; dimensions and hidden faces approximate':f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,lettering,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
 }

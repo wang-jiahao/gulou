@@ -168,3 +168,7 @@
 ## Local v0.26 — Single building roof surface
 
 Ordinary and sectioned specific buildings now render the existing extrusion cap as the roof, removing near-coplanar duplicate surfaces that produced triangular depth stripes at long distances. Existing footprint/height references remain unchanged; no new architectural dimensions are inferred. The closed collision shell and camera blockers are preserved. No source reference image or personal media is included.
+
+## v0.27 南教学楼西端题字与入口细部
+
+依据南京大学官方鼓楼VR `scene_gl-2-53-r` 立方体面实际查看全景和原尺寸题字裁切。以石材分缝作透视校正，重建金色“南教学楼”各字的独立轮廓和孔洞；照片中的字形保留，不用系统字体替换。`scripts/trace-building-lettering.py --only southTeaching`可单独重建，保持旧三组数据。金字置于西入口深色薄檐上，补窄支撑与浅色石材分缝。透视校正后比例、字宽5.3m、题字高度和檐尺寸为影像估计；建筑7.6m体量与原碰撞不变。原始照片及校正照片仅存本地references，产品仅含重建矢量。
