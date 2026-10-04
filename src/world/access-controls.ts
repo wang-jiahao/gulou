@@ -12,7 +12,7 @@ export const campusEntrances:CampusEntrance[]=[
  {id:'south-north',name:'南园北门',x:-88.39,z:383.62,angle:0,pedestrians:[-4.7,4.7],source:'campus plan gate symbol [2216,2646]'},
  {id:'beijing-west',name:'北京西路门',x:-346.9,z:-234.17,angle:Math.PI,pedestrians:[-4.8,4.8],source:'campus plan [967,547]; OSM 1984468961'},
  {id:'beijing-east',name:'北京西路东侧出入口',x:-170.29,z:-208.14,angle:Math.PI,pedestrians:[-4.8,4.8],source:'campus plan [1610,583]; OSM 1684918728; descriptive name'},
- {id:'northwest',name:'西北校门',x:-368.66,z:-146.88,angle:Math.PI/2,pedestrians:[-4.8,4.8],source:'campus plan [935,878]; official VR gl-4-02'},
+ {id:'northwest',name:'西北校门',x:-368.66,z:-146.88,angle:Math.PI/2,pedestrians:[-4.8,4.8],source:'campus plan [935,878]; official VR gl-4-02 aerial overview (not a ground-level gate view)'},
  {id:'west',name:'西校门',x:-275.74,z:97.06,angle:Math.PI/2,pedestrians:[-4.8,4.8],source:'campus plan [1391,1732]; OSM 1030348723'},
  {id:'tianjin',name:'天津路门',x:76.29,z:-50.86,angle:-Math.PI/2,pedestrians:[-4.8,4.8],source:'campus plan [2570,1063]; OSM 1615452151'},
  {id:'south-east',name:'小粉桥校门',x:southEastGate[0],z:southEastGate[1],angle:-Math.PI/2,pedestrians:[-4.8],source:'campus plan gate symbol [3037,3212]; equipment approximate'},

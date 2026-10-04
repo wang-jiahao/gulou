@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.41.0",
+  "version": "0.42.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -67,7 +67,9 @@
     "test:planar-cutout": "node --experimental-strip-types scripts/planar-cutout-check.mjs",
     "test:sports-paving": "node scripts/sports-paving-check.mjs",
     "test:south-boundary-layout": "node --experimental-strip-types scripts/south-boundary-layout-check.mjs",
-    "test:south-boundary": "node --experimental-strip-types scripts/south-boundary-check.mjs"
+    "test:south-boundary": "node --experimental-strip-types scripts/south-boundary-check.mjs",
+    "test:north-boundary-layout": "node --experimental-strip-types scripts/north-boundary-layout-check.mjs",
+    "test:north-boundary": "node --experimental-strip-types scripts/north-boundary-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

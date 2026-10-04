@@ -1,43 +1,16 @@
 import * as T from 'three';
+import { northBoundaryRuns } from './north-boundary-layout.ts';
 import { southBoundaryRuns } from './south-boundary-layout.ts';
 import { Builder } from './geometry.ts';
 import type { Materials } from './materials.ts';
 
-type Point = readonly [number, number];
-type Boundary = { name: string; kind: 'wall'; points: Point[] };
-
-/** Existing north-side masonry is retained pending the next perimeter phase.
- * South perimeter follows the registered map and the user's current railing
- * description; heights, bay spacing and unseen details remain approximate. */
-const boundaries: Boundary[] = [
-  { name: 'hankou-north-west', kind: 'wall', points: [[-106.20, 343.85], [-115, 346.7], [-138.7, 347.4]] },
-  { name: 'hankou-north-east', kind: 'wall', points: [[-75.90, 343.85], [-67.8, 348], [-43.7, 348.7]] },
-];
-
+/** Map-traced railings. The western north-campus public-street boundary still
+ * requires reference verification; all dimensions are model approximations. */
 export function createCampusBoundaries(mats: Materials) {
   const b = new Builder();
   const stone = new T.MeshStandardMaterial({ name: 'campus-boundary-stone', color: 0xb9c0ba, map: mats.textures.get('stone-grain.webp'), roughness: .94 });
   const cap = new T.MeshStandardMaterial({ name: 'campus-boundary-coping', color: 0xabb3ad, roughness: .9 });
-  const joint = new T.MeshStandardMaterial({ name: 'campus-boundary-joints', color: 0x909b96, roughness: .96 });
   const iron = new T.MeshStandardMaterial({ name: 'campus-boundary-iron', color: 0x293832, roughness: .65, metalness: .35 });
-  for (const boundary of boundaries) {
-    for (let i = 1; i < boundary.points.length; i++) {
-      const [ax, az] = boundary.points[i - 1], [bx, bz] = boundary.points[i];
-      const length = Math.hypot(bx - ax, bz - az), angle = Math.atan2(az - bz, bx - ax);
-      const box = (u: number, y: number, w: number, h: number, d: number, mat: T.Material, solid = false, v = 0) => {
-        b.box(w, h, d, ax + u * Math.cos(angle) + v * Math.sin(angle), y, az - u * Math.sin(angle) + v * Math.cos(angle), mat, solid, angle);
-      };
-      box(length / 2, 1.25, length, 2.5, .38, stone, true);
-      box(length / 2, .15, length, .3, .45, cap);
-      box(length / 2, 2.54, length + .12, .12, .5, cap);
-      // Narrow mortar lines sit outside the wall surface, without coplanar faces.
-      for (const side of [-1, 1]) {
-        for (const y of [.65, 1.25, 1.85]) box(length / 2, y, length, .014, .008, joint, false, side * .195);
-        const bays = Math.ceil(length / 3.8);
-        for (let k = 1; k < bays; k++) box(k * length / bays, 1.4, .014, 2.18, .008, joint, false, side * .195);
-      }
-    }
-  }
   const group = b.finish('campus perimeter boundaries');
   const cameraSolids: T.Object3D[] = [...group.children];
   const proxy = new Builder();
@@ -55,7 +28,7 @@ export function createCampusBoundaries(mats: Materials) {
   };
   const panels: { x: number; y: number; z: number; w: number; h: number; d: number; angle: number }[] = [];
   let bays = 0, emblems = 0;
-  for (const run of southBoundaryRuns) {
+  for (const run of [...southBoundaryRuns, ...northBoundaryRuns]) {
     let bayIndex = 0;
     for (let i = 1; i < run.points.length; i++) {
       const [ax, az] = run.points[i - 1], [bx, bz] = run.points[i];
@@ -96,7 +69,7 @@ export function createCampusBoundaries(mats: Materials) {
     mesh.computeBoundingSphere(); mesh.name = batch.material.name; mesh.userData.spatialCell = cell.split(':').slice(1).join(':');
     mesh.castShadow = mesh.receiveShadow = true; group.add(mesh); instances += mesh.count;
   }
-  cameraSolids.push(...proxy.finish('south perimeter camera panels', 64).children);
-  group.userData = { boundaries, southRuns: southBoundaryRuns, panels, height: 3.15, bays, emblems, instances, renderBatches: batches.size, sharedGeometries: 2, approximate: true };
+  cameraSolids.push(...proxy.finish('campus perimeter camera panels', 64).children);
+  group.userData = { northRuns: northBoundaryRuns, northComplete: false, southRuns: southBoundaryRuns, panels, height: 3.15, bays, emblems, instances, renderBatches: batches.size, sharedGeometries: 2, approximate: true };
   return { group, solids: b.solids, cameraSolids };
 }
