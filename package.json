@@ -1,9 +1,10 @@
 {
   "name": "gulou",
-  "version": "0.56.0",
+  "version": "0.57.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "test:tian-courtyard": "node scripts/tian-courtyard-check.mjs",
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
