@@ -5,6 +5,7 @@ import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
 import {entranceMaterials,type DoorRecord} from './building-entrances.ts';
 import {addBuildingLettering} from './building-lettering.ts';
 import {libraryEntrance} from './library-entrances.ts';
+import {museumNorthFacade} from './museum-facade.ts';
 import {splitBuildingRoof} from './building-roof.ts';
 import type {Materials} from './materials.ts';
 
@@ -32,6 +33,9 @@ export function buildLibraryComplex(mats:Materials,b:Builder,meshes:CollisionMes
    const a=points[i],c=points[(i+1)%points.length],dx=c[0]-a[0],dz=c[1]-a[1],len=Math.hypot(dx,dz),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2;
    let nx=-dz/len,nz=dx/len;if(insidePolygon(mx+nx*.1,mz+nz*.1,polygon)){nx=-nx;nz=-nz;}
    const yaw=Math.atan2(nx,nz),put=(u:number,y:number,v:number,w:number,h:number,d:number,mat:T.Material)=>b.box(w,h,d,mx+u*Math.cos(yaw)+v*nx,y+bottom,mz-u*Math.sin(yaw)+v*nz,mat,false,yaw);
+   // Only the central north face is sufficiently visible in gl-2-21-f to
+   // replace the generic windows; wing elevations remain approximate.
+   if(name==='historic-north'&&i===2){windows+=museumNorthFacade(b,mx,mz,yaw,len);continue;}
    put(0,.35,.035,len,.70,.10,plinth);put(0,height-.08,.09,len,.20,.30,trim);
    if(style==='plain'||len<2.2)continue;
    const bays=Math.max(1,Math.floor(len/(style==='historic'?3.2:2.6))),pitch=len/bays;

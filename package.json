@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -51,7 +51,8 @@
     "test:roof-geometry": "node --experimental-strip-types scripts/building-roof-check.mjs",
     "test:roofs": "node scripts/phase27-check.mjs",
     "test:south-teaching": "node scripts/phase28-check.mjs",
-    "test:library-entrances": "node scripts/phase29-check.mjs"
+    "test:library-entrances": "node scripts/phase29-check.mjs",
+    "test:museum-facade": "node scripts/phase30-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",
