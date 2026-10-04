@@ -152,3 +152,9 @@
 
 - Official VR scene_gl-3 front/back aerials show eight lanes, the western sprint-straight extensions, red semicircles and two east–west jump runways sharing a sandpit on the eastern side of the south apron. These were inspected alongside the 2024 campus plan and scene_gl-3-17. Lane widths, curve radii, runways and pit dimensions fit the registered model approximately; the track is not asserted to be a surveyed 400 m circuit.
 - Track/apron markings and sand are generated geometry and materials. The apron excludes the exact existing turf footprint to avoid overlapping ground surfaces. These decorative additions do not add collision barriers or alter football rules. Original panorama tiles and video frames remain local.
+
+## Local v0.24 — Fei Yimin tower, column recess and courtyard
+
+- The [official VR](https://vr.nju.edu.cn/newUI/#/) scene_gl-3 front aerial and scene_gl-4-02 right face were directly inspected with the [2024 campus plan](https://zcc.nju.edu.cn/dzdt/glxqdt/index.html). They establish the western tower, low east/south wings, west-open court and southwest column recess with an inner wall. The large colonnade near 25 minutes in the user walk video belongs to the western neighbouring building and does not establish a through-tunnel in Fei Yimin.
+- The canopy is separately collidable overhead while its ground route remains open. The 68.4 m tower, 19 m wings, floor spacing, canopy dimensions and hidden facades are visual estimates. Vertical gold lettering is placed on the south wing's west end, recreated with a system Kai font; it is not a traced original inscription.
+- Models, glazing and lettering are generated locally. Reference photographs, panorama tiles, user screenshots and videos remain outside source commits and distribution.

@@ -4,6 +4,7 @@ import type { Materials } from './materials.ts';
 import type { CollisionMesh } from './collision-mesh.ts';
 import { collisionMesh } from './collision-mesh.ts';
 import { insidePolygon, planShape, type MapFeature, type MapPolygon } from './campus-map.ts';
+import {buildFeiYimin} from './fei-yimin.ts';
 import {buildLibraryComplex} from './library-complex.ts';
 import {buildSpecific} from './specific-buildings.ts';
 import {entranceMaterials,addEntrance,type DoorRecord} from './building-entrances.ts';
@@ -46,6 +47,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
     if(f.id==='plan-66'){records.push(buildLibraryComplex(mats,b,fixedMeshes,cameraSolids,doors,doorMaterials));continue;}
+    if(f.id==='plan-4'){records.push(buildFeiYimin(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials));continue;}
     const specific=buildSpecific(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials);if(specific){records.push(specific);continue;}
     const profile=getBuildingProfile(f),teaching=f.id==='teaching-priority',points=f.points,shape=planShape(f);
     const height=teaching?16.6:profile.levels*3.25, floorHeight=height/profile.levels;
@@ -211,8 +213,8 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         const depth=profile.portal==='glass'?1.1:.7;put(0,3.17,depth*.4,w+1.05,.15,depth,stone);
         if(profile.portal==='columns')for(const side of[-1,1])put(side*(w/2+.3),1.52,.5,.18,2.9,.22,stone);
         if(profile.style==='villa'&&profile.balcony){put(0,3.52,.85,w+.7,.13,.13,stone);for(let q=-4;q<=4;q++)put(q*w/8,3.3,.85,.075,.45,.08,stone);}
-        if(['plan-34','plan-4','plan-71','plan-113','plan-117','plan-100'].includes(f.id)){
-          const name=f.id==='plan-4'?'费彝民楼':f.tags.name;
+        if(['plan-34','plan-71','plan-113','plan-117','plan-100'].includes(f.id)){
+          const name=f.tags.name;
           const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;const ctx=canvas.getContext('2d')!;
           ctx.fillStyle='#b9b8ac';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#776339';ctx.font='76px "Kaiti SC","STKaiti",serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(name,512,68,990);
           const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;

@@ -5,7 +5,7 @@ async function hold(ms,...keys){for(const k of keys)await p.keyboard.down(k);awa
 try{
  p=await b.newPage({viewport:{width:1440,height:900}});await start(p);
  result.buildings=await p.evaluate(()=>{const g=window.__GULOU__.game,records=g.world.root.getObjectByName('plan-based campus buildings with VR facade profiles').userData.buildings;return records.filter(r=>r.sections).map(r=>({id:r.id,name:r.name,height:r.height,sections:r.sections.map(s=>({height:s.height,area:s.area})),area:r.footprintArea,frontage:r.frontage}));});
- assert.equal(result.buildings.length,10);for(const r of result.buildings)assert.ok(Math.abs(r.sections.reduce((n,s)=>n+s.area,0)-r.area)<.02,'zoned mass preserves traced footprint');assert.equal(result.buildings.find(r=>r.id==='plan-4').height,68.4);
+ assert.deepEqual(result.buildings.map(r=>r.id).sort(),['plan-34','plan-71','teaching-priority','new-teaching','plan-73','plan-105','plan-113','plan-100','plan-117'].sort());for(const r of result.buildings)assert.ok(Math.abs(r.sections.reduce((n,s)=>n+s.area,0)-r.area)<.02,'zoned mass preserves traced footprint');assert.equal(await p.evaluate(()=>window.__GULOU__.game.world.root.getObjectByName('plan-based campus buildings with VR facade profiles').userData.buildings.find(r=>r.id==='plan-4').height),68.4);
  result.streetDetails=await p.evaluate(()=>{const root=window.__GULOU__.game.world.root;return{gate:root.getObjectByName('广州路门 · stone piers and guard pavilion').userData,banners:root.getObjectByName('paired campus lamp banners').userData};});
  assert.ok(result.streetDetails.gate.signText.includes('广州路门'));assert.equal(result.streetDetails.banners.poles,9);
  // Walk the two gate approaches from the public sidewalk, checking that the
