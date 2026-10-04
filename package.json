@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.33.0",
+  "version": "0.34.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -57,7 +57,8 @@
     "test:teaching-facade": "node scripts/phase32-check.mjs",
     "metrics": "node scripts/update-work-metrics.mjs",
     "test:entry-landing": "node scripts/entry-landing-check.mjs",
-    "test:camera-bounds": "node scripts/camera-bounds-check.mjs"
+    "test:camera-bounds": "node scripts/camera-bounds-check.mjs",
+    "test:sports-front": "node scripts/sports-front-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

@@ -90,6 +90,12 @@ export function createSportsGround(mats:Materials){
       }
     }
   }
+  const stand=frame(sportsStand),sp=stand.point;
+  // The official west-facing panorama shows uninterrupted access from the
+  // track to the full stepped front. Clip only this local strip, not the far
+  // side of the field. The small side clearance is estimated from the photo.
+  const front={minU:0,maxU:stand.width/2+7,halfV:stand.length/2+.65};
+  const standLocal=(x:number,z:number)=>({u:(x-stand.x)*Math.cos(stand.angle)-(z-stand.z)*Math.sin(stand.angle),v:(x-stand.x)*Math.sin(stand.angle)+(z-stand.z)*Math.cos(stand.angle)});
   // Gate positions come from the labelled plan entrances. Use the local fence
   // tangent to leave a real gap through both segments adjacent to a gate.
   const perimeter=sportsFence.map(p=>[...p]);
@@ -111,14 +117,19 @@ export function createSportsGround(mats:Materials){
     for(const gate of gates){const ux=a[0]-gate.x,uz=a[1]-gate.z,bb=2*(ux*dx+uz*dz),cc=ux*ux+uz*uz-(gate.width/2)**2,disc=bb*bb-4*ll*cc;
       if(disc>=0)for(const t of [(-bb-Math.sqrt(disc))/(2*ll),(-bb+Math.sqrt(disc))/(2*ll)])if(t>0&&t<1)cuts.push(t);
     }
+    const localA=standLocal(a[0],a[1]),localC=standLocal(c[0],c[1]);
+    for(const [start,end,bounds] of [[localA.u,localC.u,[front.minU,front.maxU]],[localA.v,localC.v,[-front.halfV,front.halfV]]] as const){
+      if(Math.abs(end-start)>1e-8)for(const bound of bounds){const t=(bound-start)/(end-start);if(t>0&&t<1)cuts.push(t);}
+    }
     cuts.sort((a,c)=>a-c);
     for(let j=1;j<cuts.length;j++){const t=(cuts[j-1]+cuts[j])/2;if(gates.some(g=>Math.hypot(a[0]+dx*t-g.x,a[1]+dz*t-g.z)<g.width/2))continue;
+      const local=standLocal(a[0]+dx*t,a[1]+dz*t);
+      if(local.u>front.minU&&local.u<front.maxU&&Math.abs(local.v)<front.halfV)continue;
       fence([a[0]+dx*cuts[j-1],a[1]+dz*cuts[j-1]],[a[0]+dx*cuts[j],a[1]+dz*cuts[j]]);
     }
   }
   // Open-front west podium: shallow steps, thin cantilever canopy and glazed
   // rear wall. No invisible solid box fills the space beneath its roof.
-  const stand=frame(sportsStand),sp=stand.point;
   const sb=(w:number,h:number,d:number,u:number,y:number,v:number,mat:T.Material,solid=false)=>{const q=sp(u,y,v);b.box(w,h,d,q.x,q.y,q.z,mat,solid,stand.angle);};
   for(let i=0;i<5;i++){const w=stand.width-i*.7,h=(i+1)*.18;sb(w,h,stand.length,-i*.35,h/2,0,step,true);}
   sb(stand.width-3.5,.18,stand.length,-1.75,.99,0,step,true);
