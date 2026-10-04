@@ -34,6 +34,7 @@ import {createZhongdaAvenue, zhongdaAvenueLayout, trimAvenueCurb, avenueTreePosi
 import {createLibraryWestGardens, libraryWestGardenLayout} from './library-west-gardens.ts';
 import {createRabeCourtyard, rabeCourtyardLayout} from './rabe-courtyard.ts';
 import {createTianCourtyard, tianCourtyardLayout} from './tian-courtyard.ts';
+import {createTangCourtyard,tangCourtyardLayout} from './tang-courtyard.ts';
 import {createJinyinStreetTrees} from './jinyin-street-trees.ts';
 import {createPlanarCutout} from './planar-cutout.ts';
 import {splitTeachingFeature} from './specific-buildings.ts';
@@ -101,8 +102,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   }
   map.features.push(fireTowerFootprint);
   const sportsPaving = sportsHallPavingLayout(map), sportsPavingCutout = createPlanarCutout(sportsPaving.outline);
-  const avenue = zhongdaAvenueLayout(), libraryGardens=libraryWestGardenLayout(), rabeCourtyard=rabeCourtyardLayout(), tianCourtyard=tianCourtyardLayout();
-  const surfaceCutouts = [sportsPavingCutout,...avenue.outlines.map(createPlanarCutout),...libraryGardens.outlines.map(createPlanarCutout),createPlanarCutout(rabeCourtyard.outline),...tianCourtyard.outlines.map(createPlanarCutout)];
+  const avenue = zhongdaAvenueLayout(), libraryGardens=libraryWestGardenLayout(), rabeCourtyard=rabeCourtyardLayout(), tianCourtyard=tianCourtyardLayout(), tangCourtyard=tangCourtyardLayout(map);
+  const surfaceCutouts = [sportsPavingCutout,...avenue.outlines.map(createPlanarCutout),...libraryGardens.outlines.map(createPlanarCutout),createPlanarCutout(rabeCourtyard.outline),...tianCourtyard.outlines.map(createPlanarCutout),createPlanarCutout(tangCourtyard.outline)];
   const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
   const lawnHeight = .20;
   const courtyardHeight = (x: number, z: number) => terrainHeight(x,z) + ([...raisedLawns].some(lawn => insidePolygon(x, z, lawn)) ? lawnHeight : .022);
@@ -305,6 +306,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const far = await createModelTrees(farTrees.filter(t => !map.features.some(f => f.tags.leisure === 'track' && insideRing(t.x, t.z, f.points))), 'far', mats.leaves); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);
     const libraryPlanting=await createLibraryWestGardens(libraryGardens,mats);root.add(libraryPlanting.group);moreSolids.push(...libraryPlanting.solids);vegetationUpdates.push(libraryPlanting.updateVisibility);
     const rabePlanting=await createRabeCourtyard(rabeCourtyard,mats);root.add(rabePlanting.group);moreSolids.push(...rabePlanting.solids);vegetationUpdates.push(rabePlanting.updateVisibility);
+    root.add(createTangCourtyard(tangCourtyard,mats));
     const tianPlanting=await createTianCourtyard(tianCourtyard,mats);root.add(tianPlanting.group);moreSolids.push(...tianPlanting.solids);vegetationUpdates.push(tianPlanting.updateVisibility);
     const jinyinPlanting=await createJinyinStreetTrees(mats);root.add(jinyinPlanting.group);moreSolids.push(...jinyinPlanting.solids);vegetationUpdates.push(jinyinPlanting.updateVisibility);
     const props = new Builder();
