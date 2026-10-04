@@ -416,3 +416,9 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 - 实际查看官方 [鼓楼VR](https://vr.nju.edu.cn/newUI/) gl-4-05 r，三根黑黄圆短柱、两只方形锥筒及圆井盖可见；尺寸、摆位及锥筒细节为近似，不照搬倒地临时设施。井盖字样不可辨读，未虚构校徽或文字。原图仅本地。
 - 新增5份简单方盒碰撞，3种合并静态材质；井盖不增加碰撞或相机阻挡，无动态灯或逐帧生成。保留院口、柱间、院角与公共街道通路。
 - types/lint/build通过；Chrome／Edge各56条双向步骑路线、40组人物／相机射线、搜索和旧几何保持检查通过，零网页错误／缺资源，各4张最终图实看。报告docs/validation/phase66；成功before-chrome不覆盖。
+
+## v0.65 南园旱喷广场
+
+- 实际查看官方 [鼓楼VR](https://vr.nju.edu.cn/newUI/) gl-1-24 下视高清局部与gl-1-02正面，结合地图周边草坪弧线拟合中心。原媒体references/official-vr/phase67仅本地。可见灰色圆石铺装、浅色同心嵌带、三处齐地喷口、四段弧形绿篱及北侧矩形灌木岛。铺装半径14.3m、外缘16.2m、开口3.3m等为近似，不代表实测。
+- 7份合并静态网格、57份简单碰撞，物理与相机同步；无新增动态灯或逐帧逻辑。未添加蓄水池壁、未证实喷水效果或临时周年宣传板，电子屏另行核实。
+- types/lint/build通过；Chrome／Edge各36条双向步骑路线、8组人物／相机射线、地图搜索及实际传送通过，旧solids、doors、buildings保持，零网页错误／缺资源，各4张最终画面已实看。报告docs/validation/phase67，成功before-chrome不覆盖。Edge使用既有解包可执行文件，脚本支持EDGE_EXECUTABLE。

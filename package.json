@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.64.0",
+  "version": "0.65.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -92,7 +92,8 @@
     "test:tang-entrance": "node scripts/tang-entrance-check.mjs",
     "test:tang-courtyard": "node scripts/tang-courtyard-check.mjs",
     "test:tang-access": "node scripts/tang-access-check.mjs",
-    "test:tang-ground": "node scripts/tang-ground-check.mjs"
+    "test:tang-ground": "node scripts/tang-ground-check.mjs",
+    "test:nanyuan-fountain": "node scripts/nanyuan-fountain-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",
