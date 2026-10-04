@@ -18,6 +18,7 @@ import {entranceMaterials,addEntrance,type DoorRecord} from './building-entrance
 import { getBuildingProfile } from './building-profiles.ts';
 import {createSufuteFacade} from './sufute-facade.ts';
 import {createTianFacade} from './tian-facade.ts';
+import {buildYifuEntrance} from './yifu-entrance.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
 export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, roads:MapPolygon[] = []) {
@@ -53,6 +54,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group}>();
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
   const sufute=createSufuteFacade(),tian=createTianFacade();
+  let yifu:ReturnType<typeof buildYifuEntrance>|undefined;
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
@@ -71,11 +73,14 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     const key=`${Math.floor(cx/100)}:${Math.floor(cz/100)}`;
     if(!detailCells.has(key))detailCells.set(key,{b:new Builder(),center:new T.Vector3((Math.floor(cx/100)+.5)*100,0,(Math.floor(cz/100)+.5)*100)});
     const detail=detailCells.get(key)!.b;
+    if(f.id==='plan-10')yifu=buildYifuEntrance(f,b,fixedMeshes,cameraSolids,doors,height,wall,roof);
+    else{
     const geometry = new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false,steps:1}).rotateX(-Math.PI/2);
     const uv=geometry.getAttribute('uv');for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/2.4,uv.getY(i)/2.4);
     const proxy=new T.Mesh(geometry.clone(),cameraMaterial);cameraSolids.push(proxy);fixedMeshes.push(collisionMesh(proxy));
     const surfaces=splitBuildingRoof(geometry);
     b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
+    }
     const random=rng(Number(f.tags.plan_id)*71+24);let windows=0;let frontView:number[]|undefined;let entrance:ReturnType<typeof buildHospitalEntrance>|undefined;
     const edges:{len:number;x:number;z:number;angle:number;nx:number;nz:number}[]=[];
     for(const [ri,ring]of [points,...(f.holes??[])].entries())for(let edge=0;edge<ring.length;edge++){
@@ -98,13 +103,26 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       if(f.id==='plan-17'&&!ri&&len>15&&(nx>.98||nz<-.98)){
         windows+=tian.face(b,detail,plaques,{len,x:mx,z:mz,angle,nx,nz},height);continue;
       }
-      put(b,0,.42,.025,len,.84,.12,plinth);
+      const yifuOpening=f.id==='plan-10'&&!ri&&(edge===5||edge===15);
+      // A full-width trim or low window would visually seal the new passage.
+      // Rear portions outside the opening keep their original treatment.
+      const lowBand=(y:number,v:number,h:number,d:number,mat:T.Material)=>{
+        if(!yifuOpening){put(b,0,y,v,len,h,d,mat);return;}
+        if(edge===5)return;
+        const center=yifu!.local(mx,mz)[0],direction=Math.cos(angle)*yifu!.localFrame.nz+Math.sin(angle)*yifu!.localFrame.nx;
+        const ends=[(-3.1-center)/direction,(3.1-center)/direction].sort((a,c)=>a-c);
+        for(const[lo,hi]of[[-len/2,ends[0]],[ends[1],len/2]])if(hi>lo)put(b,(lo+hi)/2,y,v,hi-lo,h,d,mat);
+      };
+      lowBand(.42,.025,.84,.12,plinth);
       // A thin finish stays behind the existing reveals and glass, so the
       // darker storey cannot cover windows or alter the physical footprint.
       if(profile.groundWall!==undefined)put(b,0,floorHeight*.525,.006,len,floorHeight*1.05,.018,paint(profile.groundWall));
       put(b,0,height-.12,.02,len,.22,.30,stone);
       put(b,0,height+.18,0,len,.30,.20,wall);
-      if(profile.bands)for(let floor=1;floor<profile.levels;floor++)put(b,0,floor*floorHeight+.1,.04,len,.16,.22,stone);
+      if(profile.bands)for(let floor=1;floor<profile.levels;floor++){
+        const y=floor*floorHeight+.1;
+        if(yifuOpening&&y<6.2)lowBand(y,.04,.16,.22,stone);else put(b,0,y,.04,len,.16,.22,stone);
+      }
       // The visible garden faces of Songlin have broad ground-floor glazing.
       // Keep the north entrance and all upper storeys on the existing profile.
       const glazedGarden=profile.gardenGlazing&&!ri&&(nx<-.7||nz>.7)&&len>3;
@@ -123,6 +141,10 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       for(let j=0;j<bays;j++)for(let floor=0;floor<profile.levels;floor++){
         const u=len*((j+1)/(bays+1)-.5),y=floorHeight*(floor+.60),w=Math.min(profile.windowWidth,len/(bays+1)*.76),h=Math.min(profile.windowHeight,floorHeight*.72);
         const g=glass[Math.floor(random()*glass.length)];
+        if(yifuOpening&&y-h/2<6.2){
+          const center=yifu!.local(mx+u*Math.cos(angle),mz-u*Math.sin(angle))[0];
+          if(edge===5||Math.abs(center)-w/2<3.4)continue;
+        }
         if(glazedGarden&&floor===0)continue;
         // The photographed entry replaces only the central bays on the old
         // procedural frontage; consume the same RNG sample before skipping.
@@ -211,7 +233,8 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         detail.box(.055,1.85,.09,x,y-.08,z+.21,defaultFrame);
       }
     }
-    if(!teaching){
+    if(f.id==='plan-10')frontView=yifu!.frontage;
+    if(!teaching&&f.id!=='plan-10'){
       // Choose a long exterior facade facing the nearest public route, rather
       // than putting a doorway onto an inner hole or a two-metre return wall.
       const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):candidates.sort((a,c)=>{
@@ -275,6 +298,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.buildings=records;
   group.userData.sufuteFacade=sufute.metadata;
   group.userData.tianFacade=tian.metadata;
+  if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;}
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
   let detailShadows=false;
   const updateVisibility=(position:T.Vector3,quality:string,flying:boolean)=>{
