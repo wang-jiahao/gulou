@@ -18,6 +18,7 @@ import {entranceMaterials,addEntrance,type DoorRecord} from './building-entrance
 import { getBuildingProfile } from './building-profiles.ts';
 import {createSufuteFacade} from './sufute-facade.ts';
 import {createTianFacade} from './tian-facade.ts';
+import {buildYifuTower,yifuTower} from './yifu-tower.ts';
 import {buildYifuEntrance} from './yifu-entrance.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
@@ -55,6 +56,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
   const sufute=createSufuteFacade(),tian=createTianFacade();
   let yifu:ReturnType<typeof buildYifuEntrance>|undefined;
+  let yifuUpper:ReturnType<typeof buildYifuTower>|undefined;
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
@@ -67,7 +69,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(f.id==='plan-6'||f.id==='plan-13'){records.push(buildSportsHall(f,b,fixedMeshes,cameraSolids,doors));continue;}
     const specific=buildSpecific(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials);if(specific){records.push(specific);continue;}
     const profile=getBuildingProfile(f),teaching=f.id==='teaching-priority',points=f.points,shape=planShape(f);
-    const height=teaching?16.6:profile.levels*3.25, floorHeight=height/profile.levels;
+    const height=teaching?16.6:f.id==='plan-10'?yifuTower.height:profile.levels*3.25, floorHeight=height/profile.levels;
     const wall=paint(profile.wall,profile.style==='historic'||profile.style==='villa'),defaultFrame=paint(profile.frame);
     const xs=points.map(p=>p[0]),zs=points.map(p=>p[1]),cx=(Math.min(...xs)+Math.max(...xs))/2,cz=(Math.min(...zs)+Math.max(...zs))/2;
     const key=`${Math.floor(cx/100)}:${Math.floor(cz/100)}`;
@@ -97,23 +99,14 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         else target.box(w,h,d,x,y,z,mat,false,angle);
       };
       if(!ri)edges.push({len,x:mx,z:mz,angle,nx,nz});
+      if(f.id==='plan-10')continue;
       if(f.id==='plan-12'&&!ri&&nx>.98&&len>8){
         windows+=sufute.face(b,detail,{len,x:mx,z:mz,angle,nx,nz},height);continue;
       }
       if(f.id==='plan-17'&&!ri&&len>15&&(nx>.98||nz<-.98)){
         windows+=tian.face(b,detail,plaques,{len,x:mx,z:mz,angle,nx,nz},height);continue;
       }
-      const yifuOpening=f.id==='plan-10'&&!ri&&(edge===5||edge===15);
-      // A full-width trim or low window would visually seal the new passage.
-      // Rear portions outside the opening keep their original treatment.
-      const lowBand=(y:number,v:number,h:number,d:number,mat:T.Material)=>{
-        if(!yifuOpening){put(b,0,y,v,len,h,d,mat);return;}
-        if(edge===5)return;
-        const center=yifu!.local(mx,mz)[0],direction=Math.cos(angle)*yifu!.localFrame.nz+Math.sin(angle)*yifu!.localFrame.nx;
-        const ends=[(-3.1-center)/direction,(3.1-center)/direction].sort((a,c)=>a-c);
-        for(const[lo,hi]of[[-len/2,ends[0]],[ends[1],len/2]])if(hi>lo)put(b,(lo+hi)/2,y,v,hi-lo,h,d,mat);
-      };
-      lowBand(.42,.025,.84,.12,plinth);
+      put(b,0,.42,.025,len,.84,.12,plinth);
       // A thin finish stays behind the existing reveals and glass, so the
       // darker storey cannot cover windows or alter the physical footprint.
       if(profile.groundWall!==undefined)put(b,0,floorHeight*.525,.006,len,floorHeight*1.05,.018,paint(profile.groundWall));
@@ -121,7 +114,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       put(b,0,height+.18,0,len,.30,.20,wall);
       if(profile.bands)for(let floor=1;floor<profile.levels;floor++){
         const y=floor*floorHeight+.1;
-        if(yifuOpening&&y<6.2)lowBand(y,.04,.16,.22,stone);else put(b,0,y,.04,len,.16,.22,stone);
+        put(b,0,y,.04,len,.16,.22,stone);
       }
       // The visible garden faces of Songlin have broad ground-floor glazing.
       // Keep the north entrance and all upper storeys on the existing profile.
@@ -141,10 +134,6 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       for(let j=0;j<bays;j++)for(let floor=0;floor<profile.levels;floor++){
         const u=len*((j+1)/(bays+1)-.5),y=floorHeight*(floor+.60),w=Math.min(profile.windowWidth,len/(bays+1)*.76),h=Math.min(profile.windowHeight,floorHeight*.72);
         const g=glass[Math.floor(random()*glass.length)];
-        if(yifuOpening&&y-h/2<6.2){
-          const center=yifu!.local(mx+u*Math.cos(angle),mz-u*Math.sin(angle))[0];
-          if(edge===5||Math.abs(center)-w/2<3.4)continue;
-        }
         if(glazedGarden&&floor===0)continue;
         // The photographed entry replaces only the central bays on the old
         // procedural frontage; consume the same RNG sample before skipping.
@@ -190,6 +179,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         for(let y=1;y<height;y+=3.3)put(detail,u,y,.2,.14,.045,.14,stone);
       }
     }
+    if(f.id==='plan-10'){yifuUpper=buildYifuTower(f,b,detail,fixedMeshes,cameraSolids,yifu!.localFrame);windows=yifuUpper.windows;}
     // Pitched roofs fit an inscribed rectangle; holes and irregular wings are never
     // covered with a bounding-box roof across their open courtyard.
     if(profile.roof!=='flat'&&!(f.holes?.length)){
@@ -298,7 +288,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.buildings=records;
   group.userData.sufuteFacade=sufute.metadata;
   group.userData.tianFacade=tian.metadata;
-  if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;}
+  if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;group.userData.yifuTower=yifuUpper;}
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
   let detailShadows=false;
   const updateVisibility=(position:T.Vector3,quality:string,flying:boolean)=>{

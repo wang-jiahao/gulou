@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.58.0",
+  "version": "0.59.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -86,7 +86,8 @@
     "test:jinyin-trees": "node scripts/jinyin-trees-check.mjs",
     "test:sufute-facade": "node scripts/sufute-facade-check.mjs",
     "test:tian-facade": "node scripts/tian-facade-check.mjs",
-    "test:yifu-entrance": "node scripts/yifu-entrance-check.mjs"
+    "test:yifu-entrance": "node scripts/yifu-entrance-check.mjs",
+    "test:yifu-tower": "node scripts/yifu-tower-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

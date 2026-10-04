@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {yifuTower} from './yifu-tower.ts';
 import {Builder} from './geometry.ts';
 import {planShape,type MapFeature} from './campus-map.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
@@ -7,7 +8,7 @@ import type {DoorRecord} from './building-entrances.ts';
 
 /** gl-4-10 f shows daylight and another building through the central portal.
  * The plan fixes the footprint; entrance dimensions and hidden finishes are
- * approximate. Retain the old tower height until its storeys are verified. */
+ * approximate. Upper masses follow the separately documented visual estimate. */
 export function buildYifuEntrance(f:MapFeature,b:Builder,meshes:CollisionMesh[],cameraSolids:T.Object3D[],doors:DoorRecord[],height:number,wall:T.Material,roof:T.Material){
  const a=f.points[5],c=f.points[6],length=Math.hypot(c[0]-a[0],c[1]-a[1]);
  const x=(a[0]+c[0])/2,z=(a[1]+c[1])/2,nx=-(c[1]-a[1])/length,nz=(c[0]-a[0])/length,yaw=Math.atan2(nx,nz);
@@ -36,14 +37,18 @@ export function buildYifuEntrance(f:MapFeature,b:Builder,meshes:CollisionMesh[],
   const geometry=new T.ExtrudeGeometry(planShape({points:world}),{depth:h,bevelEnabled:false,steps:1}).rotateX(-Math.PI/2).translate(0,bottom,0);
   const uv=geometry.getAttribute('uv');for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/2.4,uv.getY(i)/2.4);
   collider(geometry.clone());
-  const surfaces=splitBuildingRoof(geometry);b.add(surfaces.walls,mat);b.add(surfaces.roof,bottom+h===height?roof:mat);geometry.dispose();
+  const surfaces=splitBuildingRoof(geometry);b.add(surfaces.walls,mat);b.add(surfaces.roof,bottom>=clearance?roof:mat);geometry.dispose();
   parts.push({name,points:world,bottom,height:h});
  }
  function box(u:number,y:number,v:number,w:number,h:number,d:number,mat:T.Material,solidName?:string){
   const[px,pz]=point(u,v);b.box(w,h,d,px,y,pz,mat,false,yaw);
   if(solidName){collider(new T.BoxGeometry(w,h,d).rotateY(yaw).translate(px,y,pz));obstacles.push({name:solidName,u,v,width:w,depth:d,bottom:y-h/2,height:h});}
  }
- mass('continuous-upper-storeys',polygon,clearance,height-clearance);
+ const limits=[-Infinity,...yifuTower.cuts,Infinity];
+ for(let i=0;i<yifuTower.wingRows.length;i++){
+  let part=polygon;if(Number.isFinite(limits[i]))part=clip(part,0,limits[i],1);if(Number.isFinite(limits[i+1]))part=clip(part,0,limits[i+1],-1);
+  mass(`upper-wing-${i}`,part,clearance,yifuTower.wingRows[i]*yifuTower.storey);
+ }
  for(const side of[-1,1]){
   mass(side<0?'ground-west-wing':'ground-east-wing',clip(polygon,0,side*porticoHalf,side),0,clearance);
   const inner=clip(clip(clip(polygon,0,side*porticoHalf,-side),0,side*halfWidth,side),1,-depth,-1);
@@ -102,5 +107,5 @@ export function buildYifuEntrance(f:MapFeature,b:Builder,meshes:CollisionMesh[],
  }
  // The existing navigation name remains available at the photographed entrance.
  doors.push({name:f.tags.name,x,y:floor,z,yaw,width:halfWidth*2});
- return{source:'official VR gl-4-10 f (2304px) / gl-4-02 r + user plan',dimensions:'approximate',heightRetained:height,frontage:[x,z,nx,nz],localFrame:{x,z,nx,nz,yaw},passage:{halfWidth,rear,clearance:4.06,floor},portico:{halfWidth:porticoHalf,depth,ceiling:clearance},plates:plates.map(p=>({text:p.text,visiblePrefix:p.visiblePrefix,institutionSource:'https://slle.nju.edu.cn/sy/ldpxxm/gbjypx/index.html',completeTextPhotographed:false})),parts,obstacles,local};
+ return{source:'official VR gl-4-10 f (2304px) / gl-4-02 r + user plan',dimensions:'approximate',heightApproximate:height,frontage:[x,z,nx,nz],localFrame:{x,z,nx,nz,yaw},passage:{halfWidth,rear,clearance:4.06,floor},portico:{halfWidth:porticoHalf,depth,ceiling:clearance},plates:plates.map(p=>({text:p.text,visiblePrefix:p.visiblePrefix,institutionSource:'https://slle.nju.edu.cn/sy/ldpxxm/gbjypx/index.html',completeTextPhotographed:false})),parts,obstacles,local};
 }
