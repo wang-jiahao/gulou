@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -53,7 +53,9 @@
     "test:south-teaching": "node scripts/phase28-check.mjs",
     "test:library-entrances": "node scripts/phase29-check.mjs",
     "test:museum-facade": "node scripts/phase30-check.mjs",
-    "test:museum-forecourt": "node scripts/phase31-check.mjs"
+    "test:museum-forecourt": "node scripts/phase31-check.mjs",
+    "test:teaching-facade": "node scripts/phase32-check.mjs",
+    "metrics": "node scripts/update-work-metrics.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

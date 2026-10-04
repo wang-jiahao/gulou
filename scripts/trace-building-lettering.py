@@ -6,9 +6,10 @@ import sys,json,argparse
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'.tools/python'))
 import cv2,numpy as np
 parser=argparse.ArgumentParser()
-parser.add_argument('--only',choices=['library','museum','newTeaching','southTeaching'])
+parser.add_argument('--only',choices=['library','museum','newTeaching','southTeaching','teaching'])
 args=parser.parse_args()
 jobs=[
+ ('teaching','教学楼','references/phase18/scene_gl-2-10-f-full.jpg',(1230,1004,1516,1053)),
  ('library','图书馆','references/research-2026-10-03/library-official-28.png',(374,408,695,477)),
  ('museum','南京大学校史博物馆','references/phase20/scene_gl-2-21-f-full.jpg',(1007,953,1355,1009)),
  ('newTeaching','新教学楼','references/phase19/scene_gl-3-16-f-full.jpg',(1000,770,1630,931)),
@@ -19,7 +20,14 @@ result=json.loads(output.read_text()) if args.only and output.exists() else {};t
 for name,text,path,bounds in jobs:
  if args.only and args.only!=name:continue
  im=cv2.imread(path)
- if name=='southTeaching':
+ if name=='teaching':
+  # User photo provides clearer strokes than the distant cubemap. Rectify
+  # the sign plane, then fit the three glyphs to official frontal spacing.
+  im=cv2.imread('references/phase32/teaching-zhenggang-user.png')
+  src=np.float32([[240,483],[663,595],[663,714],[240,601]])
+  dst=np.float32([[10,10],[1010,10],[1010,240],[10,240]])
+  crop=cv2.warpPerspective(im,cv2.getPerspectiveTransform(src,dst),(1020,250))
+ elif name=='southTeaching':
   # Official west-entry cubemap, rectified along its stone panel joints.
   # This recovers approximate proportions, not a measured orthographic sign.
   src=np.float32([[70,663],[704,978],[713,1104],[71,900]])
@@ -38,6 +46,29 @@ for name,text,path,bounds in jobs:
   # Reject the green foliage behind the last character and neutral supports.
   mask=((r-blue>39)&(g-blue>15)&(r-g>13)&(hsv[:,:,0]>9)&(hsv[:,:,0]<32)&(hsv[:,:,1]>100)&(r>85)).astype(np.uint8)*255
   mask[:20]=0;mask[285:]=0
+
+ if name=='teaching':
+  mask=((r-blue>15)&(g-blue>13)&(r>105)&(g>103)).astype(np.uint8)*255
+  region=np.zeros(mask.shape,np.uint8)
+  region[12:189,25:250]=255;region[45:200,485:642]=255;region[53:220,825:995]=255
+  mask[region==0]=0
+  # Recover bronze edges only immediately beside a bright gold stroke. A
+  # broad low-light threshold also selects the wall and fills the last glyph.
+  bronze=((r-blue>12)&(g-blue>8)&(r>60)&(region>0)).astype(np.uint8)*255
+  mask=bronze & cv2.dilate(mask,np.ones((3,3),np.uint8))
+  mask=cv2.morphologyEx(mask,cv2.MORPH_CLOSE,np.ones((3,3),np.uint8))
+  n,labels,stats,_=cv2.connectedComponentsWithStats(mask);mask[:]=0
+  for i in range(1,n):
+   if stats[i,4]>18:mask[labels==i]=255
+  contours,hierarchy=cv2.findContours(mask,cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
+  for i,c in enumerate(contours):
+   if hierarchy[0,i,3]>=0 and cv2.contourArea(c)<20:cv2.drawContours(mask,[c],-1,255,-1)
+  fitted=np.zeros((160,1100),np.uint8)
+  for (x0,x1),(left,width) in zip([(25,250),(485,642),(825,995)],[(20,142),(480,114),(922,128)]):
+   glyph=mask[:,x0:x1];ys,xs=np.where(glyph>0)
+   glyph=glyph[ys.min():ys.max()+1,xs.min():xs.max()+1]
+   fitted[10:145,left:left+width]=cv2.resize(glyph,(width,135),interpolation=cv2.INTER_AREA)
+  mask=fitted
 
  # Include pale gold highlights adjoining a coloured stroke only.
  dil=cv2.dilate(mask,np.ones((3,3),np.uint8))>0
@@ -61,9 +92,9 @@ for name,text,path,bounds in jobs:
    if cv2.contourArea(contours[child])>8:holes.append(ring(contours[child]))
    child=hierarchy[0,child,0]
   shapes.append({'outline':ring(c),'holes':holes})
- result[name]={'text':text,'heightRatio':round((bottom-top)*scale,5),'shapes':shapes,'method':('perspective-rectified photo silhouette reconstruction; proportions approximate; original photograph excluded' if name=='southTeaching' else 'photo silhouette reconstruction; original photograph excluded')}
+ result[name]={'text':text,'heightRatio':round((bottom-top)*scale,5),'shapes':shapes,'method':('perspective-rectified photo silhouette reconstruction; proportions approximate; original photograph excluded' if name in ['southTeaching','teaching'] else 'photo silhouette reconstruction; original photograph excluded')}
  tile=np.full((200,1000,3),245,np.uint8);fit=min(960/clean.shape[1],155/clean.shape[0]);small=cv2.resize(clean,None,fx=fit,fy=fit,interpolation=cv2.INTER_AREA);tile[10:10+small.shape[0],20:20+small.shape[1]][small>120]=(55,145,185);cv2.putText(tile,name,(20,190),0,.65,(0,0,0),1);tiles.append(tile)
 output.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')))
-review='references/phase28/south-lettering-review.png' if args.only=='southTeaching' else 'references/phase20/building-lettering-review.png'
+review='references/phase32/teaching-lettering-review.png' if args.only=='teaching' else 'references/phase28/south-lettering-review.png' if args.only=='southTeaching' else 'references/phase20/building-lettering-review.png'
 cv2.imwrite(review,np.concatenate(tiles))
 print({key:{'shapes':len(value['shapes']),'heightRatio':value['heightRatio']} for key,value in result.items()})

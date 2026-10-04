@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {teachingBrick,teachingFacade} from './teaching-facade.ts';
 import { splitBuildingRoof } from './building-roof.ts';
 import {addBuildingLettering} from './building-lettering.ts';
 import {Builder,curvedRoof} from './geometry.ts';
@@ -27,10 +28,10 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  const pale=mat('specific-pale-frame',0xd4d4c9),dark=mat('specific-dark-frame',0x4c5555),glass=mat('specific-window-glass',0x597275,true),roof=mat('specific-roof',0x747b76);
  const food=['plan-113','plan-100','plan-117'].includes(f.id),yifu=f.id==='plan-34',meng=f.id==='plan-71',teaching=f.id==='teaching-priority',south=f.id==='plan-73',newTeaching=f.id==='new-teaching';
  const color=teaching?0x969288:yifu?0xcec7af:food?0xc5baa3:0xd1d2c9;
- const wall=mat(`specific-wall-${f.id}`,color);
+ const wall=teaching?teachingBrick():mat(`specific-wall-${f.id}`,color);
  const xs=f.points.map(p=>p[0]),zs=f.points.map(p=>p[1]),minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs),cx=(minX+maxX)/2,cz=(minZ+maxZ)/2;
- const heightAt=(x:number,z:number)=>yifu?(z>24&&z<43&&x> -341?7.2:23.4):meng?(x>55&&x<85&&z>297&&z<325?59.4:12.8):teaching?(x> -94&&x< -74?20.2:15.6):south?7.6:f.id==='new-teaching'?18.0:f.id==='plan-105'?10.2:food?(f.id==='plan-113'?12.3:7.2):13;
- const xbreak=[minX,...(yifu?[-341]:meng?[55,85]:teaching?[-94,-74]:[]).filter(x=>x>minX&&x<maxX),maxX].sort((a,c)=>a-c);
+ const heightAt=(x:number,z:number)=>yifu?(z>24&&z<43&&x> -341?7.2:23.4):meng?(x>55&&x<85&&z>297&&z<325?59.4:12.8):teaching?(x> -90.655&&x< -77.271?20.2:x> -94&&x< -74?17.3:15.6):south?7.6:f.id==='new-teaching'?18.0:f.id==='plan-105'?10.2:food?(f.id==='plan-113'?12.3:7.2):13;
+ const xbreak=[minX,...(yifu?[-341]:meng?[55,85]:teaching?[-94,-90.655,-77.271,-74]:[]).filter(x=>x>minX&&x<maxX),maxX].sort((a,c)=>a-c);
  const zbreak=[minZ,...(yifu?[24,43]:meng?[297,325]:[]).filter(z=>z>minZ&&z<maxZ),maxZ].sort((a,c)=>a-c);
  const sections:{height:number;area:number;bounds:number[];points:number[][]}[]=[];
  for(let ix=0;ix<xbreak.length-1;ix++)for(let iz=0;iz<zbreak.length-1;iz++){
@@ -39,6 +40,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
   const height=heightAt((xbreak[ix]+xbreak[ix+1])/2,(zbreak[iz]+zbreak[iz+1])/2),shape=planShape({points});
   const geometry=new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false}).rotateX(-Math.PI/2),proxy=new T.Mesh(geometry.clone());meshes.push(collisionMesh(proxy));cameraSolids.push(proxy);
   const surfaces=splitBuildingRoof(geometry);
+  if(teaching){const p=surfaces.walls.getAttribute('position'),n=surfaces.walls.getAttribute('normal'),uv=surfaces.walls.getAttribute('uv');for(let i=0;i<p.count;i++)uv.setXY(i,(Math.abs(n.getX(i))>.7?p.getZ(i):p.getX(i))/2,p.getY(i)/2);}
   b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
   sections.push({height,area:area(points),points,bounds:[xbreak[ix],xbreak[ix+1],zbreak[iz],zbreak[iz+1]]});
  }
@@ -84,15 +86,16 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  // Pick the documented main approach, rather than reuse a randomly selected
  // generic wall. The footprints still determine the exact exterior boundary.
  let lettering:ReturnType<typeof addBuildingLettering>|undefined;
+ let facade:ReturnType<typeof teachingFacade>['facade']|undefined;
  const preferred=edges.filter(e=>e.len>7).sort((a,c)=>{
   const score=(e:typeof a)=>yifu?Math.abs(e.x+320)+Math.abs(e.z-33)*2+(e.nx<.5?100:0):meng?Math.abs(e.z-maxZ)+(e.nz>.5?0:80):newTeaching||south?Math.abs(e.x-minX)+(e.nx<-.5?0:80):teaching?Math.abs(e.x+85)*2+Math.abs(e.z-136):f.id==='plan-105'?Math.abs(e.x+84)*2+Math.abs(e.z-maxZ):Math.abs(e.x-cx)+Math.abs(e.z-minZ)+(e.nz<-.5?0:80);
   return score(a)-score(c);
  })[0];
  if(preferred){
   const e=preferred,width=Math.min(e.len-1,yifu?7.6:food||newTeaching?7.2:teaching?8.4:4.5),entryY=teaching?1.20:yifu?.60:newTeaching?.45:0;
-  addEntrance(b,meshes,doors,doorMats,f.tags.name,e.x,e.z,e.angle,width,entryY);
+  if(!teaching)addEntrance(b,meshes,doors,doorMats,f.tags.name,e.x,e.z,e.angle,width,entryY);
   const put=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material)=>b.box(w,h,d,e.x+u*Math.cos(e.angle)+v*e.nx,y,e.z-u*Math.sin(e.angle)+v*e.nz,m,false,e.angle);
-  if(entryY)for(let step=0;step<Math.round(entryY/.15);step++){const h=(step+1)*.15,v=1.72+(Math.round(entryY/.15)-1-step)*.31;put(0,h/2,v,width+1,h,.34,pale);const proxy=new T.Mesh(new T.BoxGeometry(width+1,h,.34));proxy.position.set(e.x+v*e.nx,h/2,e.z+v*e.nz);proxy.rotation.y=e.angle;meshes.push(collisionMesh(proxy));}
+  if(entryY&&!teaching)for(let step=0;step<Math.round(entryY/.15);step++){const h=(step+1)*.15,v=1.72+(Math.round(entryY/.15)-1-step)*.31;put(0,h/2,v,width+1,h,.34,pale);const proxy=new T.Mesh(new T.BoxGeometry(width+1,h,.34));proxy.position.set(e.x+v*e.nx,h/2,e.z+v*e.nz);proxy.rotation.y=e.angle;meshes.push(collisionMesh(proxy));}
   if(yifu){put(0,5.2,.16,Math.min(e.len,18),2.05,.25,glass);for(const u of[-6,-2,2,6])put(u,3.5,.55,.26,7,.50,pale);}
   if(newTeaching){
    // Official scene_gl-3-16: broad blank side bays, three central window
@@ -105,17 +108,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
    put(0,3.66,1.15,10.5,.32,2.65,pale);
    for(const u of[-3.9,3.9])put(u,1.95,1.13,.34,3.1,.40,pale);
   }
-  if(teaching){
-   // Three arches sit in the brick crown; they are not three detached roof dormers.
-   for(const u of[-4.3,0,4.3]){
-    put(u,9.5,.18,2.4,10.5,.2,pale);
-    for(const y of[5.5,9,12.5]){put(u,y,.32,2.15,2.25,.15,glass);put(u,y+.32,.44,2.1,.055,.18,dark);put(u,y,.44,.055,2.25,.18,dark);}
-    const arch=new T.Shape();arch.moveTo(-1.45,0);arch.lineTo(1.45,0);arch.lineTo(1.45,1.25);arch.absarc(0,1.25,1.45,0,Math.PI,false);arch.closePath();
-    b.add(new T.ShapeGeometry(arch),pale,e.x+u,16.1,e.z+.25);b.add(new T.ShapeGeometry(arch).scale(.78,.80,1),glass,e.x+u,16.28,e.z+.28);
-   }
-   for(const u of[-6.7,-2.2,2.2,6.7])put(u,9.3,.53,.45,12.8,.65,pale);
-   put(0,4.05,1.0,14.8,.40,2.2,pale);put(0,15.6,.52,14.6,.34,1.1,pale);
-  }
+  if(teaching){const result=teachingFacade(b,meshes,cameraSolids,doors,f.tags.name,e.x,e.z,e.angle);lettering=result.lettering;facade=result.facade;windows+=9;}
   if(south){
    // gl-2-53-r: west-entry gold characters stand above a narrow dark canopy,
    // with slim supports against jointed pale stone. Dimensions are approximate.
@@ -127,7 +120,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
    lettering=addBuildingLettering(b,'southTeaching',e.x+e.nx*1.62,3.18,e.z+e.nz*1.62,5.3,e.angle);
   }
   else if(newTeaching){lettering=addBuildingLettering(b,'newTeaching',e.x+e.nx*.48,4.65,e.z+e.nz*.48,5.6,e.angle);}
-  else {
+  else if(!teaching){
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#c9c9bd';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#957534';ctx.font=`64px "Kaiti SC","STKaiti",serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(yifu?'逸 夫 館':teaching?'教 学 楼':f.tags.name,512,66,980);
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const signMat=new T.MeshStandardMaterial({map:texture,roughness:.8});
   b.add(new T.PlaneGeometry(Math.min(width+1,9),.70),signMat,e.x+e.nx*.8,teaching?4.55:yifu?3.8:3.7,e.z+e.nz*.8,new T.Euler(0,e.angle,0));
@@ -137,5 +130,5 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  if(f.id==='plan-105'){const rb=new Builder();curvedRoof(rb,cx,cz,maxX-minX+1,19,10.3,2.4,roof,pale,false);const g=rb.finish('south garden teaching roof');for(const child of g.children)if(child instanceof T.Mesh){meshes.push(collisionMesh(child,true));cameraSolids.push(child);b.add(child.geometry.clone(),child.material as T.Material);}}
  if(food){for(const x of[minX+1,maxX-1])for(const z of[minZ+1,maxZ-1])b.box(.55,heightAt(x,z),.55,x,heightAt(x,z)/2,z,pale);}
  const height=Math.max(...sections.map(s=>s.height));
- return{id:f.id,name:f.tags.name,source:yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'VR gl-2-10; local video':south?'NJU official VR gl-2-53 west entry; 2024 map; dimensions and hidden faces approximate':f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,lettering,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
+ return{id:f.id,name:f.tags.name,source:yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'user photograph; official VR gl-2-10; map footprint; dimensions and hidden faces approximate':south?'NJU official VR gl-2-53 west entry; 2024 map; dimensions and hidden faces approximate':f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,lettering,facade,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
 }
