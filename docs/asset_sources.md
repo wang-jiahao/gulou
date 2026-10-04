@@ -404,3 +404,9 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 - 实际查看官方 [鼓楼VR](https://vr.nju.edu.cn/newUI/) gl-4-05 f/r/b/l（f高清面及800px缩图），结合用户地图核对入口前粗粒灰地坪、侧玻璃前方格铺装、北翼东端外浓密灌木与浅色低边。原媒体仅本地，纹理为程序生成或既有许可资产。
 - 地坪按楼体庭院平面裁切并排除铺装与种植带；新增4份合并表面网格与1份静态叶片实例，无新增灯、逐帧生成、碰撞或全校植被重排。尺寸和遮挡的种植范围近似。院墙、伸缩门、短柱与井盖尚未建模，继续核实，不能因此封住金银街。
 - types/lint/build通过；Chrome／Edge各40条双向步骑路线、21组入口人物／相机射线、搜索与旧几何保持检查通过，无网页错误／缺资源，各4张最终图实看。报告docs/validation/phase64，成功before-chrome不覆盖。
+
+## v0.63 唐仲英楼朝金银街开放院门
+
+- 实际查看官方 [鼓楼VR](https://vr.nju.edu.cn/newUI/) gl-4-05 b/l/r，核对北侧浅方砖院墙、收拢银门与凸面镜、南侧停车P牌柱。来源场景见docs/sources/official-newui-gulou.xml，原图references/official-vr/phase10仅本地。
+- 位置、尺寸与遮挡面近似；院口保持开放，院墙不等同全校围墙，不据此封闭金银街公共道路。新增3份简单碰撞，相机使用可见合并网格；凸镜为静态材质，无实时反射。
+- types/lint/build及Chrome／Edge各48条双向步骑路线、30组人物／相机射线、搜索与旧几何保持检查通过，零网页错误／缺资源，各4张最终图实看。报告docs/validation/phase65；成功before-chrome不覆盖。

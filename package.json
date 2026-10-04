@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.62.0",
+  "version": "0.63.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -90,7 +90,8 @@
     "test:yifu-tower": "node scripts/yifu-tower-check.mjs",
     "test:tang-facade": "node scripts/tang-facade-check.mjs",
     "test:tang-entrance": "node scripts/tang-entrance-check.mjs",
-    "test:tang-courtyard": "node scripts/tang-courtyard-check.mjs"
+    "test:tang-courtyard": "node scripts/tang-courtyard-check.mjs",
+    "test:tang-access": "node scripts/tang-access-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",
