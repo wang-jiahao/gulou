@@ -3,6 +3,7 @@ import { insidePolygon, type CampusMap, type MapFeature } from './campus-map.ts'
 export const extraPlaces = [
   {name:'大纛坪',x:-239,z:111,yaw:Math.PI/2,description:'西南楼北侧的国旗广场。旗杆、基座与步行铺地参考官方全景和校园漫游视频。'},
   {name:'校史博物馆',x:-1.5,z:250.8,yaw:Math.PI,description:'原金陵大学图书馆的历史馆舍，与西侧现代图书馆相连。'},
+  {name:'软件学院',x:-200.11745,z:-141.1906,yaw:-.09709998576,description:'软件学院官网将鼓楼通讯地址列为费彝民楼，可从庭院一侧到达。'},
 ];
 export const isKnownPlace = (name: string) => !/^[南北]园建筑 \d+/.test(name);
 export function featureCenter(f: MapFeature): [number,number] {
@@ -24,6 +25,7 @@ export function locationName(map:CampusMap,x:number,z:number,flying=false) {
   let name='';
   if(x>-258&&x<-220&&z>91&&z<129)name='大纛坪';
   else if(x>-30&&x<28&&z>249&&z<283)name='校史博物馆';
+  else if(Math.hypot(x+200.11745,z+141.1906)<4.5)name='软件学院门前';
   else if(Math.abs(x)<4&&z>18&&z<86)name=z>81?'金大路 · 北大楼南台阶':'金大路';
   else if(Math.abs(x+87)<7&&z>179&&z<341)name='中大路';
   else if(x>-153&&x<-16&&Math.abs(z-148)<6)name='两江路';

@@ -7,7 +7,8 @@ import type {Materials} from './materials.ts';
 
 /** Official VR gl-3 / gl-4-02 and the 2024 plan show a west tower, a five-storey
  * south wing, and a west-open court. Dimensions and unseen faces are estimates.
- * The visible southwest column recess is NOT evidence of a through-building tunnel. */
+ * The southwest recess retains its back wall. The separate south-wing passage
+ * follows the user's location report; its dimensions are approximate. */
 export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:CollisionMesh[],cameraSolids:T.Object3D[],doors:DoorRecord[],doorMats:ReturnType<typeof entranceMaterials>){
  const origin=f.points[0],angle=Math.atan2(f.points[7][1]-origin[1],f.points[7][0]-origin[0]),co=Math.cos(angle),si=Math.sin(angle);
  const point=(u:number,v:number)=>[origin[0]+u*co-v*si,origin[1]+u*si+v*co];
@@ -46,8 +47,24 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  mass('tower-ground-east',clip(tower,0,6.2,1),7.2);
  mass('tower-ground-northwest',clip(clip(tower,0,6.2,-1),1,21,-1),7.2);
  const columns=[24,30,36];for(const v of columns)box(-.8,3.6,v,1.25,7.2,1.35,trim,true);
- const northeast=clip(clip(local,1,37.04,-1),0,46,1),east=clip(clip(local,1,37.04,1),1,52.8,-1),south=clip(local,1,52.8,1);
- mass('northeast-low-wing',northeast,19);mass('east-court-link',east,19);mass('south-five-storey-wing',south,19);
+ // The inner south edge slopes slightly in the plan. Partition along that
+ // actual edge: a horizontal cut leaves a thin, full-height wedge across the
+ // northern exit of a ground passage.
+ const frontV=(u:number)=>local[3][1]+(u-local[3][0])*(local[4][1]-local[3][1])/(local[4][0]-local[3][0]);
+ const splitSouth=(points:number[][],side:number)=>{const out:number[][]=[];for(let i=0;i<points.length;i++){const a=points[i],c=points[(i+1)%points.length],da=(a[1]-frontV(a[0]))*side,dc=(c[1]-frontV(c[0]))*side;if(da>=-1e-8)out.push(a);if((da>0&&dc<0)||(da<0&&dc>0)){const t=da/(da-dc);out.push([a[0]+t*(c[0]-a[0]),a[1]+t*(c[1]-a[1])]);}}// Remove collinear backtracking spikes before extrusion; their side faces
+ // would otherwise form an invisible wall across the empty court edge.
+ return out.filter((p,i)=>{const a=out[(i+out.length-1)%out.length],c=out[(i+1)%out.length];return Math.abs((p[0]-a[0])*(c[1]-p[1])-(p[1]-a[1])*(c[0]-p[0]))>1e-7;});};
+ const northeast=clip(clip(local,1,37.04,-1),0,46,1),east=splitSouth(clip(local,1,37.04,1),-1),south=splitSouth(local,1);
+ mass('northeast-low-wing',northeast,19);mass('east-court-link',east,19);
+ // Keep the upper floors continuous while opening an actual ground route at
+ // the user's indicated right side. The court-facing slogan has a separate
+ // shallow alcove, not a second tunnel. mass() also replaces the solid physics.
+ const clearance=3.8,section=(lo:number,hi:number)=>clip(clip(south,0,lo,1),0,hi,-1);
+ mass('south-upper-floors',south,19-clearance,clearance);
+ mass('south-ground-west',clip(south,0,29,-1),clearance);
+ mass('south-alcove-back',clip(section(29,44),1,56.4,1),clearance);
+ mass('south-ground-between-openings',section(44,49),clearance);
+ mass('south-ground-east',clip(south,0,55,1),clearance);
  function facade(points:number[][],height:number,style:'tower'|'podium',firstFloor=0){
   const polygon={points};
   for(let i=0;i<points.length;i++){
@@ -73,6 +90,13 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
     for(let bay=0;bay<bays;bay++){
      const u=reserve+(bay+.5)*pitch-len/2,lu=mx+u*Math.cos(yaw+angle),lv=mv-u*Math.sin(yaw+angle);
      if(towerFace&&level<2&&lu<6.3&&lv>20.5)continue;
+     if(towerFace&&level===0&&Math.abs(mv-37.04)<.05&&lu+pitch/2>35&&lu-pitch/2<43)continue;
+     if(!towerFace&&level===0&&mv>=52.6){
+      // Skip entire bays whose windows, frames or red piers overlap an opening.
+      const half=pitch/2+.2,front=Math.abs(mv-frontV(mx))<.05,back=mv>70;
+      if((front||back)&&lu+half>49&&lu-half<55)continue;
+      if(front&&lu+half>29&&lu-half<44)continue;
+     }
      if(!towerFace&&level===0&&Math.abs(mv-71.4)<.5){put(u,y,.11,pitch-.4,3.25,.12,glass);put(u-pitch/2+.12,1.9,.25,.36,3.8,.45,red);windows++;continue;}
      const w=pitch-(towerFace?.64:.58);
      put(u,y,.025,w+.14,h+.12,.055,dark);put(u,y,.057,w,h,.02,glass);
@@ -101,6 +125,41 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  for(const v of[37.0,40.2,43.4,46.6,49.8,52.95])box(12.7,4.42,v,12,.17,.10,trim);
  const entry=point(39,37.04),yaw=-angle;
  addEntrance(b,meshes,doors,doorMats,f.tags.name,entry[0],entry[1],yaw,5.4,0);
+ // Static canvas signs are merged with the building, with no per-frame work.
+ // The official school footer confirms Fei Yimin; plaque placement/font are
+ // provisional, and the building name is not replaced by one occupant's name.
+ const schoolCanvas=document.createElement('canvas');schoolCanvas.width=1536;schoolCanvas.height=160;
+ const schoolCtx=schoolCanvas.getContext('2d')!;schoolCtx.fillStyle='#edece3';schoolCtx.fillRect(0,0,1536,160);schoolCtx.fillStyle='#393a3c';schoolCtx.font='92px "Songti SC","STSong",serif';schoolCtx.textAlign='center';schoolCtx.textBaseline='middle';schoolCtx.fillText('南京大学软件学院',768,83,1400);
+ function signMaterial(name:string,canvas:HTMLCanvasElement){const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;return new T.MeshStandardMaterial({name,map,roughness:.85});}
+ const schoolPoint=point(39,37.11);
+ b.add(new T.PlaneGeometry(8,.83),signMaterial('fei-software-school-plaque',schoolCanvas),schoolPoint[0],3.45,schoolPoint[1],new T.Euler(0,yaw,0));
+ const sloganCanvas=document.createElement('canvas');sloganCanvas.width=1320;sloganCanvas.height=660;
+ const sc=sloganCanvas.getContext('2d')!;sc.fillStyle='#803456';sc.fillRect(0,0,1320,660);
+ // Reconstruct a restrained campus line drawing; never bundle the user photo
+ // (which also contains an unrelated screenshot overlay).
+ sc.strokeStyle='#b67b99';sc.globalAlpha=.43;sc.lineWidth=2;
+ for(const [x,y,w,h]of[[10,380,360,180],[350,430,360,155],[880,410,430,170]]){
+  sc.strokeRect(x,y,w,h);sc.beginPath();sc.moveTo(x-20,y);sc.lineTo(x+w*.2,y-65);sc.lineTo(x+w*.5,y-105);sc.lineTo(x+w*.8,y-65);sc.lineTo(x+w+20,y);sc.stroke();
+  for(let wx=x+22;wx<x+w-15;wx+=35){sc.strokeRect(wx,y+25,16,42);sc.strokeRect(wx,y+90,16,42);}
+  for(let d=8;d<35;d+=8){sc.beginPath();sc.moveTo(x-20,y+d);sc.lineTo(x+w*.5,y-105+d);sc.lineTo(x+w+20,y+d);sc.stroke();}
+ }
+ sc.globalAlpha=1;sc.fillStyle='#f4ebe5';sc.font='30px "PingFang SC",sans-serif';sc.textAlign='center';sc.textBaseline='middle';
+ const sloganLines=['世界上不会有第二个哈佛、牛津、斯坦福、麻省理工、剑桥，但会有','第一个北大、清华、浙大、复旦、南大等中国著名学府。我们要认真吸收','世界上先进的办学治学经验，更要遵循教育规律，扎根中国大地办大学。”'];
+ sloganLines.forEach((line,i)=>sc.fillText(line,660,215+i*75,1210));
+ const sloganPoint=point(35.5,56.34);
+ b.add(new T.PlaneGeometry(6.3,3.15),signMaterial('fei-court-purple-slogan',sloganCanvas),sloganPoint[0],1.83,sloganPoint[1],new T.Euler(0,Math.PI-angle,0));
+ // Viewed from the court toward +v, screen-right is decreasing local u.
+ // The photographed right-hand glazing sits against the retained rear wall.
+ box(30.5,1.7,56.34,2.8,3.35,.035,glass);
+ for(const u of[29.1,30.5,31.9])box(u,1.7,56.28,.07,3.4,.07,trim);
+ for(const y of[.03,2.75,3.4])box(30.5,y,56.28,2.87,.07,.07,trim);
+ for(const u of[30.36,30.64])box(u,1.25,56.20,.04,.58,.06,trim);
+ const paving=paint('sheltered-paving',0xb4b7af,true);
+ box(36.5,.006,54.6,15,.012,3.6,paving);
+ box(52,.006,62.1,6,.012,18.6,paving);
+ // Visible ceiling joints make the covered space legible from ground level.
+ for(const u of[30,32,34,36,38,40,42])box(u,3.792,54.6,.018,.016,3.6,dark);
+ for(const v of[53.6,55.6])box(36.5,3.792,v,15,.016,.018,dark);
  // Equipment follows the actual tower and the long south roof.
  box(31,69.2,13,7,1.6,8,roof,true);
  for(const u of[21,27,33,39,45,51]){box(u,19.5,63,3.8,1,2.2,plinth,true);for(const v of[62.3,63,63.7])box(u,20.05,v,3.8,.07,.10,trim);}
@@ -114,5 +173,5 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  const [wa,wc]=westEdge,signV=56.5,signU=wa[0]+(wc[0]-wa[0])*(signV-wa[1])/(wc[1]-wa[1]),slope=(wc[0]-wa[0])/(wc[1]-wa[1]);
  const signYaw=-Math.PI/2+Math.atan(slope)-angle,sign=point(signU,signV);
  b.add(new T.PlaneGeometry(1.15,5.52),signMat,sign[0]+Math.sin(signYaw)*.035,14.9,sign[1]+Math.cos(signYaw)*.035,new T.Euler(0,signYaw,0));
- return{id:f.id,name:f.tags.name,source:'NJU 2024 plan + official VR scene_gl-3 f / scene_gl-4-02 r',height:68.4,windows,roof:'west tower / five-storey south podium / open court',dormitory:false,frontage:[entry[0],entry[1],Math.sin(yaw),Math.cos(yaw)],parts,approximateHeights:true,approximateLettering:true,localFrame:{origin,angle},recess:{u:[-1.5,6.2],v:[21,37.04],clearance:7.2,throughBuilding:false},canopy:{u:[6.8,18.6],v:[36.9,52.95],clearance:4.34},labels:[{text:'费彝民楼',orientation:'vertical',face:'south wing west end'}]};
+ return{id:f.id,name:f.tags.name,source:'NJU 2024 plan + official VR scene_gl-3 f / scene_gl-4-02 r + user south passage/slogan references + software.nju.edu.cn footer',height:68.4,windows,roof:'west tower / five-storey south podium / open court',dormitory:false,frontage:[entry[0],entry[1],Math.sin(yaw),Math.cos(yaw)],parts,approximateHeights:true,approximateLettering:true,localFrame:{origin,angle},recess:{u:[-1.5,6.2],v:[21,37.04],clearance:7.2,throughBuilding:false},canopy:{u:[6.8,18.6],v:[36.9,52.95],clearance:4.34},passage:{u:[49,55],v:[52.8,71.4],clearance,approximate:true},sloganAlcove:{u:[29,44],v:[52.8,56.4],clearance,lines:sloganLines,approximateLocation:true},labels:[{text:'费彝民楼',orientation:'vertical',face:'south wing west end'},{text:'南京大学软件学院',face:'tower courtyard entrance',approximatePlacement:true}]};
 }
