@@ -11,6 +11,7 @@ import { buildOrdinaryBuildings } from './ordinary-buildings.ts';
 import { planShape, insidePolygon, insideRing, type CampusMap } from './campus-map.ts';
 import { createPriorityDetails, createSkyline, createFireTower } from './priority-details.ts';
 import { createFootballPitch } from './football-pitch.ts';
+import { createRunningTrack } from './running-track.ts';
 import { createSportsGround, sportsClearance } from './sports-ground.ts';
 import { createCampusSign, photoSpot } from './campus-sign.ts';
 import { fireTowerFootprint } from './surroundings.ts';
@@ -138,10 +139,6 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       b.box(.16, .21, length, (ax + bx) / 2, .115 + terrainHeight((ax+bx)/2,(az+bz)/2), (az + bz) / 2, mats.stone, true, Math.atan2(bx - ax, bz - az));
     }
   }
-  for (const field of map.features.filter(f => f.tags.leisure === 'track')) {
-    addSurface(field, new T.MeshStandardMaterial({ color: 0x9e6554, roughness: .96 }), .04);
-    for (const hole of field.holes ?? []) addSurface({ points: hole }, mats.grass, .041);
-  }
   // Entrance aprons attach the detailed models to the traced road network.
   b.box(12, .06, 5, 0, .025 + terraceHeight, 16.4, mats.path);
   b.box(8.5, .06, 6.5, -31, .025, 99, mats.path);
@@ -159,6 +156,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   root.add(createSkyline());
   const sports=createSportsGround(mats);root.add(sports.group);solids.push(...sports.solids);cameraSolids.push(...sports.group.children);
   const field = createFootballPitch(map.features, mats); root.add(field.group); solids.push(...field.solids); cameraSolids.push(...field.group.children);
+  const track=map.features.find(f=>f.tags.leisure==='track');if(track)root.add(createRunningTrack(track,field.pitch));
   const tower = createFireTower(), sign = createCampusSign(); root.add(tower.group, sign.group); solids.push(...tower.solids, ...sign.solids); cameraSolids.push(...tower.group.children, ...sign.group.children);
   const signElevation = courtyardHeight(-24,46);
   sign.group.position.y += signElevation; sign.solids.forEach(s => { s.y += signElevation; });
