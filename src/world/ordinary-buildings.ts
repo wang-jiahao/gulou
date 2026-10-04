@@ -10,6 +10,7 @@ import {buildPhysicsBuilding} from './physics-building.ts';
 import {buildPearlMemorial} from './pearl-memorial.ts';
 import {buildZhongshan} from './zhongshan.ts';
 import {buildRabeHouse} from './rabe-house.ts';
+import {buildHospitalEntrance} from './hospital-entrance.ts';
 import {buildSportsHall} from './sports-halls.ts';
 import {buildLibraryComplex} from './library-complex.ts';
 import {buildSpecific} from './specific-buildings.ts';
@@ -49,7 +50,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   };
   const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group}>();
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
-  const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[]}[]=[];
+  const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
     if(f.id==='plan-66'){records.push(buildLibraryComplex(mats,b,fixedMeshes,cameraSolids,doors,doorMaterials));continue;}
@@ -72,7 +73,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     const proxy=new T.Mesh(geometry.clone(),cameraMaterial);cameraSolids.push(proxy);fixedMeshes.push(collisionMesh(proxy));
     const surfaces=splitBuildingRoof(geometry);
     b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
-    const random=rng(Number(f.tags.plan_id)*71+24);let windows=0;let frontView:number[]|undefined;
+    const random=rng(Number(f.tags.plan_id)*71+24);let windows=0;let frontView:number[]|undefined;let entrance:ReturnType<typeof buildHospitalEntrance>|undefined;
     const edges:{len:number;x:number;z:number;angle:number;nx:number;nz:number}[]=[];
     for(const [ri,ring]of [points,...(f.holes??[])].entries())for(let edge=0;edge<ring.length;edge++){
       const [x0,z0]=ring[edge],[x1,z1]=ring[(edge+1)%ring.length],len=Math.hypot(x1-x0,z1-z0);if(len<.6)continue;
@@ -114,6 +115,9 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         const u=len*((j+1)/(bays+1)-.5),y=floorHeight*(floor+.60),w=Math.min(profile.windowWidth,len/(bays+1)*.76),h=Math.min(profile.windowHeight,floorHeight*.72);
         const g=glass[Math.floor(random()*glass.length)];
         if(glazedGarden&&floor===0)continue;
+        // The photographed entry replaces only the central bays on the old
+        // procedural frontage; consume the same RNG sample before skipping.
+        if(f.id==='plan-80'&&!ri&&edge===0&&Math.abs(u)-w/2<6.5)continue;
         if(profile.arched){
           const x=mx+u*Math.cos(angle),z=mz-u*Math.sin(angle);
           b.add(new T.ExtrudeGeometry(archShape(w+.20,h+.20),{depth:.10,bevelEnabled:false}),stone,x+.02*nx,y,z+.02*nz,new T.Euler(0,angle,0));
@@ -220,8 +224,11 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         frontView=[frontage.x,frontage.z,frontage.nx,frontage.nz];
         const e=frontage,w=Math.min(3.8,e.len*.38);
         const put=(u:number,y:number,v:number,bw:number,bh:number,bd:number,mat:T.Material)=>detail.box(bw,bh,bd,e.x+u*Math.cos(e.angle)+v*e.nx,y,e.z-u*Math.sin(e.angle)+v*e.nz,mat,false,e.angle);
-        addEntrance(b,fixedMeshes,doors,doorMaterials,f.tags.name,e.x,e.z,e.angle,w,0);
-        const depth=profile.portal==='glass'?1.1:.7;put(0,3.17,depth*.4,w+1.05,.15,depth,stone);
+        if(f.id==='plan-80')entrance=buildHospitalEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e.x,e.z,e.angle);
+        else{
+          addEntrance(b,fixedMeshes,doors,doorMaterials,f.tags.name,e.x,e.z,e.angle,w,0);
+          const depth=profile.portal==='glass'?1.1:.7;put(0,3.17,depth*.4,w+1.05,.15,depth,stone);
+        }
         if(profile.portal==='columns')for(const side of[-1,1])put(side*(w/2+.3),1.52,.5,.18,2.9,.22,stone);
         if(profile.style==='villa'&&profile.balcony){put(0,3.52,.85,w+.7,.13,.13,stone);for(let q=-4;q<=4;q++)put(q*w/8,3.3,.85,.075,.45,.08,stone);}
         if(['plan-34','plan-71','plan-113','plan-117','plan-100'].includes(f.id)){
@@ -247,7 +254,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         }
       }
     }
-    records.push({id:f.id,name:f.tags.name,source:profile.source,height,windows,roof:profile.roof,dormitory:profile.style==='dormitory',frontage:frontView});
+    records.push({id:f.id,name:f.tags.name,source:profile.source,height,windows,roof:profile.roof,dormitory:profile.style==='dormitory',frontage:frontView,...(entrance?{entrance}:{})});
   }
   // Every triangle remains present. Independent bounds let the renderer cull
   // buildings outside the camera or shadow frustum instead of drawing campus-wide batches.

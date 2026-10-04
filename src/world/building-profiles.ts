@@ -22,6 +22,7 @@ const profile = (base: FacadeProfile, source: string, observations: string, chan
  * Counts/proportions are visual estimates. Source IDs refer to the local VR inventory.
  * Do not equate schematic-plan footprints with a surveyed building envelope. */
 export const buildingProfiles: Record<string, FacadeProfile> = {
+  'plan-80': profile(modern,'official Gulou VR note_191; hospital exchange photograph','confirmed entrance: pale wall, silver frames, grey canopy, gold 南京大学医院, four red-brown posts and grey steps; previous two-storey flat-roof massing and frontage registration remain approximate',{levels:2,wall:0xd4d6d1,frame:0xa7b1ad}),
   'plan-1': profile(modern,'gl-4-04','pale stone grid, dark blue vertical glazing, glazed ground floor',{levels:7,wall:0xc1b6a4,style:'glass',windowHeight:2.2}),
   'plan-2': profile(modern,'gl-4-02','light rectangular wings, rooftop service enclosure',{levels:6,wall:0xd1d0c4}),
   'plan-3': profile(modern,'gl-3-18','wide horizontal window bands, warm stone piers, deep entrance canopy',{levels:7,wall:0xc7baa5,bays:3.6,windowWidth:2.7}),
