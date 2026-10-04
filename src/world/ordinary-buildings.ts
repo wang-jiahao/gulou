@@ -18,6 +18,7 @@ import {entranceMaterials,addEntrance,type DoorRecord} from './building-entrance
 import { getBuildingProfile } from './building-profiles.ts';
 import {createSufuteFacade} from './sufute-facade.ts';
 import {createTianFacade} from './tian-facade.ts';
+import {createTangFacade} from './tang-facade.ts';
 import {buildYifuTower,yifuTower} from './yifu-tower.ts';
 import {buildYifuEntrance} from './yifu-entrance.ts';
 
@@ -54,7 +55,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   };
   const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group}>();
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
-  const sufute=createSufuteFacade(),tian=createTianFacade();
+  const sufute=createSufuteFacade(),tian=createTianFacade(),tang=createTangFacade();
   let yifu:ReturnType<typeof buildYifuEntrance>|undefined;
   let yifuUpper:ReturnType<typeof buildYifuTower>|undefined;
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
@@ -100,6 +101,9 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       };
       if(!ri)edges.push({len,x:mx,z:mz,angle,nx,nz});
       if(f.id==='plan-10')continue;
+      if(f.id==='plan-22'&&!ri&&tang.accepts({len,x:mx,z:mz,angle,nx,nz})){
+        windows+=tang.face(b,detail,{len,x:mx,z:mz,angle,nx,nz},height);continue;
+      }
       if(f.id==='plan-12'&&!ri&&nx>.98&&len>8){
         windows+=sufute.face(b,detail,{len,x:mx,z:mz,angle,nx,nz},height);continue;
       }
@@ -288,6 +292,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.buildings=records;
   group.userData.sufuteFacade=sufute.metadata;
   group.userData.tianFacade=tian.metadata;
+  group.userData.tangFacade=tang.metadata;
   if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;group.userData.yifuTower=yifuUpper;}
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
   let detailShadows=false;
