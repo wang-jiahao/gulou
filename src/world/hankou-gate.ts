@@ -6,18 +6,28 @@ import { Builder, rng } from './geometry.ts';
 import type { Materials } from './materials.ts';
 
 /** Rendered lettering, not pixels from the reference photograph. */
-function lettering(font: Font, text: string, width: number, height: number, color: number, vertical = false) {
+function lettering(font: Font, text: string, width: number, height: number, color: number, centres: readonly number[], vertical = false) {
   const group = new T.Group();
   const material = new T.MeshStandardMaterial({ color, roughness: .32, metalness: .4 });
   [...text].forEach((letter, i) => {
     const geometry = new TextGeometry(letter, { font, size: 1, depth: .025, curveSegments: 5, bevelEnabled: true, bevelThickness: .006, bevelSize: .006, bevelSegments: 2 });
     geometry.computeBoundingBox(); const box = geometry.boundingBox!, size = box.getSize(new T.Vector3());
     const glyph = font.data.glyphs[letter] as { displayScale?: number };
-    const scale = Math.min((vertical ? width : width / text.length * .78) / size.x, (vertical ? height / text.length * .86 : height) / size.y) * (glyph.displayScale ?? 1);
+    // Restore relative photo heights once, then fit the whole inscription to its face.
+    // Separate group X/Y fitting approximately rectifies the oblique source photograph.
+    const scale = (vertical ? 80 : 76) * (glyph.displayScale ?? 1) / size.y;
     geometry.translate(-(box.min.x + box.max.x) / 2, -(box.min.y + box.max.y) / 2, 0); geometry.scale(scale, scale, 1);
-    const mesh = new T.Mesh(geometry, material); mesh.position.set(vertical ? 0 : width * ((i + .5) / text.length - .5), vertical ? height * (.5 - (i + .5) / text.length) : 0, 0);
+    const mesh = new T.Mesh(geometry, material); mesh.name = `gate glyph ${letter}`;
+    mesh.position.set(vertical ? 0 : centres[i], vertical ? -centres[i] : 0, 0);
     mesh.castShadow = mesh.receiveShadow = true; group.add(mesh);
   });
+  const bounds = new T.Box3().setFromObject(group), centre = bounds.getCenter(new T.Vector3()), size = bounds.getSize(new T.Vector3());
+  const sx = width / size.x, sy = height / size.y;
+  for (const child of group.children) {
+    const mesh = child as T.Mesh<T.BufferGeometry>;
+    mesh.geometry.scale(sx, sy, 1);
+    mesh.position.set((mesh.position.x - centre.x) * sx, (mesh.position.y - centre.y) * sy, 0);
+  }
   return group;
 }
 
@@ -130,10 +140,13 @@ export function createHankouGate(point: number[], mats: Materials, font: Font) {
   }
   for (let i = 0; i < 12; i++) b.box(6.7, .008, .46, gx, .065, gz + 9.5 + i * .94, paint);
   const group = b.finish('Hankou gate stone panels canopy lettering and forecourt');
-  const name = lettering(font, '南京大学', 6.0, .88, 0xe5b452); name.position.set(gx, 5.58, gz + 1.351); group.add(name);
-  const rearName = lettering(font, '南京大学', 6.0, .88, 0xe5b452); rearName.position.set(gx, 5.58, gz - 1.351); rearName.rotation.y = Math.PI; group.add(rearName);
+  // Letter centres traced from the local photograph; face dimensions are VR-checked estimates.
+  const titleCentres = [551, 631, 717, 798];
+  const name = lettering(font, '南京大学', 5.25, 1.04, 0xe5b452, titleCentres); name.position.set(gx, 5.56, gz + 1.351); group.add(name);
+  const rearName = lettering(font, '南京大学', 5.25, 1.04, 0xe5b452, titleCentres); rearName.position.set(gx, 5.56, gz - 1.351); rearName.rotation.y = Math.PI; group.add(rearName);
   for (const [side, text] of [[-1, '严肃活泼'], [1, '团结紧张']] as const) {
-    const motto = lettering(font, text, .90, 3.20, 0xa31425, true); motto.position.set(gx + side * 5.1, 3.35, gz + 1.216); group.add(motto);
+    const centres = side < 0 ? [541.5, 615, 685.5, 751.5] : [564.5, 617, 684.5, 752];
+    const motto = lettering(font, text, side < 0 ? 1.42 : 1.10, 3.28, 0xa31425, centres, true); motto.position.set(gx + side * 5.1, 3.23, gz + 1.216); group.add(motto);
   }
   const flag = nationalFlag(mats.windTime); flag.position.set(gx, 12.45, gz - .35); group.add(flag);
   // Camera proxies elsewhere use shallow traversal, so expose the relief meshes too.
