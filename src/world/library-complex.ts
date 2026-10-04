@@ -2,8 +2,10 @@ import * as T from 'three';
 import {Builder,curvedRoof} from './geometry.ts';
 import {planShape,insidePolygon,type MapPolygon} from './campus-map.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
-import {addEntrance,entranceMaterials,type DoorRecord} from './building-entrances.ts';
+import {entranceMaterials,type DoorRecord} from './building-entrances.ts';
 import {addBuildingLettering} from './building-lettering.ts';
+import {libraryEntrance} from './library-entrances.ts';
+import {splitBuildingRoof} from './building-roof.ts';
 import type {Materials} from './materials.ts';
 
 /** Separate volumes follow the user's overhead image and 2024 campus plan.
@@ -23,8 +25,8 @@ export function buildLibraryComplex(mats:Materials,b:Builder,meshes:CollisionMes
  function mass(name:string,points:number[][],height:number,material:T.Material,bottom=0,style:'modern'|'historic'|'plain'='modern'){
   const polygon={points},shape=planShape(polygon),geometry=new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false}).rotateX(-Math.PI/2).translate(0,bottom,0);
   const uv=geometry.getAttribute('uv');for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/2.4,uv.getY(i)/2.4);
-  const proxy=new T.Mesh(geometry.clone());meshes.push(collisionMesh(proxy));cameraSolids.push(proxy);b.add(geometry,material);
-  b.add(new T.ShapeGeometry(shape).rotateX(-Math.PI/2),roof,0,bottom+height+.025,0);
+  const proxy=new T.Mesh(geometry.clone());meshes.push(collisionMesh(proxy));cameraSolids.push(proxy);
+  const surfaces=splitBuildingRoof(geometry);b.add(surfaces.walls,material);b.add(surfaces.roof,roof);geometry.dispose();
   parts.push({name,points,height,bottom});
   for(let i=0;i<points.length;i++){
    const a=points[i],c=points[(i+1)%points.length],dx=c[0]-a[0],dz=c[1]-a[1],len=Math.hypot(dx,dz),mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2;
@@ -83,27 +85,51 @@ export function buildLibraryComplex(mats:Materials,b:Builder,meshes:CollisionMes
  const upperGroup=upper.finish('museum upper transverse roof');upperGroup.position.set(-1.7,0,269);upperGroup.rotation.y=Math.PI/2;upperGroup.updateMatrixWorld(true);
  const lowerGroup=roofs.finish('museum northern wing roofs');lowerGroup.updateMatrixWorld(true);
  for(const group of[lowerGroup,upperGroup])for(const child of group.children)if(child instanceof T.Mesh){meshes.push(collisionMesh(child,true));cameraSolids.push(child);b.add(child.geometry.clone().applyMatrix4(child.matrixWorld),child.material as T.Material);}
+ // The visible north eaves have dark green painted beams, narrow warm
+ // outlines and closely spaced rafter ends. Patterns are simplified, not a
+ // claim to reproduce the original ornamental painting or hidden elevations.
+ const eaveShadow=paint('museum-eave-shadow',0x2a4339),eaveLine=paint('museum-eave-painted-outlines',0x9a9261),rafter=paint('museum-rafter-wood',0x695244);
+ function northEaves(cx:number,z:number,y:number,width:number){
+  b.box(width,.46,.22,cx,y,z,green);b.box(width-.2,.23,.025,cx,y,z-.13,eaveShadow);
+  for(const dy of[-.185,.185])b.box(width-.2,.025,.028,cx,y+dy,z-.146,eaveLine);
+  const bays=Math.max(1,Math.round(width/3.5)),pitch=width/bays;
+  for(let i=0;i<bays;i++){
+   const x=cx-width/2+pitch*(i+.5),half=pitch/2-.27;
+   const points=[[-half+.15,-.105],[half-.15,-.105],[half,0],[half-.15,.105],[-half+.15,.105],[-half,0],[-half+.15,-.105]];
+   for(let j=1;j<points.length;j++)b.cylinder(new T.Vector3(x+points[j-1][0],y+points[j-1][1],z-.153),new T.Vector3(x+points[j][0],y+points[j][1],z-.153),.012,.012,eaveLine,4);
+   b.box(.12,.52,.32,x-pitch/2+.10,y,z,red);
+  }
+  const count=Math.floor(width/.28);
+  for(let i=0;i<count;i++){
+   const x=cx-width/2+(i+.5)*width/count;
+   b.box(.105,.105,.83,x,y+.34,z+.18,rafter);
+   b.box(.072,.055,.014,x,y+.335,z-.245,eaveLine);
+  }
+ }
+ northEaves(-1.8,257.55,8.76,54.4);northEaves(-1.7,256.28,13.22,20.3);
  // The modern west entrance projects beyond the long wing, as in archive 28.
  mass('west-entry-recess',[[-63.27,279.23],[-57.85,278.79],[-58.42,293.56],[-64.22,293.1]],12.4,wall);
  const entrance={x:-63.74,z:286.2,yaw:-Math.PI/2-.068};
- addEntrance(b,meshes,doors,doorMats,'图书馆',entrance.x,entrance.z,entrance.yaw,7.4,.6);
+ libraryEntrance(b,meshes,doors,doorMats,'图书馆',entrance.x,entrance.z,entrance.yaw,.6);
  const westPut=(u:number,y:number,v:number,w:number,h:number,d:number,mat:T.Material)=>b.box(w,h,d,entrance.x+u*Math.cos(entrance.yaw)+v*Math.sin(entrance.yaw),y,entrance.z-u*Math.sin(entrance.yaw)+v*Math.cos(entrance.yaw),mat,false,entrance.yaw);
  westPut(0,3.78,1.35,14.2,.42,3.2,trim);
  for(let i=0;i<4;i++){const h=(i+1)*.15,v=2.85-i*.33;westPut(0,h/2,v,14.3,h,.36,trim);const proxy=new T.Mesh(new T.BoxGeometry(14.3,h,.36));proxy.position.set(entrance.x+Math.sin(entrance.yaw)*v,h/2,entrance.z+Math.cos(entrance.yaw)*v);proxy.rotation.y=entrance.yaw;meshes.push(collisionMesh(proxy));}
- const labels=[addBuildingLettering(b,'library',entrance.x-.25,4.35,entrance.z-.02,7.7,entrance.yaw)];
+ // Keep the gold silhouette in front of the projecting facade fins.
+ const labels=[addBuildingLettering(b,'library',entrance.x+Math.sin(entrance.yaw)*.68,4.35,entrance.z+Math.cos(entrance.yaw)*.68,7.7,entrance.yaw)];
  // Museum faces north down Jin Da Road. Its small portal inscription sits on
  // the stone lintel, distinct from the library's widely spaced gold characters.
  const museum={x:-1.5,z:257.18,yaw:Math.PI+.065};
- addEntrance(b,meshes,doors,doorMats,'校史博物馆',museum.x,museum.z,museum.yaw,3.3,.45);
- for(const side of[-1,1])b.box(.46,4.1,.75,museum.x+side*2.22,2.5,museum.z-.65,trim);
- b.box(5.1,.62,.90,museum.x,4.38,museum.z-.68,trim,false,.065);
+ libraryEntrance(b,meshes,doors,doorMats,'校史博物馆',museum.x,museum.z,museum.yaw,.45,true);
+ const museumPut=(u:number,y:number,v:number,w:number,h:number,d:number,mat:T.Material)=>b.box(w,h,d,museum.x+u*Math.cos(museum.yaw)+v*Math.sin(museum.yaw),y,museum.z-u*Math.sin(museum.yaw)+v*Math.cos(museum.yaw),mat,false,museum.yaw);
+ for(const side of[-1,1])museumPut(side*2.22,2.5,1.30,.46,4.1,.75,trim);
+ museumPut(0,4.38,1.20,5.1,.62,.90,trim);
  // The photographed lintel has a shallow tiled cap, without pagoda upturns.
- b.box(5.5,.15,1.2,museum.x,4.84,museum.z-.65,tile,false,.065);
+ museumPut(0,4.84,1.18,5.5,.15,1.2,tile);
  for(let i=0;i<23;i++){
-  const x=museum.x-2.65+i*.24;
-  b.cylinder(new T.Vector3(x,4.94,museum.z-1.28),new T.Vector3(x,4.94,museum.z-.04),.075,.075,tile,8);
+  const u=-2.65+i*.24,point=(v:number)=>new T.Vector3(museum.x+u*Math.cos(museum.yaw)+v*Math.sin(museum.yaw),4.94,museum.z-u*Math.sin(museum.yaw)+v*Math.cos(museum.yaw));
+  b.cylinder(point(.58),point(1.78),.075,.075,tile,8);
  }
- labels.push(addBuildingLettering(b,'museum',museum.x,4.18,museum.z-1.17,3.4,museum.yaw));
+ labels.push(addBuildingLettering(b,'museum',museum.x+Math.sin(museum.yaw)*1.68,4.18,museum.z+Math.cos(museum.yaw)*1.68,3.4,museum.yaw));
  for(let i=0;i<3;i++){const h=(i+1)*.15,z=museum.z-2.5+i*.34;b.box(5.8,h,.36,museum.x,h/2,z,trim);const proxy=new T.Mesh(new T.BoxGeometry(5.8,h,.36));proxy.position.set(museum.x,h/2,z);meshes.push(collisionMesh(proxy));}
  return{id:'plan-66',name:'图书馆',source:'user overhead + NJU 2024 plan + official VR gl-2-21 + archive photo 28',height:16.4,windows,roof:'north heritage / middle flat / modern L wings',dormitory:false,frontage:[entrance.x,entrance.z,Math.sin(entrance.yaw),Math.cos(entrance.yaw)],parts,labels,approximateHeights:true};
 }
