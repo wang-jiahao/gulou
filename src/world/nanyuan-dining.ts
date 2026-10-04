@@ -38,9 +38,27 @@ export function buildNanyuanDining(f:MapFeature,b:Builder,meshes:CollisionMesh[]
   const[px,pz]=point(u,v);b.box(w,h,d,px,y,pz,material,false,yaw);
   if(name){collider(new T.BoxGeometry(w,h,d).rotateY(yaw).translate(px,y,pz));obstacles.push({name,u,v,width:w,depth:d,bottom:y-h/2,height:h});}
  }
+ // Use the mapped east edge, rather than assuming the two elevations are
+ // perpendicular. s runs north along the gallery; t points out to the east.
+ const ea=f.points[3],ec=f.points[0],eastLength=Math.hypot(ec[0]-ea[0],ec[1]-ea[1]);
+ const ex=(ea[0]+ec[0])/2,ez=(ea[1]+ec[1])/2,enx=-(ec[1]-ea[1])/eastLength,enz=(ec[0]-ea[0])/eastLength,eastYaw=Math.atan2(enx,enz);
+ const eastPoint=(s:number,t:number)=>[ex+s*enz+t*enx,ez-s*enx+t*enz];
+ const eastLocal=(u:number,v:number)=>{const[px,pz]=point(u,v);return[(px-ex)*enz-(pz-ez)*enx,(px-ex)*enx+(pz-ez)*enz];};
+ const eastClip=(points:number[][],axis:number,value:number,side:number)=>clip(points.map(([u,v])=>eastLocal(u,v)),axis,value,side).map(([s,t])=>local(...eastPoint(s,t) as [number,number]));
+ const galleryHalf=18,galleryDepth=5.2,galleryFloor=1.65,galleryLevels=[5,9.06,13.12];
+ function eastBox(s:number,y:number,t:number,w:number,h:number,d:number,material:T.Material,name?:string){
+  const[px,pz]=eastPoint(s,t);b.box(w,h,d,px,y,pz,material,false,eastYaw);
+  if(name){collider(new T.BoxGeometry(w,h,d).rotateY(eastYaw).translate(px,y,pz));parts.push({name,bottom:y-h/2,height:h});}
+ }
+ function recessedMass(name:string,points:number[][],bottom:number,h:number,holes:number[][][]=[]){
+  mass(`${name}-north`,eastClip(points,0,galleryHalf,1),bottom,h);
+  mass(`${name}-south`,eastClip(points,0,-galleryHalf,-1),bottom,h);
+  const middle=eastClip(eastClip(points,0,-galleryHalf,1),0,galleryHalf,-1);
+  mass(`${name}-core`,eastClip(middle,1,-galleryDepth,-1),bottom,h,holes);
+ }
  const courtyard=[[-19,-13],[8,-13],[8,-32],[-19,-32]];
- mass('upper-ring',polygon,ceiling,height-ceiling,[courtyard]);
- mass('ground-rear',clip(polygon,1,-depth,-1),0,ceiling);
+ recessedMass('upper-ring',polygon,ceiling,height-ceiling,[courtyard]);
+ recessedMass('ground-rear',clip(polygon,1,-depth,-1),0,ceiling);
  const front=clip(polygon,1,-depth,1);
  mass('east-end',clip(front,0,-24,-1),0,ceiling);
  mass('west-stair-wing',clip(front,0,17,1),0,ceiling);
@@ -96,9 +114,47 @@ export function buildNanyuanDining(f:MapFeature,b:Builder,meshes:CollisionMesh[]
  // Muted service boxes are static and share existing material batches.
  for(const u of[-25,-15,0,13]){box(u,height+.55,-5,2.1,1.1,1.8,roof,'roof-service');for(let j=0;j<5;j++)box(u-.8+j*.4,height+.55,-4.085,.08,.85,.045,dark);}
  box(21.5,19,-8,9,2,7,wall,'stair-roof');
+ // gl110 b: open recessed galleries, broad pale fascia boards, silver rails
+ // and full-height round columns. These are actual openings in both meshes.
+ eastBox(0,galleryFloor/2,-galleryDepth/2,36,galleryFloor,galleryDepth,stone,'east-landing');
+ for(const level of [...galleryLevels,height]){
+  eastBox(0,level-.18,-galleryDepth/2,36,.36,galleryDepth,wall,'east-gallery-slab');
+  if(level===height)continue;
+  eastBox(0,level+.22,-.12,36,.78,.24,wall,'east-gallery-parapet');
+  for(const rail of[.70,.91,1.12])eastBox(0,level+rail,-.1,36,.045,.05,metal);
+  for(let s=-18;s<=18;s+=1.5)eastBox(s,level+.83,-.1,.045,.65,.05,metal);
+ }
+ for(const level of [galleryFloor,...galleryLevels]){
+  const top=level===galleryFloor?5:level===13.12?18:level+4.06;
+  eastBox(0,(level+top)/2,-galleryDepth+.025,36,top-level-.25,.05,glass);
+  for(let s=-18;s<=18;s+=1.8)eastBox(s,(level+top)/2,-galleryDepth+.075,.06,top-level-.25,.10,metal);
+  eastBox(0,level+.82,-galleryDepth+.085,36,.08,.12,metal);
+ }
+ const eastColumns=[-16,-8,0,8,16];
+ for(const s of eastColumns){
+  const[px,pz]=eastPoint(s,.10),bottom=galleryFloor,top=height+.18;
+  b.cylinder(new T.Vector3(px,bottom,pz),new T.Vector3(px,top,pz),.5,.5,metal,12);
+  collider(new T.CylinderGeometry(.5,.5,top-bottom,12).translate(px,(top+bottom)/2,pz));
+  for(let y=bottom+2;y<top;y+=2)b.add(new T.CylinderGeometry(.51,.51,.045,12),dark,px,y,pz);
+ }
+ // The central stair rises to the open ground-floor gallery. The paired blue
+ // lower-level canopies in the reference need their own terrain/access pass.
+ for(let i=0;i<11;i++){
+  const h=.15*(i+1),d=(11-i)*.36;
+  eastBox(0,h/2,d/2,26,h,d,stone,'east-step');
+ }
+ for(const s of[-12.7,-4.3,4.3,12.7]){
+  const[ax,az]=eastPoint(s,3.85),[bx,bz]=eastPoint(s,-.5);
+  b.cylinder(new T.Vector3(ax,1.03,az),new T.Vector3(bx,galleryFloor+.92,bz),.035,.035,metal,6);
+  for(const t of[3.85,2.7,1.5,.3,-.5]){const rise=t>0?Math.max(.15,.15*(11-Math.floor(t/.36))):galleryFloor;eastBox(s,rise+.44,t,.055,.88,.055,metal);}
+ }
+ for(const s of[-15.6,15.6]){
+  eastBox(s,galleryFloor+.47,.06,4.8,.94,.16,wall,'east-landing-side');
+  eastBox(s,galleryFloor+1.09,.06,4.8,.06,.07,metal);
+ }
  // Until their own reference pass, side/rear elevations are explicitly
  // approximate horizontal glazing, without adding unsupported entrances.
- for(let edge=1;edge<polygon.length;edge++){
+ for(let edge=1;edge<3;edge++){
   const p=polygon[edge],q=polygon[(edge+1)%polygon.length],p0=point(...p as [number,number]),p1=point(...q as [number,number]);
   const w=Math.hypot(p1[0]-p0[0],p1[1]-p0[1]),ex=(p0[0]+p1[0])/2,ez=(p0[1]+p1[1])/2,enx=-(p1[1]-p0[1])/w,enz=(p1[0]-p0[0])/w,angle=Math.atan2(enx,enz);
   for(const y of rows){
@@ -109,5 +165,5 @@ export function buildNanyuanDining(f:MapFeature,b:Builder,meshes:CollisionMesh[]
  // Keep the original arrival point/plant exclusion stable for the rest of
  // campus; the accessible landing is reached by the broad north steps.
  const[dx,dz]=point(0,1.5);doors.push({name:f.tags.name,x:dx,y:0,z:dz,yaw,width:7.2});
- return{id:f.id,name:f.tags.name,source:'Official VR gl110/gl115 note145 + gl124 b north aerial; official map footprint; dimensions approximate',height,windows:3,roof:'flat light court',dormitory:false,frontage:[x,z,nx,nz],dining:{source:'gl124 b / gl110 b',dimensions:'approximate',frame:{x,z,nx,nz,yaw},floor,ceiling,depth,entryU,rows,courtyard,parts,obstacles,eastGalleryPending:true}};
+ return{id:f.id,name:f.tags.name,source:'Official VR gl110/gl115 note145 + gl124 b north aerial; official map footprint; dimensions approximate',height,windows:3,roof:'flat light court',dormitory:false,frontage:[x,z,nx,nz],dining:{source:'gl124 b / gl110 b',dimensions:'approximate',frame:{x,z,nx,nz,yaw},floor,ceiling,depth,entryU,rows,courtyard,parts,obstacles,eastGallery:{frame:{x:ex,z:ez,nx:enx,nz:enz,yaw:eastYaw},half:galleryHalf,depth:galleryDepth,floor:galleryFloor,levels:galleryLevels,columns:eastColumns,lowerCanopiesPending:true}}};
 }
