@@ -36,6 +36,7 @@ import {createRabeCourtyard, rabeCourtyardLayout} from './rabe-courtyard.ts';
 import {createTianCourtyard, tianCourtyardLayout} from './tian-courtyard.ts';
 import {createTangCourtyard,tangCourtyardLayout} from './tang-courtyard.ts';
 import {createTangCourtyardAccess} from './tang-courtyard-access.ts';
+import {createTangCourtyardGround} from './tang-courtyard-ground.ts';
 import {createJinyinStreetTrees} from './jinyin-street-trees.ts';
 import {createPlanarCutout} from './planar-cutout.ts';
 import {splitTeachingFeature} from './specific-buildings.ts';
@@ -309,6 +310,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const rabePlanting=await createRabeCourtyard(rabeCourtyard,mats);root.add(rabePlanting.group);moreSolids.push(...rabePlanting.solids);vegetationUpdates.push(rabePlanting.updateVisibility);
     root.add(createTangCourtyard(tangCourtyard,mats));
     const tangAccess=createTangCourtyardAccess(mats);root.add(tangAccess.group);moreSolids.push(...tangAccess.solids);cameraSolids.push(...tangAccess.cameraSolids);
+    const tangGround=createTangCourtyardGround();root.add(tangGround.group);moreSolids.push(...tangGround.solids);cameraSolids.push(...tangGround.cameraSolids);
     const tianPlanting=await createTianCourtyard(tianCourtyard,mats);root.add(tianPlanting.group);moreSolids.push(...tianPlanting.solids);vegetationUpdates.push(tianPlanting.updateVisibility);
     const jinyinPlanting=await createJinyinStreetTrees(mats);root.add(jinyinPlanting.group);moreSolids.push(...jinyinPlanting.solids);vegetationUpdates.push(jinyinPlanting.updateVisibility);
     const props = new Builder();

@@ -410,3 +410,9 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 - 实际查看官方 [鼓楼VR](https://vr.nju.edu.cn/newUI/) gl-4-05 b/l/r，核对北侧浅方砖院墙、收拢银门与凸面镜、南侧停车P牌柱。来源场景见docs/sources/official-newui-gulou.xml，原图references/official-vr/phase10仅本地。
 - 位置、尺寸与遮挡面近似；院口保持开放，院墙不等同全校围墙，不据此封闭金银街公共道路。新增3份简单碰撞，相机使用可见合并网格；凸镜为静态材质，无实时反射。
 - types/lint/build及Chrome／Edge各48条双向步骑路线、30组人物／相机射线、搜索与旧几何保持检查通过，零网页错误／缺资源，各4张最终图实看。报告docs/validation/phase65；成功before-chrome不覆盖。
+
+## v0.64 唐楼院角短柱、锥筒与井盖
+
+- 实际查看官方 [鼓楼VR](https://vr.nju.edu.cn/newUI/) gl-4-05 r，三根黑黄圆短柱、两只方形锥筒及圆井盖可见；尺寸、摆位及锥筒细节为近似，不照搬倒地临时设施。井盖字样不可辨读，未虚构校徽或文字。原图仅本地。
+- 新增5份简单方盒碰撞，3种合并静态材质；井盖不增加碰撞或相机阻挡，无动态灯或逐帧生成。保留院口、柱间、院角与公共街道通路。
+- types/lint/build通过；Chrome／Edge各56条双向步骑路线、40组人物／相机射线、搜索和旧几何保持检查通过，零网页错误／缺资源，各4张最终图实看。报告docs/validation/phase66；成功before-chrome不覆盖。

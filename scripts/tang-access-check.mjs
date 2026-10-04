@@ -2,8 +2,9 @@ import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 
+const groundDetails=process.env.TANG_GROUND_DETAILS==='1';
 const stage=process.env.TANG_ACCESS_STAGE||'after',channel=process.env.BROWSER_CHANNEL||'chrome';
-const out='docs/validation/phase65',file=`${out}/${stage}-${channel}.json`;
+const out=groundDetails?'docs/validation/phase66':'docs/validation/phase65',file=`${out}/${stage}-${channel}.json`;
 await mkdir(out,{recursive:true});
 if(stage.startsWith('before')){try{await readFile(file);throw Error('Baseline already exists');}catch(e){if(e.code!=='ENOENT')throw e;}}
 const browser=await chromium.launch(process.env.EDGE_EXECUTABLE?{executablePath:process.env.EDGE_EXECUTABLE}:{channel}),report={stage,channel,errors:[],missing:[],routes:[]};
@@ -33,13 +34,13 @@ try{
   for(const key of ['fixed','instances','solids','access','boundaries','buildings','doors'])assert.deepEqual(report.geometry[key],before.geometry[key],key+' preserved');
   const remaining=[...report.geometry.cuboids];
   for(const box of before.geometry.cuboids){const i=remaining.findIndex(b=>JSON.stringify(b)===JSON.stringify(box));assert.ok(i>=0,'old collider preserved');remaining.splice(i,1);}
-  assert.equal(remaining.length,3,'only wall, pier and folded gate colliders added');report.addedCuboids=remaining;
+  assert.equal(remaining.length,groundDetails?5:3,groundDetails?'only three posts and two cones added':'only wall, pier and folded gate colliders added');report.addedCuboids=remaining;
   report.garden=await page.evaluate(()=>window.__GULOU__.game.world.root.getObjectByName('tang courtyard').userData);
   assert.equal(report.garden.beds.length,1);assert.ok(report.garden.surfaceMeshes<=5);assert.ok(report.garden.shrubCards<1000);
   report.entrance=await page.evaluate(()=>window.__GULOU__.game.world.root.getObjectByName('plan-based campus buildings with VR facade profiles').userData.tangEntrance);
   assert.equal(report.geometry.buildings.find(b=>b.id==='plan-22').height,19.5);
   assert.equal(report.entrance.throughPassage,false);
-  report.rays=await page.evaluate(()=>{
+  report.rays=await page.evaluate(groundDetails=>{
    const g=window.__GULOU__.game,p=g.player,e=g.world.root.getObjectByName('plan-based campus buildings with VR facade profiles').userData.tangEntrance,f=e.localFrame;
    const point=(u,y,v)=>({x:f.x+u*f.nz+v*f.nx,y,z:f.z-u*f.nx+v*f.nz});
    const cast=(name,from,to,blocked)=>{
@@ -50,6 +51,12 @@ try{
     return{name,blocked,physics:hit?.timeOfImpact??null,camera:camera?.distance??null,len};
    };
    const tests=[];
+   if(groundDetails){
+    for(const [name,x,z] of [['post-west',-394.9,-65.1],['post-middle',-392.8,-65.1],['post-east',-390.7,-65.1],['cone-west',-399.8,-64.7],['cone-east',-396.3,-64.7]]){
+     tests.push(cast(name,{x,y:.25,z:z+1},{x,y:.25,z:z-1},true));
+     tests.push(cast(name+'-above',{x,y:1.25,z:z+1},{x,y:1.25,z:z-1},false));
+    }
+   }
    for(const z of[-63,-59,-54])for(const y of[.8,1.8])tests.push(cast(`open-yard-${z}-${y}`,{x:-390,y,z},{x:-382,y,z},false));
    tests.push(cast('yard-wall',{x:-389,y:1.2,z:-72},{x:-384,y:1.2,z:-72},true));
    tests.push(cast('parking-pier',{x:-389,y:1.2,z:-51},{x:-384,y:1.2,z:-51},true));
@@ -63,7 +70,7 @@ try{
    tests.push(cast('roof',point(-9.75,24,-3),point(-9.75,16,-3),true));
    tests.push(cast('floor',point(-9.75,2,-3),point(-9.75,.03,-3),true));
    return tests;
-  });
+  },groundDetails);
   for(const r of report.rays){assert.equal(r.physics!==null,r.blocked,'physics '+JSON.stringify(r));assert.equal(r.camera!==null,r.blocked,'camera '+JSON.stringify(r));}
   const roof=report.rays.find(r=>r.name==='roof');assert.ok(Math.abs(roof.physics-4.5)<.01);
   await page.keyboard.press('KeyM');await page.waitForFunction(()=>document.querySelector('#campus-map').open);
@@ -76,6 +83,7 @@ try{
  const fixture=await page.evaluate(()=>{const b=window.__GULOU__.game.world.bicycles[1];return{position:b.group.position.toArray(),angle:b.angle};});
  report.publicRoutes=[];
  const routes=[
+  ...(groundDetails?[{name:'短柱间隙',a:{x:-393.85,z:-61},b:{x:-393.85,z:-66.2}},{name:'院角井盖旁',a:{x:-401,z:-62},b:{x:-388,z:-62}}]:[]),
   {name:'院门北侧通行',a:{x:-401,z:-63},b:{x:-382,z:-63}},
   {name:'院门南侧通行',a:{x:-401,z:-54},b:{x:-382,z:-54}},
   {name:'院边灌木外侧',a:{x:-384,z:-81},b:{x:-384,z:-61}},
@@ -104,7 +112,7 @@ try{
   await page.evaluate(f=>{const p=window.__GULOU__.game.player;if(p.riding){p.teleport(...f.position);p.rideYaw=f.angle;p.parkBicycle();}p.reset();},fixture);
 
  await page.addStyleTag({content:'body > :not(canvas){visibility:hidden!important} canvas{visibility:visible!important}'});
- const shots=[['outward',[-395,2.1,-58],[-381,2,-61],75],['wall',[-391,2.1,-62],[-386.5,1.5,-74],73],['gate',[-392,2.1,-60],[-386.5,1.6,-65.3],68],['parking',[-396,2.1,-62],[-386.3,2,-50.5],72]];
+ const shots=groundDetails?[['corner',[-401,2.2,-58],[-390,1,-67],64],['posts',[-397.5,1.8,-60.5],[-392.8,.5,-65.1],64],['cover',[-395.1,2,-61.6],[-394.7,.04,-63.9],55],['gate',[-394,2.1,-60],[-386.5,1.5,-65.3],70]]:[['outward',[-395,2.1,-58],[-381,2,-61],75],['wall',[-391,2.1,-62],[-386.5,1.5,-74],73],['gate',[-392,2.1,-60],[-386.5,1.6,-65.3],68],['parking',[-396,2.1,-62],[-386.3,2,-50.5],72]];
  for(const[name,eye,look,fov]of shots){
   await page.evaluate(({eye,look,fov})=>{const g=window.__GULOU__.game;g.player.avatar.root.visible=false;g.camera.position.set(...eye);g.camera.lookAt(...look);g.camera.fov=fov;g.camera.updateProjectionMatrix();g.atmosphere.update(0,false,g.camera.position);if(g.foliageLight)g.foliageLight.value=g.atmosphere.daylight;g.world.updateVegetation(g.camera.position,g.quality,true,g.camera.position);g.csm.lightDirection.copy(g.atmosphere.sunDirection).negate();g.csm.lights.forEach(l=>{l.intensity=g.atmosphere.sunIntensity;l.color.copy(g.atmosphere.lightColor);});g.renderer.toneMappingExposure=1.05+g.atmosphere.night*.12;g.camera.updateMatrixWorld();g.csm.updateFrustums();g.csm.update();g.renderer.render(g.scene,g.camera);},{eye,look,fov});
   await page.screenshot({path:`${out}/${stage}-${channel}-${name}.png`});
