@@ -22,6 +22,7 @@ import { createSouthRoadDetails } from './south-road-details.ts';
 import { createSouthTreeDetails } from './south-tree-details.ts';
 import { createCampusDirectory } from './campus-directory.ts';
 import {createPublicStreets} from './public-streets.ts';
+import {createCampusBoundaries} from './campus-boundaries.ts';
 import {createGuangzhouGate} from './guangzhou-gate.ts';
 import {createLampBanners} from './lamp-banners.ts';
 import {splitTeachingFeature} from './specific-buildings.ts';
@@ -152,6 +153,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);
   const guangzhou=createGuangzhouGate(mats);root.add(guangzhou.group);solids.push(...guangzhou.solids);cameraSolids.push(...guangzhou.group.children);
   const access=createAccessControls(mats);root.add(access.group);solids.push(...access.solids);
+  const boundary=createCampusBoundaries(mats);root.add(boundary.group);solids.push(...boundary.solids);cameraSolids.push(...boundary.group.children);
   cameraSolids.push(...priority.group.children);
   root.add(createSkyline());
   const sports=createSportsGround(mats);root.add(sports.group);solids.push(...sports.solids);cameraSolids.push(...sports.group.children);
@@ -289,7 +291,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       props.solids.push({ x, y: 1.8+floor, z, w: .18, h: 3.6, d: .18 });
     }
     root.add(createLampBanners(lampSpots.filter(([,z])=>z>=165&&z<=389),mats.metal));
-    const propGroup = props.finish('benches lamps and boundary'); root.add(propGroup); moreSolids.push(...props.solids); cameraSolids.push(...propGroup.children);
+    const propGroup = props.finish('benches and lamps'); root.add(propGroup); moreSolids.push(...props.solids); cameraSolids.push(...propGroup.children);
     const amenities=createDormitoryAmenities(map,ordinary.records,mats,[...solids,...moreSolids]);root.add(amenities.group);bicycles.push(...amenities.bicycles);moreSolids.push(...amenities.solids);lampPositions.push(...amenities.lamps);cameraSolids.push(...amenities.group.children);
     const parking=createTeachingBicycleParking(mats);root.add(parking.group);bicycles.push(...parking.bicycles);moreSolids.push(...parking.solids);cameraSolids.push(...parking.group.children);
     afterSector();

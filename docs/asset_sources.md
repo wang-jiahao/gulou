@@ -1,6 +1,6 @@
 # 资产来源与使用范围
 
-当前本地版本 v0.7.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
+当前本地版本 v0.25.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
 
 | 资产 / 资料 | 来源与许可 | 使用方式 |
 | --- | --- | --- |
@@ -158,3 +158,9 @@
 - The [official VR](https://vr.nju.edu.cn/newUI/#/) scene_gl-3 front aerial and scene_gl-4-02 right face were directly inspected with the [2024 campus plan](https://zcc.nju.edu.cn/dzdt/glxqdt/index.html). They establish the western tower, low east/south wings, west-open court and southwest column recess with an inner wall. The large colonnade near 25 minutes in the user walk video belongs to the western neighbouring building and does not establish a through-tunnel in Fei Yimin.
 - The canopy is separately collidable overhead while its ground route remains open. The 68.4 m tower, 19 m wings, floor spacing, canopy dimensions and hidden facades are visual estimates. Vertical gold lettering is placed on the south wing's west end, recreated with a system Kai font; it is not a traced original inscription.
 - Models, glazing and lettering are generated locally. Reference photographs, panorama tiles, user screenshots and videos remain outside source commits and distribution.
+
+## Local v0.25 — Hankou boundary and public-road alignment
+
+- [Official VR](https://vr.nju.edu.cn/newUI/#/) scene_gl-2-01 and gl-2-40 were inspected with the [2024 Asset Office plan](https://zcc.nju.edu.cn/dzdt/glxqdt/index.html). These support the short solid-wall stretches north of Hankou Road and low masonry / iron railings south of it. Gl-2-40 is an elevated gate-side view despite its official aerial label. Unseen perimeter extensions are not inferred.
+- The registered map centreline replaces the straight Hankou strip that overlapped south teaching. The 10.4 m carriageway, 1.8 m sidewalks, wall heights and setbacks are model estimates, not surveyed dimensions. Guangzhou retains its prior road approximation. Road drawing, vehicle paths and crossing checks share the same coordinates.
+- Chrome and Edge each passed 28 walk/ride route checks, 16 boundary blocks, 12 physics rays and eight actual player crossings with stop/resume checks. Real Rapier tests cover bends, yielding, wraparound and contact. Original source media remain local and excluded from distribution.
