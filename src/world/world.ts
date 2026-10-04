@@ -26,6 +26,8 @@ import {createCampusBoundaries} from './campus-boundaries.ts';
 import {createGuangzhouGate} from './guangzhou-gate.ts';
 import {createLampBanners} from './lamp-banners.ts';
 import {createSportsHallForecourts} from './sports-hall-forecourts.ts';
+import {createSportsHallPaving, sportsHallPavingLayout} from './sports-hall-paving.ts';
+import {createPlanarCutout} from './planar-cutout.ts';
 import {splitTeachingFeature} from './specific-buildings.ts';
 import type {CampusBicycle} from './bicycle.ts';
 import {extraPlaces} from './place-index.ts';
@@ -86,6 +88,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     southTeaching.tags={...southTeaching.tags,name:'南教学楼',source:'NJU asset office 2024 campus plan + official VR scene_gl-2-53',labelConfidence:'official location diagram; distinct from South Garden teaching building'};
   }
   map.features.push(fireTowerFootprint);
+  const sportsPaving = sportsHallPavingLayout(map), sportsPavingCutout = createPlanarCutout(sportsPaving.outline);
   const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
   const lawnHeight = .20;
   const courtyardHeight = (x: number, z: number) => terrainHeight(x,z) + ([...raisedLawns].some(lawn => insidePolygon(x, z, lawn)) ? lawnHeight : .022);
@@ -111,8 +114,11 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const eastSteps=createEastTeachingSteps(mats);root.add(eastSteps.group);solids.push(...eastSteps.solids);cameraSolids.push(...eastSteps.group.children);
   // Official VR shows asphalt garden paths, rather than a continuous stone plaza.
   const addSurface = (polygon: Parameters<typeof planShape>[0], material: T.Material, y: number) => {
-    const geometry = terrainSurface(polygon,y);
+    let geometry = terrainSurface(polygon,y);
     if (material === asphalt) { const proxy = new T.Mesh(geometry); proxy.updateMatrixWorld(); fixedMeshes.push(collisionMesh(proxy, false)); }
+    if (sportsPavingCutout.intersects(polygon.points)) {
+      geometry.dispose(); geometry = terrainSurface(polygon,y,sportsPavingCutout);
+    }
     b.add(geometry, material);
   };
   for (const road of map.roads) {
@@ -145,6 +151,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   b.box(12, .06, 5, 0, .025 + terraceHeight, 16.4, mats.path);
   b.box(8.5, .06, 6.5, -31, .025, 99, mats.path);
   const ground = b.finish('registered campus roads lawns and playing fields'); root.add(ground); solids.push(...b.solids);
+  root.add(createSportsHallPaving(sportsPaving,mats));
   root.add(createPublicStreets(mats));
   const southRoads = createSouthRoadDetails(map, mats,[songlinPathOpening]); root.add(southRoads.group); solids.push(...southRoads.solids);
   const garden = createSonglinGarden(mats); root.add(garden.group); solids.push(...garden.solids); fixedMeshes.push(...garden.fixedMeshes);cameraSolids.push(...garden.group.children);
@@ -260,6 +267,9 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       if (farTrees.some(t => Math.hypot(t.x - x, t.z - z) < 11)) continue;
       farTrees.push({ x, z, height: 12 + rand() * 8 });
     }
+    // Filter after sampling so correcting this forecourt never reshuffles
+    // the seeded avenue/woodland planting elsewhere on campus.
+    for (let i=farTrees.length-1;i>=0;i--) if (insidePolygon(farTrees[i].x,farTrees[i].z,sportsPaving.surface)) farTrees.splice(i,1);
     farTrees.forEach(tree=>{tree.baseY=courtyardHeight(tree.x,tree.z);});
     root.add(createSouthTreeDetails(farTrees, map, mats));
     const far = await createModelTrees(farTrees.filter(t => !map.features.some(f => f.tags.leisure === 'track' && insideRing(t.x, t.z, f.points))), 'far', mats.leaves); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);

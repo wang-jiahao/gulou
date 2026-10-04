@@ -2,6 +2,7 @@ import * as T from 'three';
 import { Builder } from './geometry.ts';
 import { planShape, type MapPolygon } from './campus-map.ts';
 import type { Materials } from './materials.ts';
+import type { PlanarCutout } from './planar-cutout.ts';
 
 // The walk at 17:10–17:25 shows the entire garden above the auditorium approach.
 // Seven 18 cm risers are a visual estimate, not a surveyed elevation. Side and
@@ -19,12 +20,13 @@ export function terrainHeight(x: number, z: number) {
 
 /** Clip planar triangles at every grade break before lifting them. This keeps
  * long traced road polygons from interpolating straight across the terrace. */
-export function terrainSurface(polygon: MapPolygon, offset: number) {
+export function terrainSurface(polygon: MapPolygon, offset: number, cutout?: PlanarCutout) {
   const source = new T.ShapeGeometry(planShape(polygon));
   const p = source.getAttribute('position'), index = source.getIndex()!;
   const output: number[] = [], uv: number[] = [];
   for (let i = 0; i < index.count; i += 3) {
     let polygons = [Array.from({ length: 3 }, (_, j) => [p.getX(index.getX(i + j)), -p.getY(index.getX(i + j))])];
+    if (cutout) polygons = cutout.subtract(polygons[0]);
     for (const [axis, value] of [[0,-43],[0,-39],[0,27],[0,29],[0,31],[0,33],[0,39],[0,43],[0,68],[0,72],[1,-30],[1,-22],[1,10],[1,14],[1,18],[1,78.2],[1,82],[1,85.4],[1,85.85]]) {
       const split: number[][][] = [];
       for (const ring of polygons) {

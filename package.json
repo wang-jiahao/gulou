@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.39.0",
+  "version": "0.40.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -63,7 +63,9 @@
     "test:software-passage": "node scripts/software-passage-check.mjs",
     "test:sports-halls": "node scripts/sports-halls-check.mjs",
     "test:sports-hall-forecourts": "node scripts/sports-hall-forecourts-check.mjs",
-    "test:purple-bicycle": "node scripts/purple-bicycle-check.mjs"
+    "test:purple-bicycle": "node scripts/purple-bicycle-check.mjs",
+    "test:planar-cutout": "node --experimental-strip-types scripts/planar-cutout-check.mjs",
+    "test:sports-paving": "node scripts/sports-paving-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",
