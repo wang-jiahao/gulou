@@ -10,6 +10,7 @@ import { collisionMesh, type CollisionMesh } from './collision-mesh.ts';
 import { buildOrdinaryBuildings } from './ordinary-buildings.ts';
 import {memorialPlantingClearance} from './pearl-memorial.ts';
 import {zhongshanPlantingClearance} from './zhongshan.ts';
+import {rabePlantingClearance} from './rabe-house.ts';
 import { planShape, insidePolygon, insideRing, type CampusMap } from './campus-map.ts';
 import { createPriorityDetails, createSkyline, createFireTower } from './priority-details.ts';
 import { createFootballPitch } from './football-pitch.ts';
@@ -267,7 +268,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     sectors++;
     await new Promise<void>(resolve => setTimeout(resolve, 50));
     const rand = rng(88), farTrees: TreeSpot[] = [], avenueTrees: TreeSpot[] = [];
-    const plantingDoors=ordinary.doors.map(d=>d.name==='赛珍珠纪念馆'?memorialPlantingClearance:d.name==='中山楼'?zhongshanPlantingClearance:d);
+    const plantingDoors=ordinary.doors.map(d=>d.name==='赛珍珠纪念馆'?memorialPlantingClearance:d.name==='中山楼'?zhongshanPlantingClearance:d.name==='拉贝纪念馆'?rabePlantingClearance:d);
     const clear = (x: number, z: number) => !sportsClearance(x,z)&&!teachingParkingClearance(x,z)&&!plantingDoors.some(d=>Math.hypot(d.x-x,d.z-z)<5)&&!map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
     // Avenue planting uses the traced road edge; other trees stay within plan lawns.
     for (let z = 156; z < 342; z += 15) for (const side of [-1, 1]) {

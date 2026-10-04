@@ -9,6 +9,7 @@ import {buildFeiYimin} from './fei-yimin.ts';
 import {buildPhysicsBuilding} from './physics-building.ts';
 import {buildPearlMemorial} from './pearl-memorial.ts';
 import {buildZhongshan} from './zhongshan.ts';
+import {buildRabeHouse} from './rabe-house.ts';
 import {buildSportsHall} from './sports-halls.ts';
 import {buildLibraryComplex} from './library-complex.ts';
 import {buildSpecific} from './specific-buildings.ts';
@@ -55,6 +56,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(f.id==='plan-4'){records.push(buildFeiYimin(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials));continue;}
     if(f.id==='plan-70'){records.push(buildPhysicsBuilding(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-50'){records.push(buildPearlMemorial(f,mats,b,fixedMeshes,cameraSolids,doors));continue;}
+    if(f.id==='plan-128'){records.push(buildRabeHouse(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-77'){records.push(buildZhongshan(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-6'||f.id==='plan-13'){records.push(buildSportsHall(f,b,fixedMeshes,cameraSolids,doors));continue;}
     const specific=buildSpecific(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials);if(specific){records.push(specific);continue;}
