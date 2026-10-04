@@ -13,6 +13,15 @@ export class EnvironmentState {
   weatherTransitions = 0;
   private seed: number;
   constructor(seed = Math.floor(Math.random() * 2147483647)) { this.seed = seed; this.nextWeatherIn = 100 + this.random() * 100; }
+  /** A fresh visit starts clear in the afternoon; keep the preferred cycle speed. */
+  resetForEntry() {
+    this.hour = 15;
+    this.autoTime = true;
+    this.weatherMode = 'random';
+    this.rain = this.wetness = this.targetRain = 0;
+    this.nextWeatherIn = 100 + this.random() * 100;
+    this.weatherTransitions = 0;
+  }
   private random() { this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0; return this.seed / 4294967296; }
   setHour(hour: number, manual = true) {
     if (!Number.isFinite(hour)) return;

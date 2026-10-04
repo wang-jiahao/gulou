@@ -173,8 +173,10 @@ export class Player {
       if(this.flightState==='launching'){this.launchTime+=dt;vertical=14;if(this.position.y>=this.launchTarget||this.launchTime>3)this.flightState='gliding';}
       else if(this.flightState==='landing')vertical=-7;
       else vertical=this.keys.has('Space')?7:(this.keys.has('ControlLeft')||this.keys.has('ControlRight'))?-8:-.7;
-      const lateral=right*(this.flightState==='landing'?2.5:4);
-      const vx=-Math.sin(yaw)*cruising+Math.cos(yaw)*lateral,vz=-Math.cos(yaw)*cruising-Math.sin(yaw)*lateral;
+      const lateral=right*4,landing=this.flightState==='landing';
+      // Use the same normalized camera-relative direction as the walking/touch input.
+      const vx=landing?this.direction.x*2.5:-Math.sin(yaw)*cruising+Math.cos(yaw)*lateral;
+      const vz=landing?this.direction.z*2.5:-Math.cos(yaw)*cruising-Math.sin(yaw)*lateral;
       this.flightVelocity.x=T.MathUtils.damp(this.flightVelocity.x,vx,3.5,dt);this.flightVelocity.z=T.MathUtils.damp(this.flightVelocity.z,vz,3.5,dt);this.flightVelocity.y=T.MathUtils.damp(this.flightVelocity.y,vertical,4,dt);
       this.flightBank=T.MathUtils.damp(this.flightBank,-right*.2,5,dt);
     }

@@ -42,9 +42,10 @@ async function boot() {
     if (typeof s.sensitivity === 'number' && s.sensitivity >= .0004 && s.sensitivity <= .004) { game.cameraRig.sensitivity = s.sensitivity; el<HTMLInputElement>('sensitivity').value = String(s.sensitivity / .00042); }
   } catch { /* Use defaults for unavailable or invalid storage. */ }
   await game.init((p, label) => { el('loading-bar').style.width = `${p * 100}%`; el('loading-percent').textContent = `${Math.round(p * 100)}%`; el('loading-text').textContent = label; });
-  try{const saved=JSON.parse(localStorage.getItem('gulou-settings-v1')??'{}').world;if(saved){const a=game.atmosphere.state;if(typeof saved.autoTime==='boolean')a.autoTime=saved.autoTime;if([6,12,24].includes(saved.cycleMinutes))a.cycleMinutes=saved.cycleMinutes;if(!a.autoTime&&Number.isFinite(saved.hour))a.setHour(saved.hour);if(['clear','rain','random'].includes(saved.weatherMode))a.setWeather(saved.weatherMode);}}catch{/* Use defaults. */}
+  try{const saved=JSON.parse(localStorage.getItem('gulou-settings-v1')??'{}').world;if([6,12,24].includes(saved?.cycleMinutes))game.atmosphere.state.cycleMinutes=saved.cycleMinutes;}catch{/* Use defaults. */}
   el<HTMLButtonElement>('enter').disabled = false; el('enter-label').textContent = '进入校园';
   el('enter').onclick = () => {
+    game.atmosphere.state.resetForEntry();
     entered = true; game.music.start(); el('welcome').hidden = true; el('hud').hidden = false; game.mode = 'playing'; lockPointer(); void game.audio.start().catch(() => toast('环境声暂不可用，可继续漫步。'));
     toast(touchDevice ? '左手摇杆移动，右手拖动画面。地图里可以传送。' : '欢迎回来。F 起飞 · V 切换视角 · M 地图与传送');
   };
@@ -93,7 +94,7 @@ async function boot() {
   el<HTMLInputElement>('auto-time').onchange=e=>{game.atmosphere.state.autoTime=(e.target as HTMLInputElement).checked;saveSettings();};
   el<HTMLSelectElement>('cycle-speed').onchange=e=>{game.atmosphere.state.cycleMinutes=Number((e.target as HTMLSelectElement).value);saveSettings();};
   worldSettings.querySelectorAll<HTMLButtonElement>('[data-weather]').forEach(button=>button.onclick=()=>{game.atmosphere.state.setWeather(button.dataset.weather as WeatherMode);syncWorld();saveSettings();});
-  el('world-reset').onclick=()=>{const a=game.atmosphere.state;a.setHour(15,false);a.autoTime=true;a.cycleMinutes=12;a.setWeather('random');a.targetRain=0;syncWorld();saveSettings();};
+  el('world-reset').onclick=()=>{const a=game.atmosphere.state;a.cycleMinutes=12;a.resetForEntry();syncWorld();saveSettings();};
   settings.addEventListener('close', () => { if (game.mode === 'paused') { el('resume').hidden = false; } });
   info.addEventListener('close', () => { el('resume').hidden = false; });
   el('reset').onclick = () => { game.player.reset(); game.cameraRig.reset(); toast('已回到北大楼前。'); };
