@@ -6,6 +6,7 @@ import {entranceMaterials,type DoorRecord} from './building-entrances.ts';
 import {addBuildingLettering} from './building-lettering.ts';
 import {libraryEntrance} from './library-entrances.ts';
 import {museumNorthFacade} from './museum-facade.ts';
+import {museumForecourt} from './museum-forecourt.ts';
 import {splitBuildingRoof} from './building-roof.ts';
 import type {Materials} from './materials.ts';
 
@@ -135,5 +136,6 @@ export function buildLibraryComplex(mats:Materials,b:Builder,meshes:CollisionMes
  }
  labels.push(addBuildingLettering(b,'museum',museum.x+Math.sin(museum.yaw)*1.68,4.18,museum.z+Math.cos(museum.yaw)*1.68,3.4,museum.yaw));
  for(let i=0;i<3;i++){const h=(i+1)*.15,z=museum.z-2.5+i*.34;b.box(5.8,h,.36,museum.x,h/2,z,trim);const proxy=new T.Mesh(new T.BoxGeometry(5.8,h,.36));proxy.position.set(museum.x,h/2,z);meshes.push(collisionMesh(proxy));}
- return{id:'plan-66',name:'图书馆',source:'user overhead + NJU 2024 plan + official VR gl-2-21 + archive photo 28',height:16.4,windows,roof:'north heritage / middle flat / modern L wings',dormitory:false,frontage:[entrance.x,entrance.z,Math.sin(entrance.yaw),Math.cos(entrance.yaw)],parts,labels,approximateHeights:true};
+ const forecourt=museumForecourt(b,meshes,cameraSolids,museum.x,museum.z,museum.yaw);
+ return{id:'plan-66',name:'图书馆',source:'user overhead + NJU 2024 plan + official VR gl-2-21 + archive photo 28',height:16.4,windows,roof:'north heritage / middle flat / modern L wings',dormitory:false,frontage:[entrance.x,entrance.z,Math.sin(entrance.yaw),Math.cos(entrance.yaw)],parts,labels,forecourt,approximateHeights:true};
 }
