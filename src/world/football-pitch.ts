@@ -18,6 +18,9 @@ export function createFootballPitch(features: MapFeature[], mats: Materials) {
   const paint = new T.MeshStandardMaterial({ color: 0xe3e7d9, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const steel = new T.MeshStandardMaterial({ color: 0xe8e9e0, metalness: .12, roughness: .6 });
   b.box(pitch.width + 4, .08, pitch.length + 4, pitch.x, .035, pitch.z, mats.grass, true, pitch.angle, 3.6);
+  // Alternating bands run across the field in the official west/east panoramas.
+  const turfBands=mats.grass.clone();turfBands.name='Suzhe transverse turf bands';turfBands.color.multiplyScalar(.82);
+  for(let row=0;row<12;row+=2){const p=pitchPoint(pitch,0,.003,-pitch.length/2+(row+.5)*pitch.length/12);b.box(pitch.width,.003,pitch.length/12,p.x,p.y,p.z,turfBands,false,pitch.angle,3.6);}
   const line = (x: number, z: number, w: number, d: number) => { const p = pitchPoint(pitch, x, .008, z); b.box(w, .006, d, p.x, p.y, p.z, paint, false, pitch.angle); };
   for (const side of [-1, 1]) { line(side * pitch.width / 2, 0, .11, pitch.length); line(0, side * pitch.length / 2, pitch.width, .11); }
   line(0, 0, pitch.width, .11);
@@ -56,7 +59,7 @@ export function createFootballPitch(features: MapFeature[], mats: Materials) {
   const group = b.finish('Suzhe football practice pitch');
   // Flat turf and painted lines only receive shadows. Casting a shadow onto
   // their own shallow surface produces bands at the far end of the pitch.
-  for (const object of group.children) if (object instanceof T.Mesh && (object.material === mats.grass || object.material === paint)) object.castShadow = false;
+  for (const object of group.children) if (object instanceof T.Mesh && (object.material === mats.grass || object.material === turfBands || object.material === paint)) object.castShadow = false;
   group.add(...nets.children.slice());
   group.userData = { source: 'inner field traced from the supplied campus plan', layout: 'approximate 90×60 m practice markings; regulation-size goal mouths' };
   return { group, solids: b.solids, pitch };

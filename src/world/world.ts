@@ -11,6 +11,7 @@ import { buildOrdinaryBuildings } from './ordinary-buildings.ts';
 import { planShape, insidePolygon, insideRing, type CampusMap } from './campus-map.ts';
 import { createPriorityDetails, createSkyline, createFireTower } from './priority-details.ts';
 import { createFootballPitch } from './football-pitch.ts';
+import { createSportsGround, sportsClearance } from './sports-ground.ts';
 import { createCampusSign, photoSpot } from './campus-sign.ts';
 import { fireTowerFootprint } from './surroundings.ts';
 import { createAccessControls, campusEntrances } from './access-controls.ts';
@@ -155,6 +156,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const access=createAccessControls(mats);root.add(access.group);solids.push(...access.solids);
   cameraSolids.push(...priority.group.children);
   root.add(createSkyline());
+  const sports=createSportsGround(mats);root.add(sports.group);solids.push(...sports.solids);cameraSolids.push(...sports.group.children);
   const field = createFootballPitch(map.features, mats); root.add(field.group); solids.push(...field.solids); cameraSolids.push(...field.group.children);
   const tower = createFireTower(), sign = createCampusSign(); root.add(tower.group, sign.group); solids.push(...tower.solids, ...sign.solids); cameraSolids.push(...tower.group.children, ...sign.group.children);
   const signElevation = courtyardHeight(-24,46);
@@ -242,7 +244,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     sectors++;
     await new Promise<void>(resolve => setTimeout(resolve, 50));
     const rand = rng(88), farTrees: TreeSpot[] = [];
-    const clear = (x: number, z: number) => !ordinary.doors.some(d=>Math.hypot(d.x-x,d.z-z)<5)&&!map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
+    const clear = (x: number, z: number) => !sportsClearance(x,z)&&!ordinary.doors.some(d=>Math.hypot(d.x-x,d.z-z)<5)&&!map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
     // Avenue planting uses the traced road edge; other trees stay within plan lawns.
     for (let z = 156; z < 342; z += 15) for (const side of [-1, 1]) {
       const x = -85 - (z - 182) * .035 + side * 8;
@@ -295,5 +297,5 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     return moreSolids;
   }
   const updateVegetation = (position: T.Vector3, quality: string, flying: boolean, camera=position) => vegetationUpdates.forEach(update => update(position, quality, flying,camera));
-  return { root, map, doors:ordinary.doors, bicycles, dadaoping, access, directory, garden, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
+  return { root, map, doors:ordinary.doors, bicycles, dadaoping, access, directory, garden, sports, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
 }
