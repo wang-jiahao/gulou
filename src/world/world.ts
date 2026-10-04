@@ -33,6 +33,7 @@ import {createSportsHallPaving, sportsHallPavingLayout} from './sports-hall-pavi
 import {createZhongdaAvenue, zhongdaAvenueLayout, trimAvenueCurb, avenueTreePosition} from './zhongda-avenue.ts';
 import {createLibraryWestGardens, libraryWestGardenLayout} from './library-west-gardens.ts';
 import {createRabeCourtyard, rabeCourtyardLayout} from './rabe-courtyard.ts';
+import {createJinyinStreetTrees} from './jinyin-street-trees.ts';
 import {createPlanarCutout} from './planar-cutout.ts';
 import {splitTeachingFeature} from './specific-buildings.ts';
 import type {CampusBicycle} from './bicycle.ts';
@@ -303,6 +304,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const far = await createModelTrees(farTrees.filter(t => !map.features.some(f => f.tags.leisure === 'track' && insideRing(t.x, t.z, f.points))), 'far', mats.leaves); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);
     const libraryPlanting=await createLibraryWestGardens(libraryGardens,mats);root.add(libraryPlanting.group);moreSolids.push(...libraryPlanting.solids);vegetationUpdates.push(libraryPlanting.updateVisibility);
     const rabePlanting=await createRabeCourtyard(rabeCourtyard,mats);root.add(rabePlanting.group);moreSolids.push(...rabePlanting.solids);vegetationUpdates.push(rabePlanting.updateVisibility);
+    const jinyinPlanting=await createJinyinStreetTrees(mats);root.add(jinyinPlanting.group);moreSolids.push(...jinyinPlanting.solids);vegetationUpdates.push(jinyinPlanting.updateVisibility);
     const props = new Builder();
     for (const p of benchLocations) {
       for (let k = 0; k < 5; k++) props.box(2.25, .075, .105, p.x, .52 + p.y, p.z + k * .12, mats.wood);

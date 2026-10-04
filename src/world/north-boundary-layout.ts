@@ -117,7 +117,7 @@ export const northBoundaryRuns = [
     ],
   },
   {
-    name: "jinyin-suzhe-west",
+    name: "jinyin-sufute-west",
     // User plan + official gl-4-05 street views: leave the transport entrance
     // north of this run open. The higher pale plinth is a visual approximation.
     baseHeight: 1.1,
