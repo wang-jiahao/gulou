@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -47,7 +47,9 @@
     "test:fei-yimin": "node scripts/phase25-check.mjs",
     "test:boundaries": "node scripts/phase26-check.mjs",
     "test:traffic": "node --experimental-transform-types scripts/street-traffic-check.mjs",
-    "test:street-crossings": "node scripts/street-crossings-check.mjs"
+    "test:street-crossings": "node scripts/street-crossings-check.mjs",
+    "test:roof-geometry": "node --experimental-strip-types scripts/building-roof-check.mjs",
+    "test:roofs": "node scripts/phase27-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

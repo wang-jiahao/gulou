@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { splitBuildingRoof } from './building-roof.ts';
 import { Builder, curvedRoof, rng } from './geometry.ts';
 import type { Materials } from './materials.ts';
 import type { CollisionMesh } from './collision-mesh.ts';
@@ -59,8 +60,8 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     const geometry = new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false,steps:1}).rotateX(-Math.PI/2);
     const uv=geometry.getAttribute('uv');for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/2.4,uv.getY(i)/2.4);
     const proxy=new T.Mesh(geometry.clone(),cameraMaterial);cameraSolids.push(proxy);fixedMeshes.push(collisionMesh(proxy));
-    b.add(geometry,wall);
-    b.add(new T.ShapeGeometry(shape).rotateX(-Math.PI/2),roof,0,height+.035,0);
+    const surfaces=splitBuildingRoof(geometry);
+    b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
     const random=rng(Number(f.tags.plan_id)*71+24);let windows=0;let frontView:number[]|undefined;
     const edges:{len:number;x:number;z:number;angle:number;nx:number;nz:number}[]=[];
     for(const [ri,ring]of [points,...(f.holes??[])].entries())for(let edge=0;edge<ring.length;edge++){

@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { splitBuildingRoof } from './building-roof.ts';
 import {addBuildingLettering} from './building-lettering.ts';
 import {Builder,curvedRoof} from './geometry.ts';
 import {insidePolygon,planShape,type MapFeature} from './campus-map.ts';
@@ -36,8 +37,9 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
   let points=f.points;for(const[axis,value,side]of[[0,xbreak[ix],1],[0,xbreak[ix+1],-1],[1,zbreak[iz],1],[1,zbreak[iz+1],-1]])points=clip(points,axis,value,side);
   if(points.length<3||area(points)<.1)continue;
   const height=heightAt((xbreak[ix]+xbreak[ix+1])/2,(zbreak[iz]+zbreak[iz+1])/2),shape=planShape({points});
-  const geometry=new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false}).rotateX(-Math.PI/2),proxy=new T.Mesh(geometry.clone());meshes.push(collisionMesh(proxy));cameraSolids.push(proxy);b.add(geometry,wall);
-  b.add(new T.ShapeGeometry(shape).rotateX(-Math.PI/2),roof,0,height+.015,0);
+  const geometry=new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false}).rotateX(-Math.PI/2),proxy=new T.Mesh(geometry.clone());meshes.push(collisionMesh(proxy));cameraSolids.push(proxy);
+  const surfaces=splitBuildingRoof(geometry);
+  b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
   sections.push({height,area:area(points),points,bounds:[xbreak[ix],xbreak[ix+1],zbreak[iz],zbreak[iz+1]]});
  }
  let windows=0;
