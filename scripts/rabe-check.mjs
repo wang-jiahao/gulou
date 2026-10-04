@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {southBoundaryRuns} from '../src/world/south-boundary-layout.ts';
-const out='docs/validation/phase50',stage=process.env.RABE_STAGE||'after',channel=process.env.BROWSER_CHANNEL||'chrome';
+import {checkRabeCourtyard} from './rabe-courtyard-checks.mjs';
+const courtyardMode=process.env.RABE_COURTYARD==='1';
+const out=courtyardMode?'docs/validation/phase51':'docs/validation/phase50',stage=process.env.RABE_STAGE||'after',channel=process.env.BROWSER_CHANNEL||'chrome';
 await mkdir(out,{recursive:true});
 if(stage.startsWith('before')){try{await readFile(`${out}/${stage}-${channel}.json`);throw Error('Baseline already exists');}catch(e){if(e.code!=='ENOENT')throw e;}}
 const browser=await chromium.launch(process.env.EDGE_EXECUTABLE?{executablePath:process.env.EDGE_EXECUTABLE}:{channel});
@@ -18,8 +20,11 @@ try{
  report.geometry=await page.evaluate(async()=>{
   const g=window.__GULOU__.game,hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',a))).map(n=>n.toString(16).padStart(2,'0')).join(''),fixed=[];
   for(const m of g.world.fixedMeshes){const v=m.vertices;let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;for(let i=0;i<v.length;i+=3){minX=Math.min(minX,v[i]);maxX=Math.max(maxX,v[i]);minZ=Math.min(minZ,v[i+2]);maxZ=Math.max(maxZ,v[i+2]);}fixed.push({hash:await hash(v)+await hash(m.indices),bounds:[minX,maxX,minZ,maxZ]});}
-  const instances=[];g.world.root.traverse(o=>{if(o.isInstancedMesh)instances.push({name:o.name,count:o.count,matrix:Array.from(o.instanceMatrix.array)});});
-  return JSON.parse(JSON.stringify({instances,fixed,solids:g.world.solids,doors:g.world.doors,buildings:g.world.root.getObjectByName('plan-based campus buildings with VR facade profiles').userData.buildings}));
+  const instances=[];g.world.root.traverse(o=>{let parent=o;while(parent){if(parent.name==='rabe courtyard')return;parent=parent.parent;}if(o.isInstancedMesh)instances.push({name:o.name,count:o.count,matrix:Array.from(o.instanceMatrix.array)});});
+  const courtyard=g.world.root.getObjectByName('rabe courtyard')?.userData??null,cuboids=[];
+  // Expansion colliders are registered directly with Rapier, not world.solids.
+  g.player.physics.forEachCollider(c=>{if(!c.parent()&&c.shape.halfExtents)cuboids.push({position:c.translation(),rotation:c.rotation(),halfExtents:c.shape.halfExtents});});
+  return JSON.parse(JSON.stringify({courtyard,cuboids,instances,fixed,solids:g.world.solids,doors:g.world.doors,buildings:g.world.root.getObjectByName('plan-based campus buildings with VR facade profiles').userData.buildings}));
  });
  report.building=report.geometry.buildings.find(b=>b.id==='plan-128');
  if(stage==='after'){
@@ -28,13 +33,16 @@ try{
   assert.equal(report.footprints,before.footprints,'original campus outlines retained');
   assert.equal(hash(report.geometry.buildings.filter(b=>b.id!=='plan-128')),hash(before.geometry.buildings.filter(b=>b.id!=='plan-128')),'unrelated buildings retained');
   assert.equal(hash(report.geometry.doors.filter(d=>d.name!=='拉贝纪念馆')),hash(before.geometry.doors.filter(d=>d.name!=='拉贝纪念馆')),'unrelated doors retained');
-  assert.equal(hash(report.geometry.solids),hash(before.geometry.solids),'tree and other box collisions retained');
+  if(courtyardMode){assert.equal(hash(report.geometry.buildings),hash(before.geometry.buildings),'all buildings retained');assert.equal(hash(report.geometry.doors),hash(before.geometry.doors),'all entrances retained');}
+  assert.equal(hash(report.geometry.solids),hash(before.geometry.solids),'initial-region box collisions retained');
+  const courtyardSolids=report.geometry.courtyard?.solids??[],previousCuboids=[...report.geometry.cuboids];
+  for(const s of courtyardSolids){const i=previousCuboids.findIndex(c=>Math.abs(c.position.x-s.x)<.001&&Math.abs(c.position.y-s.y)<.001&&Math.abs(c.position.z-s.z)<.001&&Math.abs(c.halfExtents.x-s.w/2)<.001&&Math.abs(c.halfExtents.y-s.h/2)<.001&&Math.abs(c.halfExtents.z-s.d/2)<.001);assert.ok(i>=0,'courtyard tree collider registered with Rapier');previousCuboids.splice(i,1);}
   const fixedTrees=g=>g.instances.filter(o=>o.name!=='complete crown coverage across LOD transitions');
   assert.equal(hash(fixedTrees(report.geometry)),hash(fixedTrees(before.geometry)),'static instance matrices retained');
   const localMesh=m=>m.bounds[0]>114&&m.bounds[1]<137&&m.bounds[2]>679&&m.bounds[3]<701;
-  const remaining=[...report.geometry.fixed],oldLocal=before.geometry.fixed.filter(localMesh);
-  for(const m of before.geometry.fixed.filter(m=>!localMesh(m))){const i=remaining.findIndex(n=>n.hash===m.hash);assert.ok(i>=0,'unrelated fixed collider retained');remaining.splice(i,1);}
-  assert.ok(remaining.every(localMesh),'all replacement colliders confined to Rabe house');
+  const remaining=[...report.geometry.fixed],oldLocal=courtyardMode?[]:before.geometry.fixed.filter(localMesh);
+  for(const m of before.geometry.fixed.filter(m=>courtyardMode||!localMesh(m))){const i=remaining.findIndex(n=>n.hash===m.hash);assert.ok(i>=0,'unrelated fixed collider retained');remaining.splice(i,1);}
+  assert.ok(courtyardMode?remaining.length===0:remaining.every(localMesh),'fixed collisions preserved or confined to house');
   report.meshChanges={retained:before.geometry.fixed.length-oldLocal.length,removed:oldLocal.length,added:remaining.length};
   assert.equal(report.building.name,'拉贝纪念馆');assert.equal(report.building.storeys,2);assert.equal(report.building.attic,true);
   const[x,z,nx,nz]=report.building.frontage,point=(u,v)=>[x+u*nz+v*nx,z-u*nx+v*nz];
@@ -45,6 +53,7 @@ try{
   assert.ok(nz>.99,'VR/map registration places the front on the south');
   report.courtyard={arrival:point(0,4),clearance:boundaryDistance(point(0,4))};
   assert.ok(inside(report.courtyard.arrival)&&report.courtyard.clearance>.8,'arrival stays inside the campus with standing clearance');
+  if(courtyardMode)await checkRabeCourtyard(page,report,point,inside,boundaryDistance,previousCuboids);
   for(const b of report.building.boxes){for(const du of[-b.w/2,b.w/2])for(const dv of[-b.d/2,b.d/2]){
    const p=point(b.u-report.building.porchU+du,b.v-2.16+dv);
    assert.ok(inside(p)&&boundaryDistance(p)>.2,'building detail stays inside campus: '+b.kind);
@@ -82,7 +91,11 @@ try{
   ['entrance',[120.9,2.8,700.8],[120.5,3.1,695],78],
   ['southeast',[141,11,710],[123,4.6,690],65],
   ['roof',[151,25,710],[123,5,689],62],
-  ['north',[106,11,676],[123,4,689],65]]){
+  ['north',[106,11,676],[123,4,689],65],
+  ...(courtyardMode?[
+   ['courtyard-overhead',[109,31,707],[117,0,691],58],
+   ['west-walk',[113.4,2.4,699],[114,2.5,685],75],
+  ]:[])]){
   await page.evaluate(({eye,look,fov})=>{const g=window.__GULOU__.game;g.player.avatar.root.visible=false;g.camera.position.set(...eye);g.camera.lookAt(...look);g.camera.fov=fov;g.camera.updateProjectionMatrix();g.atmosphere.update(0,false,g.camera.position);if(g.foliageLight)g.foliageLight.value=g.atmosphere.daylight;g.world.updateVegetation(g.camera.position,g.quality,true,g.camera.position);g.csm.lightDirection.copy(g.atmosphere.sunDirection).negate();g.csm.lights.forEach(l=>{l.intensity=g.atmosphere.sunIntensity;l.color.copy(g.atmosphere.lightColor);});g.renderer.toneMappingExposure=1.05+g.atmosphere.night*.12;g.camera.updateMatrixWorld();g.csm.updateFrustums();g.csm.update();g.renderer.render(g.scene,g.camera);},{eye,look,fov});
   await page.screenshot({path:`${out}/${stage}-${channel}-${name}.png`});
  }

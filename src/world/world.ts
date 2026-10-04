@@ -32,6 +32,7 @@ import {createSportsHallForecourts} from './sports-hall-forecourts.ts';
 import {createSportsHallPaving, sportsHallPavingLayout} from './sports-hall-paving.ts';
 import {createZhongdaAvenue, zhongdaAvenueLayout, trimAvenueCurb, avenueTreePosition} from './zhongda-avenue.ts';
 import {createLibraryWestGardens, libraryWestGardenLayout} from './library-west-gardens.ts';
+import {createRabeCourtyard, rabeCourtyardLayout} from './rabe-courtyard.ts';
 import {createPlanarCutout} from './planar-cutout.ts';
 import {splitTeachingFeature} from './specific-buildings.ts';
 import type {CampusBicycle} from './bicycle.ts';
@@ -95,8 +96,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   }
   map.features.push(fireTowerFootprint);
   const sportsPaving = sportsHallPavingLayout(map), sportsPavingCutout = createPlanarCutout(sportsPaving.outline);
-  const avenue = zhongdaAvenueLayout(), libraryGardens=libraryWestGardenLayout();
-  const surfaceCutouts = [sportsPavingCutout,...avenue.outlines.map(createPlanarCutout),...libraryGardens.outlines.map(createPlanarCutout)];
+  const avenue = zhongdaAvenueLayout(), libraryGardens=libraryWestGardenLayout(), rabeCourtyard=rabeCourtyardLayout();
+  const surfaceCutouts = [sportsPavingCutout,...avenue.outlines.map(createPlanarCutout),...libraryGardens.outlines.map(createPlanarCutout),createPlanarCutout(rabeCourtyard.outline)];
   const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
   const lawnHeight = .20;
   const courtyardHeight = (x: number, z: number) => terrainHeight(x,z) + ([...raisedLawns].some(lawn => insidePolygon(x, z, lawn)) ? lawnHeight : .022);
@@ -298,6 +299,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     root.add(createSouthTreeDetails(farTrees, map, mats));
     const far = await createModelTrees(farTrees.filter(t => !map.features.some(f => f.tags.leisure === 'track' && insideRing(t.x, t.z, f.points))), 'far', mats.leaves); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);
     const libraryPlanting=await createLibraryWestGardens(libraryGardens,mats);root.add(libraryPlanting.group);moreSolids.push(...libraryPlanting.solids);vegetationUpdates.push(libraryPlanting.updateVisibility);
+    const rabePlanting=await createRabeCourtyard(rabeCourtyard,mats);root.add(rabePlanting.group);moreSolids.push(...rabePlanting.solids);vegetationUpdates.push(rabePlanting.updateVisibility);
     const props = new Builder();
     for (const p of benchLocations) {
       for (let k = 0; k < 5; k++) props.box(2.25, .075, .105, p.x, .52 + p.y, p.z + k * .12, mats.wood);
