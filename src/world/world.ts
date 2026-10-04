@@ -9,6 +9,7 @@ import { createModelTrees } from './model-trees.ts';
 import { collisionMesh, type CollisionMesh } from './collision-mesh.ts';
 import { buildOrdinaryBuildings } from './ordinary-buildings.ts';
 import {memorialPlantingClearance} from './pearl-memorial.ts';
+import {zhongshanPlantingClearance} from './zhongshan.ts';
 import { planShape, insidePolygon, insideRing, type CampusMap } from './campus-map.ts';
 import { createPriorityDetails, createSkyline, createFireTower } from './priority-details.ts';
 import { createFootballPitch } from './football-pitch.ts';
@@ -216,7 +217,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   travelPlaces.push(directory.arrival);
   travelPlaces.push({name:'松林楼',x:-65.8,z:411.8,yaw:-Math.PI/2,firstPerson:true});
   travelPlaces.push(garden.arrival);
-  for(const record of ordinary.records)if(record.frontage&&!record.dormitory&&!['松林楼','教学楼／郑钢楼'].includes(record.name)){const[x,z,nx,nz]=record.frontage;const name=travelPlaces.some(p=>p.name===record.name)?`${record.name}（图号 ${record.id.replace('plan-','')}）`:record.name;travelPlaces.push({name,x:x+nx*4,z:z+nz*4,yaw:Math.atan2(nx,nz)});}
+  for(const record of ordinary.records)if(record.frontage&&!record.dormitory&&!['松林楼','教学楼／郑钢楼'].includes(record.name)){const[x,z,nx,nz]=record.frontage;const name=travelPlaces.some(p=>p.name===record.name)?`${record.name}（图号 ${record.id.replace('plan-','')}）`:record.name;const approach=record.id==='plan-77'?5.5:4;travelPlaces.push({name,x:x+nx*approach,z:z+nz*approach,yaw:Math.atan2(nx,nz)});}
   travelPlaces.push(...extraPlaces);
   const ivy=createIvy(mats,quality);ivy.position.y=terraceHeight;root.add(ivy);
 
@@ -266,7 +267,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     sectors++;
     await new Promise<void>(resolve => setTimeout(resolve, 50));
     const rand = rng(88), farTrees: TreeSpot[] = [], avenueTrees: TreeSpot[] = [];
-    const plantingDoors=ordinary.doors.map(d=>d.name==='赛珍珠纪念馆'?memorialPlantingClearance:d);
+    const plantingDoors=ordinary.doors.map(d=>d.name==='赛珍珠纪念馆'?memorialPlantingClearance:d.name==='中山楼'?zhongshanPlantingClearance:d);
     const clear = (x: number, z: number) => !sportsClearance(x,z)&&!teachingParkingClearance(x,z)&&!plantingDoors.some(d=>Math.hypot(d.x-x,d.z-z)<5)&&!map.features.some(f => f.tags.building && insidePolygon(x, z, f)) && !map.roads.some(r => insidePolygon(x, z, r));
     // Avenue planting uses the traced road edge; other trees stay within plan lawns.
     for (let z = 156; z < 342; z += 15) for (const side of [-1, 1]) {
