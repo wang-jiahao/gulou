@@ -35,7 +35,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-13': profile(modern,'gl-3-03','pool hall, rounded-looking corner banding and horizontal glazing',{levels:4,wall:0xd3d2c5,windowWidth:2.7,bays:3.3}),
   'plan-14': profile(modern,'gl-3-02','three-level pale facade, narrow upright windows and modest entrance',{levels:3,windowWidth:1.2,windowHeight:1.65,ac:true}),
   'plan-16': profile(villa,'gl-2-28','brick residence behind wall, pitched roof, recessed windows',{wall:0x9e8970,portal:'stone'}),
-  'plan-17': profile(modern,'gl-4-08 / gl-4-09','tall pale arts building, projecting entrance, small window grid',{levels:11,wall:0xc1beb1,ac:true}),
+  'plan-17': profile(modern,'gl-4-10 b / gl-4-09 f + user campus plan','five-storey art school, north narrow vertical piers and slot windows, east portal below vertical gold name; dimensions and hidden faces approximate',{levels:5,wall:0xd2d0c5,ac:true}),
   'plan-18': profile(historic,'gl-3-08 / gl-3-11','Tiangan group, dark tiled pitched roofs and masonry bands',{levels:2,roof:'heritage'}),
   'plan-20': profile(historic,'gl-3-02 / gl-3-15','historic pitched roof block near northeast corner',{levels:2,roof:'heritage'}),
   'plan-22': profile(modern,'gl-4-05','white stone wings, blue glass vertical connector and covered entry',{levels:6,wall:0xcacbc2,style:'glass',windowWidth:2.35}),

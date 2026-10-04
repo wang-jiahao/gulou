@@ -17,6 +17,7 @@ import {buildSpecific} from './specific-buildings.ts';
 import {entranceMaterials,addEntrance,type DoorRecord} from './building-entrances.ts';
 import { getBuildingProfile } from './building-profiles.ts';
 import {createSufuteFacade} from './sufute-facade.ts';
+import {createTianFacade} from './tian-facade.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
 export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, roads:MapPolygon[] = []) {
@@ -51,7 +52,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   };
   const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group}>();
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
-  const sufute=createSufuteFacade();
+  const sufute=createSufuteFacade(),tian=createTianFacade();
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
@@ -93,6 +94,9 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       if(!ri)edges.push({len,x:mx,z:mz,angle,nx,nz});
       if(f.id==='plan-12'&&!ri&&nx>.98&&len>8){
         windows+=sufute.face(b,detail,{len,x:mx,z:mz,angle,nx,nz},height);continue;
+      }
+      if(f.id==='plan-17'&&!ri&&len>15&&(nx>.98||nz<-.98)){
+        windows+=tian.face(b,detail,plaques,{len,x:mx,z:mz,angle,nx,nz},height);continue;
       }
       put(b,0,.42,.025,len,.84,.12,plinth);
       // A thin finish stays behind the existing reveals and glass, so the
@@ -210,7 +214,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(!teaching){
       // Choose a long exterior facade facing the nearest public route, rather
       // than putting a doorway onto an inner hole or a two-metre return wall.
-      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=candidates.sort((a,c)=>{
+      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):candidates.sort((a,c)=>{
         const score=(e:typeof a)=>{
           if(scores.has(e))return scores.get(e)!;
           let best=10000;
@@ -230,7 +234,8 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         const e=frontage,w=Math.min(3.8,e.len*.38);
         if(f.id==='plan-12')sufute.name(plaques,e);
         const put=(u:number,y:number,v:number,bw:number,bh:number,bd:number,mat:T.Material)=>detail.box(bw,bh,bd,e.x+u*Math.cos(e.angle)+v*e.nx,y,e.z-u*Math.sin(e.angle)+v*e.nz,mat,false,e.angle);
-        if(f.id==='plan-80')entrance=buildHospitalEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e.x,e.z,e.angle);
+        if(f.id==='plan-17')frontView=tian.entrance(b,fixedMeshes,doors,e);
+        else if(f.id==='plan-80')entrance=buildHospitalEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e.x,e.z,e.angle);
         else{
           addEntrance(b,fixedMeshes,doors,doorMaterials,f.tags.name,e.x,e.z,e.angle,w,0);
           const depth=profile.portal==='glass'?1.1:.7;put(0,3.17,depth*.4,w+1.05,.15,depth,stone);
@@ -269,6 +274,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   for(const mesh of group.children)if(mesh instanceof T.Mesh&&(glass.includes(mesh.material as T.MeshStandardMaterial)||mesh.material===gardenGlass)){mesh.receiveShadow=false;mesh.castShadow=false;}
   group.userData.buildings=records;
   group.userData.sufuteFacade=sufute.metadata;
+  group.userData.tianFacade=tian.metadata;
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
   let detailShadows=false;
   const updateVisibility=(position:T.Vector3,quality:string,flying:boolean)=>{
