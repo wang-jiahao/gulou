@@ -21,6 +21,7 @@ import { fireTowerFootprint } from './surroundings.ts';
 import { createAccessControls, campusEntrances } from './access-controls.ts';
 import { createDormitoryAmenities } from './dormitory-amenities.ts';
 import { createTeachingBicycleParking, teachingParkingClearance } from './teaching-bicycle-parking.ts';
+import {createDiningForecourt} from './nanyuan-dining-forecourt.ts';
 import { createSouthRoadDetails } from './south-road-details.ts';
 import { createSouthTreeDetails } from './south-tree-details.ts';
 import { createCampusDirectory } from './campus-directory.ts';
@@ -347,6 +348,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const propGroup = props.finish('benches and lamps'); root.add(propGroup); moreSolids.push(...props.solids); cameraSolids.push(...propGroup.children);
     const amenities=createDormitoryAmenities(map,ordinary.records,mats,[...solids,...moreSolids]);root.add(amenities.group);bicycles.push(...amenities.bicycles);moreSolids.push(...amenities.solids);lampPositions.push(...amenities.lamps);cameraSolids.push(...amenities.group.children);
     const parking=createTeachingBicycleParking(mats);root.add(parking.group);bicycles.push(...parking.bicycles);moreSolids.push(...parking.solids);cameraSolids.push(...parking.group.children);
+    const diningForecourt=await createDiningForecourt(mats);root.add(diningForecourt.group);bicycles.push(...diningForecourt.bicycles);moreSolids.push(...diningForecourt.solids);fixedMeshes.push(...diningForecourt.fixedMeshes);cameraSolids.push(...diningForecourt.cameraSolids);vegetationUpdates.push(diningForecourt.updateVisibility);
     const forecourt=await createSportsHallForecourts(map,mats);root.add(forecourt.group);moreSolids.push(...forecourt.solids);cameraSolids.push(...forecourt.cameraSolids);vegetationUpdates.push(forecourt.updateVisibility);
     afterSector();
     sectors++;

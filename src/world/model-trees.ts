@@ -8,13 +8,16 @@ import type { TreeSpot } from './vegetation.ts';
 type TreeLOD = 'near' | 'far' | 'distant';
 type TreeAsset = { box: T.Box3; sources: { geometry: T.BufferGeometry; material: T.MeshStandardMaterial }[] };
 const caches = new WeakMap<T.Material, { assets: Map<TreeLOD, Promise<TreeAsset>>; materials: Map<string, T.MeshStandardMaterial> }>();
-const whitewashedMaterials = new WeakMap<T.MeshStandardMaterial, T.MeshStandardMaterial>();
+const whitewashedMaterials = new WeakMap<T.MeshStandardMaterial, Map<number,T.MeshStandardMaterial>>();
 
-function whitewashedTrunk(base: T.MeshStandardMaterial) {
-  let material = whitewashedMaterials.get(base);
+function whitewashedTrunk(base: T.MeshStandardMaterial, groundY:number) {
+  let elevations = whitewashedMaterials.get(base);
+  if(!elevations){elevations=new Map();whitewashedMaterials.set(base,elevations);}
+  let material = elevations.get(groundY);
   if (material) return material;
   material = base.clone(); material.name = `${base.name}-whitewash`;
   material.userData.whitewashHeight = 1.2;
+  material.userData.whitewashBaseY = groundY;
   material.onBeforeCompile = shader => {
     shader.vertexShader = 'varying vec3 vTrunkWorld;\n' + shader.vertexShader;
     shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
@@ -26,13 +29,13 @@ function whitewashedTrunk(base: T.MeshStandardMaterial) {
     shader.fragmentShader = 'varying vec3 vTrunkWorld;\n' + shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
       float paintEdge = .018 * sin(vTrunkWorld.x * 31.0 + vTrunkWorld.z * 19.0);
-      float paintCoverage = 1.0 - smoothstep(1.18 + paintEdge, 1.22 + paintEdge, vTrunkWorld.y);
+      float paintCoverage = 1.0 - smoothstep(${(groundY+1.18).toFixed(5)} + paintEdge, ${(groundY+1.22).toFixed(5)} + paintEdge, vTrunkWorld.y);
       float barkGrain = clamp(dot(diffuseColor.rgb, vec3(.2126, .7152, .0722)), 0.0, 1.0);
       vec3 chalk = vec3(.70, .72, .66) * (.82 + .18 * barkGrain);
       diffuseColor.rgb = mix(diffuseColor.rgb, chalk, paintCoverage);`);
   };
-  material.customProgramCacheKey = () => 'gulou-trunk-whitewash-v1';
-  whitewashedMaterials.set(base, material); return material;
+  material.customProgramCacheKey = () => `gulou-trunk-whitewash-v2:${groundY}`;
+  elevations.set(groundY, material); return material;
 }
 
 function loadTree(lod: TreeLOD, foliage: T.Material): Promise<TreeAsset> {
@@ -122,13 +125,13 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
       const layer = cell.levels[level]; layer.visible = level === 0;
       for (const { geometry, material } of asset.sources) {
         const trunk = material.name.includes('trunk');
-        // Split only mixed trunk batches. All levels reuse the original meshes,
-        // transforms and one painted material, so the band cannot jump with LOD.
-        const batches = trunk ? [false, true] : [false];
-        for (const painted of batches) {
-          const indices = cell.trees.map((_, i) => i).filter(i => !trunk || Boolean(cell.trees[i].whitewash) === painted);
+        // Share one paint material per planting elevation across all LODs.
+        // Raised beds keep the full band above soil instead of burying it.
+        const batches = trunk ? [null, ...new Set(cell.trees.filter(t=>t.whitewash).map(t=>t.baseY??0))] : [null];
+        for (const paintBase of batches) {
+          const indices = cell.trees.map((_, i) => i).filter(i => !trunk || (paintBase===null ? !cell.trees[i].whitewash : Boolean(cell.trees[i].whitewash)&&(cell.trees[i].baseY??0)===paintBase));
           if (!indices.length) continue;
-          const mesh = new T.InstancedMesh(geometry, painted ? whitewashedTrunk(material) : material, indices.length);
+          const mesh = new T.InstancedMesh(geometry, paintBase!==null ? whitewashedTrunk(material,paintBase) : material, indices.length);
           indices.forEach((source, i) => { mesh.setMatrixAt(i, transforms[source]); mesh.setColorAt(i, new T.Color().setRGB(.91, .96, .87)); });
           mesh.castShadow = names[level] === 'near'; mesh.receiveShadow = true; mesh.computeBoundingSphere(); layer.add(mesh);
         }
