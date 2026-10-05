@@ -89,7 +89,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-111': profile(modern,'gl-1-15','bathhouse facade with large blue glazed upper bay and sheltered entry',{levels:3,style:'glass',windowWidth:2.5}),
   'plan-112': profile(dorm,'gl-1-22 / gl-1-24','Taoyuan residential block, pale paint and metal sashes'),
   'plan-113': profile(modern,'gl-1-10 note145 / gl-1-24 b','dining complex, three glazed rows over a recessed ground portico; dedicated approximate model',{levels:4,windowWidth:2.8}),
-  'plan-114': profile(modern,'gl-1-10 note146 / f','Yaoliang former student centre; services hall sign on f. Existing height/facade provisional; broad gallery on b belongs to plan113',{levels:5,wall:0xd4d7cd,balcony:true,windowWidth:2.5}),
+  'plan-114': profile(modern,'gl-1-10 f/l','Yaoliang services hall: dedicated low flat portico, tall glass and stone sign; hidden mass and height approximate, adjacent tall dormitories remain separate',{levels:3,wall:0xd0d5cf}),
   'plan-115': profile(dorm,'gl-1-24','six-storey residence within south-campus row'),
   'plan-116': profile(historic,'gl-1-07','two-storey grey masonry, red windows and central pale portal',{levels:2,roof:'heritage',frame:0x76433d}),
   'plan-118': profile(dorm,'gl-1-24','south-campus residential block with regular grid'),
