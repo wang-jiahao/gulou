@@ -23,6 +23,7 @@ import { createAccessControls, campusEntrances } from './access-controls.ts';
 import { createDormitoryAmenities } from './dormitory-amenities.ts';
 import { createTeachingBicycleParking, teachingParkingClearance } from './teaching-bicycle-parking.ts';
 import {createDiningForecourt} from './nanyuan-dining-forecourt.ts';
+import {createChemistryForecourt} from './chemistry-forecourt.ts';
 import {createDiningStreet,diningStreetLayout} from './nanyuan-dining-street.ts';
 import {createYaoliangForecourt,yaoliangForecourtLayout} from './yaoliang-forecourt.ts';
 import { createSouthRoadDetails } from './south-road-details.ts';
@@ -367,6 +368,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const amenities=createDormitoryAmenities(map,ordinary.records,mats,[...solids,...moreSolids]);root.add(amenities.group);bicycles.push(...amenities.bicycles);moreSolids.push(...amenities.solids);lampPositions.push(...amenities.lamps);cameraSolids.push(...amenities.group.children);
     const parking=createTeachingBicycleParking(mats);root.add(parking.group);bicycles.push(...parking.bicycles);moreSolids.push(...parking.solids);cameraSolids.push(...parking.group.children);
     const diningForecourt=await createDiningForecourt(mats);root.add(diningForecourt.group);bicycles.push(...diningForecourt.bicycles);moreSolids.push(...diningForecourt.solids);fixedMeshes.push(...diningForecourt.fixedMeshes);cameraSolids.push(...diningForecourt.cameraSolids);vegetationUpdates.push(diningForecourt.updateVisibility);
+    const chemistryForecourt=await createChemistryForecourt(mats);root.add(chemistryForecourt.group);bicycles.push(...chemistryForecourt.bicycles);moreSolids.push(...chemistryForecourt.solids);cameraSolids.push(...chemistryForecourt.cameraSolids);vegetationUpdates.push(chemistryForecourt.updateVisibility);
     batchParkedBicycles(root,bicycles);
     const diningLane=createDiningStreet(diningStreet,mats,asphalt);root.add(diningLane.group);fixedMeshes.push(...diningLane.fixedMeshes);cameraSolids.push(...diningLane.cameraSolids);
     const hallForecourt=await createYaoliangForecourt(yaoliangForecourt,mats);root.add(hallForecourt.group);moreSolids.push(...hallForecourt.solids);fixedMeshes.push(...hallForecourt.fixedMeshes);cameraSolids.push(...hallForecourt.cameraSolids);vegetationUpdates.push(hallForecourt.updateVisibility);
