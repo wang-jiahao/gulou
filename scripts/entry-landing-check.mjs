@@ -39,7 +39,7 @@ try{
   });
   await ready(page);
   let e=(await state(page)).environment;
-  assert.equal(e.hour,15);assert.equal(e.rain,0);assert.equal(e.autoTime,true);assert.equal(e.weatherMode,'random');assert.equal(e.cycleMinutes,24);
+  assert.equal(e.hour,15);assert.equal(e.rain,0);assert.equal(e.autoTime,true);assert.equal(e.weatherMode,'random');assert.equal(e.cycleMinutes,192);
   await page.click('#enter');
   e=(await state(page)).environment;assert.ok(e.hour>=15&&e.hour<15.1);assert.equal(e.rain,0);assert.equal(e.weatherMode,'random');
   await page.screenshot({path:`${shots}/entry-${channel}.png`});

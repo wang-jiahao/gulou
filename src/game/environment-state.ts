@@ -1,25 +1,33 @@
 export type WeatherMode = 'clear' | 'rain' | 'random';
+export const DEFAULT_CYCLE_MINUTES = 96;
+export const CYCLE_MINUTES = [48, DEFAULT_CYCLE_MINUTES, 192];
+/** Preserve the relative speed of pre-v0.82 preferences while slowing every old preset. */
+export function restoreCycleMinutes(value: unknown) {
+  if (typeof value !== 'number') return DEFAULT_CYCLE_MINUTES;
+  if ([6, 12, 24].includes(value)) return value * 8;
+  return CYCLE_MINUTES.includes(value) ? value : DEFAULT_CYCLE_MINUTES;
+}
 
 /** Simulation time, independent of wall-clock timers so pause and tests are deterministic. */
 export class EnvironmentState {
   hour = 15;
   autoTime = true;
-  cycleMinutes = 12;
+  cycleMinutes = DEFAULT_CYCLE_MINUTES;
   weatherMode: WeatherMode = 'random';
   rain = 0;
   wetness = 0;
   targetRain = 0;
-  nextWeatherIn = 140;
+  nextWeatherIn = 420;
   weatherTransitions = 0;
   private seed: number;
-  constructor(seed = Math.floor(Math.random() * 2147483647)) { this.seed = seed; this.nextWeatherIn = 100 + this.random() * 100; }
+  constructor(seed = Math.floor(Math.random() * 2147483647)) { this.seed = seed; this.nextWeatherIn = 300 + this.random() * 240; }
   /** A fresh visit starts clear in the afternoon; keep the preferred cycle speed. */
   resetForEntry() {
     this.hour = 15;
     this.autoTime = true;
     this.weatherMode = 'random';
     this.rain = this.wetness = this.targetRain = 0;
-    this.nextWeatherIn = 100 + this.random() * 100;
+    this.nextWeatherIn = 300 + this.random() * 240;
     this.weatherTransitions = 0;
   }
   private random() { this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0; return this.seed / 4294967296; }
@@ -31,15 +39,15 @@ export class EnvironmentState {
   setWeather(mode: WeatherMode) {
     this.weatherMode = mode;
     if (mode !== 'random') this.targetRain = mode === 'rain' ? 1 : 0;
-    else this.nextWeatherIn = 75 + this.random() * 100;
+    else this.nextWeatherIn = this.targetRain > .5 ? 45 + this.random() * 60 : 240 + this.random() * 180;
   }
   update(dt: number, active: boolean) {
     if (active && this.autoTime) this.hour = (this.hour + dt * 24 / (Math.max(2, this.cycleMinutes) * 60)) % 24;
     if (active && this.weatherMode === 'random') {
       this.nextWeatherIn -= dt;
       while (this.nextWeatherIn <= 0) {
-        this.targetRain = this.targetRain > .5 ? 0 : (this.random() < .75 ? 1 : 0);
-        this.nextWeatherIn += this.targetRain ? 45 + this.random() * 75 : 90 + this.random() * 150;
+        this.targetRain = this.targetRain > .5 ? 0 : (this.random() < .4 ? 1 : 0);
+        this.nextWeatherIn += this.targetRain ? 45 + this.random() * 60 : 240 + this.random() * 180;
         this.weatherTransitions++;
       }
     }

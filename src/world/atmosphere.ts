@@ -44,13 +44,14 @@ export class Atmosphere {
       void main(){
         vec3 d=normalize(vDirection);vec2 uv=vec2(atan(d.z,d.x)/6.2831853+.5,asin(clamp(d.y,-1.,1.))/3.14159265+.5);
         vec3 day=texture2D(uHDR,vec2(fract(uv.x-.11),uv.y)).rgb*.62;
-        float horizon=pow(1.-abs(d.y),4.);vec3 dusk=mix(vec3(.14,.18,.31),vec3(1.4,.43,.12),horizon);
-        day=mix(day,dusk,uTwilight*.72);
+        float horizon=pow(1.-abs(d.y),3.);
+        float sunset=pow(max(0.,dot(normalize(vec3(d.x,.001,d.z)),normalize(vec3(uSun.x,.001,uSun.z)))),3.);
+        vec3 dusk=mix(vec3(.12,.18,.38),mix(vec3(.52,.27,.39),vec3(1.65,.55,.20),sunset),horizon);
         vec3 night=mix(vec3(.004,.008,.022),vec3(.027,.043,.08),pow(1.-max(d.y,0.),3.));
         vec2 cell=uv*vec2(1100.,550.);float star=step(.9984,hash(floor(cell)))*pow(max(0.,1.-length(fract(cell)-.5)*3.8),3.);
         night+=vec3(.65,.76,1.)*star*smoothstep(.02,.2,d.y);
         float moonDot=dot(d,uMoon);night+=vec3(.67,.77,.94)*(smoothstep(.99991,.99997,moonDot)*2.+pow(max(0.,moonDot),600.)*.025);
-        vec3 color=mix(night,day,uDay);float gray=dot(color,vec3(.2126,.7152,.0722));
+        vec3 color=mix(mix(night,day,uDay),dusk,uTwilight*.92);float gray=dot(color,vec3(.2126,.7152,.0722));
         color=mix(color,vec3(gray*.57,gray*.63,gray*.72),uRain*.82);
         gl_FragColor=vec4(color,1.);
         #include <tonemapping_fragment>
@@ -109,21 +110,23 @@ export class Atmosphere {
     this.clock += dt; this.state.update(dt, active);
     const angle = (this.state.hour - 6) / 24 * Math.PI * 2, elevation = Math.sin(angle);
     this.daylight = T.MathUtils.smoothstep(elevation, -.09, .18); this.night = 1 - this.daylight;
+    // Keep civil twilight independent of direct daylight so sunset does not become midnight.
+    const twilight = Math.exp(-Math.pow((elevation + .025) / .18, 2));
     const sun = new T.Vector3(Math.cos(angle), elevation, .68).normalize();
     this.moon.set(-sun.x, Math.max(.25, -sun.y), -sun.z).normalize();
-    const directSun = 4.1 * Math.pow(Math.max(0, elevation), .35);
+    const directSun = 4.1 * Math.pow(Math.max(0, elevation), .35) * T.MathUtils.smoothstep(elevation, 0, .08);
     this.sunDirection.copy(directSun > .025 ? sun : this.moon);
-    this.sunIntensity = (directSun + this.night * .32) * (1 - this.state.rain * .77);
+    this.sunIntensity = (directSun + this.night * .32 * (1 - twilight)) * (1 - this.state.rain * .77);
     this.lightColor.set(directSun > .025 ? 0xfff0d9 : 0x98b9ef);
     if (directSun > .025) this.lightColor.lerp(new T.Color(0xff9957), (1 - T.MathUtils.smoothstep(elevation, 0, .3)) * .65);
-    this.hemisphere.intensity = .17 + .31 * this.daylight * (1 - this.state.rain * .4);
-    this.hemisphere.color.set(0x8ca1cd).lerp(new T.Color(0xc5d8eb), this.daylight);
+    this.hemisphere.intensity = .17 + (.31 * this.daylight + .42 * twilight) * (1 - this.state.rain * .4);
+    this.hemisphere.color.set(0x8ca1cd).lerp(new T.Color(0xc5d8eb), this.daylight).lerp(new T.Color(0xe5bdad), twilight * .65);
     const fog = this.scene.fog as T.Fog;
-    fog.color.set(0x101b30).lerp(new T.Color(0xc5d3d6), this.daylight).lerp(new T.Color(this.daylight > .5 ? 0x73818c : 0x101927), this.state.rain * .8);
+    fog.color.set(0x101b30).lerp(new T.Color(0xc5d3d6), this.daylight).lerp(new T.Color(0xb899aa), twilight * .8).lerp(new T.Color(this.daylight > .5 ? 0x73818c : 0x101927), this.state.rain * .8);
     fog.near = T.MathUtils.lerp(140, 25, this.state.rain); fog.far = T.MathUtils.lerp(1100, 230, this.state.rain);
-    this.scene.environmentIntensity = (.12 + .16 * this.daylight) * (1 - this.state.rain * .35);
+    this.scene.environmentIntensity = (.12 + .16 * this.daylight + .2 * twilight) * (1 - this.state.rain * .35);
     this.sky.position.copy(cameraPosition); const sky = this.sky.material.uniforms;
-    sky.uDay.value = this.daylight; sky.uTwilight.value = Math.exp(-Math.pow((elevation - .035) / .16, 2)); sky.uRain.value = this.state.rain; sky.uSun.value.copy(sun); sky.uMoon.value.copy(this.moon);
+    sky.uDay.value = this.daylight; sky.uTwilight.value = twilight; sky.uRain.value = this.state.rain; sky.uSun.value.copy(sun); sky.uMoon.value.copy(this.moon);
     this.rainMesh.visible = this.state.rain > .008;
     const rain = this.rainMesh.material.uniforms; rain.uTime.value = this.clock; rain.uRain.value = this.state.rain; rain.uCenter.value.copy(cameraPosition); rain.uNight.value = this.night;
     for (const m of this.windows) m.emissiveIntensity = this.night * (m.name.endsWith('cool') ? .35 : .65);
