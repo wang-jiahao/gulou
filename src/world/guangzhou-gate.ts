@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {Builder} from './geometry.ts';
 import type {Materials} from './materials.ts';
+import {addGateTrafficSigns} from './gate-traffic-signs.ts';
 
 /** User night photo and BV1HT4y1U7TE 00:00/00:23: pale raised stone sign,
  * four gold text rows and capped grille piers. VR gl-1-12 retains entrance context.
@@ -58,6 +59,7 @@ export function createGuangzhouGate(mats:Materials){
  spaced('GUANG ZHOU LU GATE',514,'58px Arial,sans-serif',1090);
  const map=new T.CanvasTexture(c);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;
  b.add(new T.PlaneGeometry(4.95,1.73),new T.MeshStandardMaterial({name:'guangzhou-gate-bilingual-lettering',map,transparent:true,depthWrite:false,roughness:.45,metalness:.35}),plaqueX,1.12,plaqueZ+.383);
+ addGateTrafficSigns(b,plaqueX,plaqueZ+.20,trim);
  // Spherical stone bollards visible beside the public sidewalk; gaps preserve
  // both pedestrian approaches and the central vehicle lane.
  for(const side of[-1,1])for(const u of[8.2,11.6,15]){
@@ -68,6 +70,6 @@ export function createGuangzhouGate(mats:Materials){
  }
  // Short approach paving; no beam is invented over the road.
  b.box(15,.025,12,x,.019,z-1,mats.path);
- const group=b.finish('广州路门 · stone piers and guard pavilion');group.userData={source:'user night photo; official VR gl-1-12/16; BV1HT4y1U7TE 00:00–00:03, 00:23',signText:['南京大学','NANJING UNIVERSITY','广州路门','GUANG ZHOU LU GATE'],confidence:'lettering, raised stone plaque and capped grille piers verified; dimensions and full entrance layout approximate'};
+ const group=b.finish('广州路门 · stone piers and guard pavilion');group.userData={source:'user night photo; official VR gl-1-12/16; BV1HT4y1U7TE 00:00–00:03, 00:23',signText:['南京大学','NANJING UNIVERSITY','广州路门','GUANG ZHOU LU GATE'],trafficPictograms:['front-facing car','no horn','10','motorcycle'],confidence:'lettering, raised stone plaque, capped grille piers and four main traffic pictograms verified; supplementary text unverified; dimensions and full entrance layout approximate'};
  return{group,solids:b.solids};
 }
