@@ -10,6 +10,7 @@ import {buildPhysicsBuilding} from './physics-building.ts';
 import {buildPearlMemorial} from './pearl-memorial.ts';
 import {buildZhongshan} from './zhongshan.ts';
 import {buildRabeHouse} from './rabe-house.ts';
+import {buildChemistryEntrance,chemistryFrontage} from './chemistry-entrance.ts';
 import {buildHospitalEntrance} from './hospital-entrance.ts';
 import {buildSportsHall} from './sports-halls.ts';
 import {buildLibraryComplex} from './library-complex.ts';
@@ -62,6 +63,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   let yifu:ReturnType<typeof buildYifuEntrance>|undefined;
   let yifuUpper:ReturnType<typeof buildYifuTower>|undefined;
   let tangEntrance:ReturnType<typeof buildTangEntrance>|undefined;
+  let chemistryEntry:ReturnType<typeof buildChemistryEntrance>|undefined;
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
@@ -149,6 +151,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         // The photographed entry replaces only the central bays on the old
         // procedural frontage; consume the same RNG sample before skipping.
         if(f.id==='plan-80'&&!ri&&edge===0&&Math.abs(u)-w/2<6.5)continue;
+        if(f.id==='plan-3'&&!ri&&floor<2&&chemistryFrontage({len,x:mx,z:mz,angle,nx,nz})&&Math.abs(u)-w/2<11.7)continue;
         if(profile.arched){
           const x=mx+u*Math.cos(angle),z=mz-u*Math.sin(angle);
           b.add(new T.ExtrudeGeometry(archShape(w+.20,h+.20),{depth:.10,bevelEnabled:false}),stone,x+.02*nx,y,z+.02*nz,new T.Euler(0,angle,0));
@@ -239,7 +242,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(!teaching&&f.id!=='plan-10'&&f.id!=='plan-22'){
       // Choose a long exterior facade facing the nearest public route, rather
       // than putting a doorway onto an inner hole or a two-metre return wall.
-      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):candidates.sort((a,c)=>{
+      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=f.id==='plan-3'?edges.find(chemistryFrontage):f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):candidates.sort((a,c)=>{
         const score=(e:typeof a)=>{
           if(scores.has(e))return scores.get(e)!;
           let best=10000;
@@ -260,6 +263,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         if(f.id==='plan-12')sufute.name(plaques,e);
         const put=(u:number,y:number,v:number,bw:number,bh:number,bd:number,mat:T.Material)=>detail.box(bw,bh,bd,e.x+u*Math.cos(e.angle)+v*e.nx,y,e.z-u*Math.sin(e.angle)+v*e.nz,mat,false,e.angle);
         if(f.id==='plan-17')frontView=tian.entrance(b,fixedMeshes,doors,e);
+        else if(f.id==='plan-3')chemistryEntry=buildChemistryEntrance(b,fixedMeshes,cameraSolids,doors,e);
         else if(f.id==='plan-80')entrance=buildHospitalEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e.x,e.z,e.angle);
         else{
           addEntrance(b,fixedMeshes,doors,doorMaterials,f.tags.name,e.x,e.z,e.angle,w,0);
@@ -302,6 +306,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.tianFacade=tian.metadata;
   group.userData.tangFacade=tang.metadata;
   group.userData.tangEntrance=tangEntrance;
+  group.userData.chemistryEntrance=chemistryEntry;
   if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;group.userData.yifuTower=yifuUpper;}
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
   let detailShadows=false;

@@ -248,7 +248,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   travelPlaces.push(directory.arrival);
   travelPlaces.push({name:'松林楼',x:-65.8,z:411.8,yaw:-Math.PI/2,firstPerson:true});
   travelPlaces.push(garden.arrival);
-  for(const record of ordinary.records)if(record.frontage&&!record.dormitory&&!['松林楼','教学楼／郑钢楼'].includes(record.name)){const[x,z,nx,nz]=record.frontage;const name=travelPlaces.some(p=>p.name===record.name)?`${record.name}（图号 ${record.id.replace('plan-','')}）`:record.name;const approach=record.id==='plan-77'?5.5:4;travelPlaces.push({name,x:x+nx*approach,z:z+nz*approach,yaw:Math.atan2(nx,nz)});}
+  for(const record of ordinary.records)if(record.frontage&&!record.dormitory&&!['松林楼','教学楼／郑钢楼'].includes(record.name)){const[x,z,nx,nz]=record.frontage;const name=travelPlaces.some(p=>p.name===record.name)?`${record.name}（图号 ${record.id.replace('plan-','')}）`:record.name;const approach=record.id==='plan-3'?9:record.id==='plan-77'?5.5:4;travelPlaces.push({name,x:x+nx*approach,z:z+nz*approach,yaw:Math.atan2(nx,nz)});}
   travelPlaces.push(...extraPlaces);
   const ivy=createIvy(mats,quality);ivy.position.y=terraceHeight;root.add(ivy);
 
