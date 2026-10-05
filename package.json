@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.73.0",
+  "version": "0.74.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -99,7 +99,8 @@
     "test:nanyuan-dining-forecourt": "node scripts/nanyuan-dining-forecourt-check.mjs",
     "test:nanyuan-dining-street": "DINING_STREET=1 node scripts/nanyuan-dining-forecourt-check.mjs",
     "test:yaoliang-hall": "node scripts/yaoliang-hall-check.mjs",
-    "test:yaoliang-forecourt": "node scripts/yaoliang-forecourt-check.mjs"
+    "test:yaoliang-forecourt": "node scripts/yaoliang-forecourt-check.mjs",
+    "test:bicycle-batching": "node scripts/bicycle-batching-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

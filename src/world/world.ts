@@ -1,3 +1,4 @@
+import {batchParkedBicycles} from './bicycle-batching.ts';
 import * as T from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
@@ -366,6 +367,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const amenities=createDormitoryAmenities(map,ordinary.records,mats,[...solids,...moreSolids]);root.add(amenities.group);bicycles.push(...amenities.bicycles);moreSolids.push(...amenities.solids);lampPositions.push(...amenities.lamps);cameraSolids.push(...amenities.group.children);
     const parking=createTeachingBicycleParking(mats);root.add(parking.group);bicycles.push(...parking.bicycles);moreSolids.push(...parking.solids);cameraSolids.push(...parking.group.children);
     const diningForecourt=await createDiningForecourt(mats);root.add(diningForecourt.group);bicycles.push(...diningForecourt.bicycles);moreSolids.push(...diningForecourt.solids);fixedMeshes.push(...diningForecourt.fixedMeshes);cameraSolids.push(...diningForecourt.cameraSolids);vegetationUpdates.push(diningForecourt.updateVisibility);
+    batchParkedBicycles(root,bicycles);
     const diningLane=createDiningStreet(diningStreet,mats,asphalt);root.add(diningLane.group);fixedMeshes.push(...diningLane.fixedMeshes);cameraSolids.push(...diningLane.cameraSolids);
     const hallForecourt=await createYaoliangForecourt(yaoliangForecourt,mats);root.add(hallForecourt.group);moreSolids.push(...hallForecourt.solids);fixedMeshes.push(...hallForecourt.fixedMeshes);cameraSolids.push(...hallForecourt.cameraSolids);vegetationUpdates.push(hallForecourt.updateVisibility);
     const forecourt=await createSportsHallForecourts(map,mats);root.add(forecourt.group);moreSolids.push(...forecourt.solids);cameraSolids.push(...forecourt.cameraSolids);vegetationUpdates.push(forecourt.updateVisibility);

@@ -2,7 +2,7 @@ import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {Builder, type Solid} from './geometry.ts';
 
-export type CampusBicycle = ReturnType<typeof createBicycle> & { id:string; solid:Solid; home:T.Vector3; angle:number; };
+export type CampusBicycle = ReturnType<typeof createBicycle> & { id:string; solid:Solid; home:T.Vector3; angle:number; setParked?:(parked:boolean)=>void; };
 export const bicycleFit={seat:.91,seatZ:.25,barY:1.20,barZ:-.12,barHalfWidth:.24,crankY:.32,crankZ:.12,crankRadius:.17};
 // User photo: magenta low-step frame, pale rims, open black basket and rear lock.
 // Dimensions, hidden parts and small marks are approximate, not manufacturer CAD.

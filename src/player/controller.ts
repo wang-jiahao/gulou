@@ -83,7 +83,7 @@ export class Player {
     const rotation={x:0,y:Math.sin(bike.angle/2),z:0,w:Math.cos(bike.angle/2)};
     if(this.physics.intersectionWithShape({x:p.x,y:p.y+.90,z:p.z},rotation,shape,undefined,undefined,this.collider,this.body)){parked.setEnabled(true);return false;}
     this.placeOnSupport(p.x,p.y+.045,p.z);this.collider.setShape(shape);this.collider.setRotationWrtParent(rotation);
-    this.riding=bike;this.rideYaw=bike.angle;this.rideViewYaw=bike.angle;this.rideSteering=0;this.rideSpeed=0;this.pedalPhase=0;this.clearInput();this.motor.enableAutostep(.16,.2,false);this.motor.enableSnapToGround(.4);return true;
+    this.riding=bike;bike.setParked?.(false);this.rideYaw=bike.angle;this.rideViewYaw=bike.angle;this.rideSteering=0;this.rideSpeed=0;this.pedalPhase=0;this.clearInput();this.motor.enableAutostep(.16,.2,false);this.motor.enableSnapToGround(.4);return true;
   }
   dismount(){
     const bike=this.riding;if(!bike)return true;
@@ -102,6 +102,7 @@ export class Player {
   private parkBicycle(){
     const bike=this.riding;if(!bike)return;
     bike.group.position.copy(this.position);bike.group.rotation.y=this.rideYaw;bike.angle=this.rideYaw;
+    bike.setParked?.(true);
     const collider=this.solidColliders.get(bike.solid)!;
     collider.setTranslation({x:this.position.x,y:this.position.y+.52,z:this.position.z});collider.setRotation({x:0,y:Math.sin(this.rideYaw/2),z:0,w:Math.cos(this.rideYaw/2)});collider.setEnabled(true);
     this.riding=null;this.rideSpeed=0;this.collider.setShape(new RAPIER.Capsule(.57,.27));this.collider.setRotationWrtParent({x:0,y:0,z:0,w:1});this.motor.enableAutostep(.3,.2,false);this.clearInput();this.physics.step();
