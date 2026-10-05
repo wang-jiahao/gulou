@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.77.0",
+  "version": "0.78.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -102,7 +102,8 @@
     "test:yaoliang-forecourt": "node scripts/yaoliang-forecourt-check.mjs",
     "test:bicycle-batching": "node scripts/bicycle-batching-check.mjs",
     "test:chemistry-facade": "node scripts/chemistry-facade-check.mjs",
-    "test:chemistry-forecourt": "node scripts/chemistry-forecourt-check.mjs"
+    "test:chemistry-forecourt": "node scripts/chemistry-forecourt-check.mjs",
+    "test:canopy-update": "node scripts/canopy-update-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",
