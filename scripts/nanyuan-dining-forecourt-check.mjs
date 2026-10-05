@@ -1,10 +1,11 @@
+import {compareLowerGeometry,checkDiningLowerEntry} from './nanyuan-dining-lower-check.mjs';
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 
 const stage=process.env.DINING_FORECOURT_STAGE||'after',channel=process.env.BROWSER_CHANNEL||'chrome';
-const street=process.env.DINING_STREET==='1';
-const out=street?'docs/validation/phase71':'docs/validation/phase70',file=`${out}/${stage}-${channel}.json`;
+const lower=process.env.DINING_LOWER==='1',street=lower||process.env.DINING_STREET==='1';
+const out=lower?'docs/validation/phase72':street?'docs/validation/phase71':'docs/validation/phase70',file=`${out}/${stage}-${channel}.json`;
 await mkdir(out,{recursive:true});
 if(stage==='before'){try{await readFile(file);throw Error('Baseline already exists');}catch(e){if(e.code!=='ENOENT')throw e;}}
 const browser=await chromium.launch(process.env.EDGE_EXECUTABLE?{executablePath:process.env.EDGE_EXECUTABLE}:{channel}),report={stage,channel,errors:[],missing:[],routes:[]};
@@ -30,6 +31,7 @@ try{
  report.geometry=JSON.parse(JSON.stringify(report.geometry));
  if(stage==='after'){
   const before=JSON.parse(await readFile(`${out}/before-chrome.json`,'utf8')).geometry;
+  if(lower)report.collisionChange=compareLowerGeometry(report.geometry,before);else{
   for(const key of ['instances','solids','access','boundaries','buildings','doors'])assert.deepEqual(report.geometry[key],before[key],key+' preserved');
   const prior=new Map();for(const c of before.cuboids){const k=JSON.stringify(c);prior.set(k,(prior.get(k)||0)+1);}
   const additions=[];for(const c of report.geometry.cuboids){const k=JSON.stringify(c),n=prior.get(k)||0;if(n)prior.set(k,n-1);else additions.push(c);}
@@ -46,6 +48,7 @@ try{
    assert.equal(additions.length,report.geometry.forecourt.solidCount,'only forecourt tree and bicycle colliders added');
    assert.equal(report.collisionChange.added,report.geometry.forecourt.fixedMeshCount,'only planter meshes added');
   }
+ }
  }
  report.dining=report.geometry.buildings.find(b=>b.id==='plan-113').dining;
  const point=(u,v)=>[-86.219+u*(-.99828)+v*(-.05864),560.105-u*(-.05864)+v*(-.99828)];
@@ -129,8 +132,13 @@ try{
   await page.keyboard.press('m');await page.fill('#place-search',name);await page.selectOption('#travel-place',arrival);await page.click('#travel-place-go');
   report.arrival=await page.evaluate(()=>window.__GULOU__.game.player.position.toArray());assert.ok(report.arrival[1]<.2,'arrival on ground');
  }
+ if(lower&&stage==='after')report.lower=await checkDiningLowerEntry(page);
  await page.addStyleTag({content:'body > :not(canvas){visibility:hidden!important} canvas{visibility:visible!important}'});
- const shots=street?[
+ const shots=lower?[
+  ['paired-canopies',[-36,5.5,606],[-54,1.5,580],76],
+  ['south-mouth',[-46.8,1.7,599.2],[-53.1,-.3,596.8],75],
+  ['lower-landing',[-54.9,.45,597.1],[-49,1.3,597.1],78]
+ ]:street?[
   ['street',[-35,6,607],[-42,1,570],76],
   ['curb',[-36,1.5,589],[-41,.15,583],72],
   ['north-link',[-36,8,543],[-39,.5,566],78]

@@ -82,7 +82,7 @@ export class Player {
     const shape=new RAPIER.Cuboid(.34,.84,.95),p=bike.group.position;
     const rotation={x:0,y:Math.sin(bike.angle/2),z:0,w:Math.cos(bike.angle/2)};
     if(this.physics.intersectionWithShape({x:p.x,y:p.y+.90,z:p.z},rotation,shape,undefined,undefined,this.collider,this.body)){parked.setEnabled(true);return false;}
-    this.teleport(p.x,p.y+.045,p.z);this.collider.setShape(shape);this.collider.setRotationWrtParent(rotation);
+    this.placeOnSupport(p.x,p.y+.045,p.z);this.collider.setShape(shape);this.collider.setRotationWrtParent(rotation);
     this.riding=bike;this.rideYaw=bike.angle;this.rideViewYaw=bike.angle;this.rideSteering=0;this.rideSpeed=0;this.pedalPhase=0;this.clearInput();this.motor.enableAutostep(.16,.2,false);this.motor.enableSnapToGround(.4);return true;
   }
   dismount(){
@@ -95,7 +95,7 @@ export class Player {
       const y=origin.y-hit.timeOfImpact+.045;
       const blocked=this.physics.intersectionWithShape({x,y:y+.86,z},{x:0,y:0,z:0,w:1},new RAPIER.Capsule(.57,.27),undefined,undefined,this.collider,this.body);
       if(blocked)continue;
-      this.parkBicycle();this.teleport(x,y,z);return true;
+      this.parkBicycle();this.placeOnSupport(x,y,z);return true;
     }
     return false;
   }
@@ -140,8 +140,13 @@ export class Player {
   private finishFlight(){this.flightState='walking';this.flightVelocity.set(0,0,0);this.velocityY=0;this.motor.enableAutostep(.3,.2,false);this.motor.enableSnapToGround(.4);this.glider.visible=false;this.avatar.root.rotation.z=0;}
   reset() { this.parkBicycle();this.finishFlight();this.teleport(spawn.x, spawn.y, spawn.z); this.seated = false; this.clearInput(); this.avatar.root.rotation.y = 0; }
   teleport(x: number, y: number, z: number) {
+    this.placeOnSupport(x,Math.max(.03,terrainHeight(x,z)+.035,y),z);
+  }
+  // Mount/dismount already verify support and clearance. Preserve their actual
+  // floor elevation, including lower landings, without changing teleport rules.
+  private placeOnSupport(x:number,y:number,z:number){
     this.grounded=false;this.jumpRequest=0;
-    this.position.set(T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), Math.max(.03, terrainHeight(x,z)+.035, y), T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1));
+    this.position.set(T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), y, T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1));
     this.body.setTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }, true);
     this.body.setNextKinematicTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }); this.velocityY = 0; this.previous.copy(this.position); this.avatar.root.position.copy(this.position);
   }

@@ -40,6 +40,7 @@ import {createTangCourtyard,tangCourtyardLayout} from './tang-courtyard.ts';
 import {createTangCourtyardAccess} from './tang-courtyard-access.ts';
 import {createTangCourtyardGround} from './tang-courtyard-ground.ts';
 import {createJinyinStreetTrees} from './jinyin-street-trees.ts';
+import {diningLowerEntryLayout} from './nanyuan-dining-lower.ts';
 import {createPlanarCutout} from './planar-cutout.ts';
 import {splitTeachingFeature} from './specific-buildings.ts';
 import type {CampusBicycle} from './bicycle.ts';
@@ -92,7 +93,6 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const solids: Solid[] = [], cameraSolids: T.Object3D[] = [], fixedMeshes: CollisionMesh[] = [], lampPositions:T.Vector3[]=[], vegetationUpdates: ((position: T.Vector3, quality: string, flying: boolean, camera?:T.Vector3) => void)[] = [];
   const mapResponse = await fetch(`${import.meta.env.BASE_URL}data/campus-layout.json`);
   if (!mapResponse.ok) throw new Error('校园地图加载失败');
-  const groundCameraProxy = new T.Mesh(new T.PlaneGeometry(1800, 1900).rotateX(-Math.PI / 2), new T.MeshBasicMaterial({ side: T.DoubleSide })); groundCameraProxy.position.set(-130, .005, 160); groundCameraProxy.updateMatrixWorld(); cameraSolids.push(groundCameraProxy);
   const map: CampusMap = await mapResponse.json();
   const memorial=map.features.find(f=>f.id==='plan-50');if(memorial){memorial.tags={...memorial.tags,name:'赛珍珠纪念馆','building:levels':'2',source:'NJU Archives 2023-12-24 + user campus plan labelled 赛珍珠楼 + gl-2-05'};}
   const parcel=map.features.find(f=>f.id==='plan-100');if(parcel){
@@ -109,6 +109,12 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const sportsPaving = sportsHallPavingLayout(map), sportsPavingCutout = createPlanarCutout(sportsPaving.outline);
   const avenue = zhongdaAvenueLayout(), libraryGardens=libraryWestGardenLayout(), rabeCourtyard=rabeCourtyardLayout(), tianCourtyard=tianCourtyardLayout(), tangCourtyard=tangCourtyardLayout(map);
   const diningStreet=diningStreetLayout();
+  const lowerEntries=diningLowerEntryLayout(map.features.find(f=>f.id==='plan-113')!);
+  const lowerCuts=lowerEntries.outlines.map(createPlanarCutout);
+  const lowerCut={intersects:(ring:number[][])=>lowerCuts.some(c=>c.intersects(ring)),subtract:(ring:number[][])=>lowerCuts.reduce((parts,c)=>parts.flatMap(p=>c.subtract(p)),[ring])};
+  const foundationShape=planShape({points:[[-1030,-790],[770,-790],[770,1110],[-1030,1110]],holes:lowerEntries.outlines.map(o=>o.points)});
+  const groundCameraProxy=new T.Mesh(new T.ShapeGeometry(foundationShape).rotateX(-Math.PI/2).translate(0,.005,0),new T.MeshBasicMaterial({side:T.DoubleSide}));
+  groundCameraProxy.updateMatrixWorld();cameraSolids.push(groundCameraProxy);
   const surfaceCutouts = [sportsPavingCutout,...avenue.outlines.map(createPlanarCutout),...libraryGardens.outlines.map(createPlanarCutout),createPlanarCutout(rabeCourtyard.outline),...tianCourtyard.outlines.map(createPlanarCutout),createPlanarCutout(tangCourtyard.outline),createPlanarCutout(diningStreet.outline)];
   const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
   const lawnHeight = .20;
@@ -120,9 +126,14 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   // Bias the foundation away from the camera so its pale surface cannot win
   // the depth test intermittently when looking down from flight altitude.
   const base = new T.MeshStandardMaterial({ name: 'campus-foundation', color: 0xa5aa96, roughness: 1, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 8 });
-  b.box(1800, .4, 1900, -130, -.2, 160, base);
+  b.add(new T.ExtrudeGeometry(foundationShape,{depth:.4,bevelEnabled:false,steps:1}).rotateX(-Math.PI/2).translate(0,-.4,0),base);
   // Modest collider tiles avoid the contact tolerance of a kilometre-wide convex box.
-  for (let x = -640; x < 192; x += 64) for (let z = -320; z < 768; z += 64) solids.push({ x: x + 32, y: -.2, z: z + 32, w: 64, h: .4, d: 64 });
+  for (let x = -640; x < 192; x += 64) for (let z = -320; z < 768; z += 64) {
+    const tile={points:[[x,z],[x+64,z],[x+64,z+64],[x,z+64]]};
+    if(lowerCut.intersects(tile.points)){
+      const proxy=new T.Mesh(terrainSurface(tile,0,lowerCut));proxy.updateMatrixWorld();fixedMeshes.push(collisionMesh(proxy,false));
+    }else solids.push({ x: x + 32, y: -.2, z: z + 32, w: 64, h: .4, d: 64 });
+  }
   const asphalt = new T.MeshStandardMaterial({ name: 'paving', color: 0x93988f, map: mats.textures.get('courtyard-asphalt.webp'), roughness: .95, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
   // The white strokes in the schematic map are drawing outlines, not metre-wide
   // strips of pale paving. Fill only the courtyard substrate beneath its paths.
@@ -135,9 +146,11 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const eastSteps=createEastTeachingSteps(mats);root.add(eastSteps.group);solids.push(...eastSteps.solids);cameraSolids.push(...eastSteps.group.children);
   // Official VR shows asphalt garden paths, rather than a continuous stone plaza.
   const addSurface = (polygon: Parameters<typeof planShape>[0], material: T.Material, y: number) => {
-    let geometry = terrainSurface(polygon,y);
+    // Sunken entrances remove both road support and visible paving.
+    const groundCut=lowerCut.intersects(polygon.points)?lowerCut:undefined;
+    let geometry = terrainSurface(polygon,y,groundCut);
     if (material === asphalt) { const proxy = new T.Mesh(geometry); proxy.updateMatrixWorld(); fixedMeshes.push(collisionMesh(proxy, false)); }
-    const cuts = surfaceCutouts.filter(c=>c.intersects(polygon.points));
+    const cuts = [...surfaceCutouts,...lowerCuts].filter(c=>c.intersects(polygon.points));
     if (cuts.length) {
       geometry.dispose(); geometry = terrainSurface(polygon,y,{
         intersects: ring=>cuts.some(c=>c.intersects(ring)),

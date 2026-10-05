@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {buildDiningLowerEntries} from './nanyuan-dining-lower.ts';
 import {Builder} from './geometry.ts';
 import {planShape,type MapFeature} from './campus-map.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
@@ -116,7 +117,11 @@ export function buildNanyuanDining(f:MapFeature,b:Builder,meshes:CollisionMesh[]
  box(21.5,19,-8,9,2,7,wall,'stair-roof');
  // gl110 b: open recessed galleries, broad pale fascia boards, silver rails
  // and full-height round columns. These are actual openings in both meshes.
- eastBox(0,galleryFloor/2,-galleryDepth/2,36,galleryFloor,galleryDepth,stone,'east-landing');
+ // Keep the upper deck, with the two lower vestibules clear underneath.
+ eastBox(0,galleryFloor-.18,-galleryDepth/2,36,.36,galleryDepth,stone,'east-landing');
+ eastBox(0,.645,-galleryDepth/2,26.6,1.29,galleryDepth,stone,'east-landing-core');
+ eastBox(0,.645,-3.6,36,1.29,3.2,stone,'east-landing-rear');
+ for(const s of[-17.95,17.95])eastBox(s,.645,-1,.1,1.29,2,stone,'east-landing-edge');
  for(const level of [...galleryLevels,height]){
   eastBox(0,level-.18,-galleryDepth/2,36,.36,galleryDepth,wall,'east-gallery-slab');
   if(level===height)continue;
@@ -137,8 +142,7 @@ export function buildNanyuanDining(f:MapFeature,b:Builder,meshes:CollisionMesh[]
   collider(new T.CylinderGeometry(.5,.5,top-bottom,12).translate(px,(top+bottom)/2,pz));
   for(let y=bottom+2;y<top;y+=2)b.add(new T.CylinderGeometry(.51,.51,.045,12),dark,px,y,pz);
  }
- // The central stair rises to the open ground-floor gallery. The paired blue
- // lower-level canopies in the reference need their own terrain/access pass.
+ // The central stair retains its independent route to the upper gallery.
  for(let i=0;i<11;i++){
   const h=.15*(i+1),d=(11-i)*.36;
   eastBox(0,h/2,d/2,26,h,d,stone,'east-step');
@@ -165,5 +169,6 @@ export function buildNanyuanDining(f:MapFeature,b:Builder,meshes:CollisionMesh[]
  // Keep the original arrival point/plant exclusion stable for the rest of
  // campus; the accessible landing is reached by the broad north steps.
  const[dx,dz]=point(0,1.5);doors.push({name:f.tags.name,x:dx,y:0,z:dz,yaw,width:7.2});
- return{id:f.id,name:f.tags.name,source:'Official VR gl110/gl115 note145 + gl124 b north aerial; official map footprint; dimensions approximate',height,windows:3,roof:'flat light court',dormitory:false,frontage:[x,z,nx,nz],dining:{source:'gl124 b / gl110 b',dimensions:'approximate',frame:{x,z,nx,nz,yaw},floor,ceiling,depth,entryU,rows,courtyard,parts,obstacles,eastGallery:{frame:{x:ex,z:ez,nx:enx,nz:enz,yaw:eastYaw},half:galleryHalf,depth:galleryDepth,floor:galleryFloor,levels:galleryLevels,columns:eastColumns,lowerCanopiesPending:true}}};
+ const lowerEntries=buildDiningLowerEntries(f,b,meshes,camera,stone,metal,glass);
+ return{id:f.id,name:f.tags.name,source:'Official VR gl110/gl115 note145 + gl124 b north aerial; official map footprint; dimensions approximate',height,windows:3,roof:'flat light court',dormitory:false,frontage:[x,z,nx,nz],dining:{source:'gl124 b / gl110 b',dimensions:'approximate',frame:{x,z,nx,nz,yaw},floor,ceiling,depth,entryU,rows,courtyard,parts,obstacles,eastGallery:{frame:{x:ex,z:ez,nx:enx,nz:enz,yaw:eastYaw},half:galleryHalf,depth:galleryDepth,floor:galleryFloor,levels:galleryLevels,columns:eastColumns,lowerCanopiesPending:false,lowerEntries}}};
 }
