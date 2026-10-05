@@ -4,7 +4,8 @@ import type {Materials} from './materials.ts';
 import {addGateTrafficSigns} from './gate-traffic-signs.ts';
 
 /** User night photo and BV1HT4y1U7TE 00:00/00:23: pale raised stone sign,
- * four gold text rows and capped grille piers. VR gl-1-12 retains entrance context.
+ * four gold text rows and capped grille piers. Seen from the street, the guard
+ * pavilion is left of the entrance and the plaque is right.
  * Dimensions and the full entrance layout remain approximate. */
 export function createGuangzhouGate(mats:Materials){
  const b=new Builder(),x=-35.067,z=720.0;
@@ -35,7 +36,7 @@ export function createGuangzhouGate(mats:Materials){
  for(const dz of[-2.3,0,2.3])for(const dx of[-2.3,2.3])b.box(.09,2.0,.08,gx+dx,1.35,gz+dz,stone);
  b.box(1.1,1.9,.08,gx+.7,1.0,gz+2.46,trim);
  b.box(.78,1.2,.035,gx+.7,1.4,gz+2.51,glass);
- const plaqueX=x-11.0,plaqueZ=z+.42;
+ const plaqueX=x+11.0,plaqueZ=z+.42;
  const plaqueStone=new T.MeshStandardMaterial({name:'guangzhou-pale-stone-sign-wall',color:0xc9c9c2,map:mats.textures.get('stone-grain.webp'),roughness:.85});
  b.box(5.7,2.15,.48,plaqueX,1.075,plaqueZ,plaqueStone,true);
  b.box(5.9,.14,.62,plaqueX,2.18,plaqueZ,plaqueStone);
@@ -70,6 +71,6 @@ export function createGuangzhouGate(mats:Materials){
  }
  // Short approach paving; no beam is invented over the road.
  b.box(15,.025,12,x,.019,z-1,mats.path);
- const group=b.finish('广州路门 · stone piers and guard pavilion');group.userData={source:'user night photo; official VR gl-1-12/16; BV1HT4y1U7TE 00:00–00:03, 00:23',signText:['南京大学','NANJING UNIVERSITY','广州路门','GUANG ZHOU LU GATE'],trafficPictograms:['front-facing car','no horn','10','motorcycle'],confidence:'lettering, raised stone plaque, capped grille piers and four main traffic pictograms verified; supplementary text unverified; dimensions and full entrance layout approximate'};
+ const group=b.finish('广州路门 · stone piers and guard pavilion');group.userData={source:'user night photo (street view: pavilion left, plaque right); BV1HT4y1U7TE 00:00–00:03, 00:23',signText:['南京大学','NANJING UNIVERSITY','广州路门','GUANG ZHOU LU GATE'],trafficPictograms:['front-facing car','no horn','10','motorcycle'],confidence:'lettering, raised stone plaque, capped grille piers and four main traffic pictograms verified; supplementary text unverified; dimensions and full entrance layout approximate'};
  return{group,solids:b.solids};
 }

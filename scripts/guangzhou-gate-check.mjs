@@ -32,11 +32,13 @@ try{
   for(const key of['solids','cuboids']){
    const isPier=s=>key==='solids'?pier(s.x,s.z):pier(s.position.x,s.position.z);
    const isBollard=s=>key==='solids'?bollard(s.x,s.y,s.z):bollard(s.position.x,s.position.y,s.position.z);
+   const isOldPlaque=s=>key==='solids'?Math.abs(s.x+46.067)<.001&&s.y===1.075&&s.z===720.42&&s.w===5.7:Math.abs(s.position.x+46.067)<.001&&Math.abs(s.position.y-1.075)<.001&&Math.abs(s.position.z-720.42)<.001&&Math.abs(s.halfExtents.x-2.85)<.001;
+   assert.equal(before[key].filter(isOldPlaque).length,1,'exactly one old main plaque');
    assert.equal(before[key].filter(isPier).length,2,'exactly two old gate piers');
    assert.equal(before[key].filter(isBollard).length,6,'exactly six old bollards');
    const remaining=report.geometry[key].map(s=>JSON.stringify(s));
-   for(const s of before[key].filter(s=>!isPier(s)&&!isBollard(s))){const i=remaining.indexOf(JSON.stringify(s));assert.ok(i>=0,'unrelated '+key+' retained');remaining.splice(i,1);}
-   report[key+'Changed']=remaining.length;assert.equal(remaining.length,9,'two taller piers, six repositioned bollards and raised stone plaque');
+   for(const s of before[key].filter(s=>!isPier(s)&&!isBollard(s)&&!isOldPlaque(s))){const i=remaining.indexOf(JSON.stringify(s));assert.ok(i>=0,'unrelated '+key+' retained');remaining.splice(i,1);}
+   report[key+'Changed']=remaining.length;assert.equal(remaining.length,10,'two taller piers, six repositioned bollards and two right-side plaque solids');
   }
   assert.deepEqual(report.geometry.gate.signText,['南京大学','NANJING UNIVERSITY','广州路门','GUANG ZHOU LU GATE']);
  }
@@ -68,7 +70,7 @@ try{
  if(!stage.startsWith('before'))for(const r of report.bollardRays)assert.ok(r.distance!==null&&Math.abs(r.distance-1.965)<.03,'bollard collision '+JSON.stringify(r));
  await page.addStyleTag({content:'body > :not(canvas){visibility:hidden!important} canvas{visibility:visible!important}'});
  for(const[name,eye,look,fov]of[
-  ['street',[-32,5,750],[-39,1.6,718],66],['lettering',[-46,2.1,730],[-46,1.25,720.7],50],
+  ['street',[-32,5,750],[-39,1.6,718],66],['lettering',[-24.067,2.1,730],[-24.067,1.25,720.7],50],
   ['pier',[-40,2.8,726],[-43,2.0,720],55],['inside',[-32,6,699],[-35,1.5,720],65]
  ]){
   const counts=await page.evaluate(({eye,look,fov})=>{const g=window.__GULOU__.game;g.player.avatar.root.visible=false;g.camera.position.set(...eye);g.camera.lookAt(...look);g.camera.fov=fov;g.camera.updateProjectionMatrix();g.atmosphere.update(0,false,g.camera.position);if(g.foliageLight)g.foliageLight.value=g.atmosphere.daylight;g.world.updateVegetation(g.camera.position,g.quality,true,g.camera.position);g.csm.lightDirection.copy(g.atmosphere.sunDirection).negate();g.csm.lights.forEach(l=>{l.intensity=g.atmosphere.sunIntensity;l.color.copy(g.atmosphere.lightColor);});g.renderer.toneMappingExposure=1.05;g.camera.updateMatrixWorld();g.csm.updateFrustums();g.csm.update();g.renderer.render(g.scene,g.camera);return{calls:g.renderer.info.render.calls,triangles:g.renderer.info.render.triangles};},{eye,look,fov});

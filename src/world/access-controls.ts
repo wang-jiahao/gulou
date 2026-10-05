@@ -9,7 +9,7 @@ export type CampusEntrance={id:string;name:string;x:number;z:number;angle:number
  * corrected to the Xiaofenqiao gate symbol. Equipment layouts are gameplay approximations. */
 export const campusEntrances:CampusEntrance[]=[
  {id:'hankou',name:'汉口路校门',x:-91.0546,z:344.25,angle:0,pedestrians:[-7.6,7.6],source:'campus plan + official VR gl-2-01'},
- {id:'guangzhou',name:'广州路校门',x:-35.067,z:715.04,angle:0,pedestrians:[-5.2,5.2],source:'campus plan + official VR gl-1-12'},
+ {id:'guangzhou',name:'广州路校门',x:-35.067,z:715.04,angle:0,pedestrians:[-5.2,5.2],source:'campus plan gate position; user photo; equipment spacing approximate'},
  {id:'south-north',name:'南园北门',x:-88.39,z:383.62,angle:0,pedestrians:[-4.7,4.7],source:'campus plan gate symbol [2216,2646]'},
  {id:'beijing-west',name:'北京西路门',x:-346.9,z:-234.17,angle:Math.PI,pedestrians:[-4.8,4.8],source:'campus plan [967,547]; OSM 1984468961'},
  {id:'beijing-east',name:'北京西路东侧出入口',x:-170.29,z:-208.14,angle:Math.PI,pedestrians:[-4.8,4.8],source:'campus plan [1610,583]; OSM 1684918728; descriptive name'},
