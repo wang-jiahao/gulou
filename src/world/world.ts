@@ -22,6 +22,7 @@ import { createAccessControls, campusEntrances } from './access-controls.ts';
 import { createDormitoryAmenities } from './dormitory-amenities.ts';
 import { createTeachingBicycleParking, teachingParkingClearance } from './teaching-bicycle-parking.ts';
 import {createDiningForecourt} from './nanyuan-dining-forecourt.ts';
+import {createDiningStreet,diningStreetLayout} from './nanyuan-dining-street.ts';
 import { createSouthRoadDetails } from './south-road-details.ts';
 import { createSouthTreeDetails } from './south-tree-details.ts';
 import { createCampusDirectory } from './campus-directory.ts';
@@ -107,7 +108,8 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   map.features.push(fireTowerFootprint);
   const sportsPaving = sportsHallPavingLayout(map), sportsPavingCutout = createPlanarCutout(sportsPaving.outline);
   const avenue = zhongdaAvenueLayout(), libraryGardens=libraryWestGardenLayout(), rabeCourtyard=rabeCourtyardLayout(), tianCourtyard=tianCourtyardLayout(), tangCourtyard=tangCourtyardLayout(map);
-  const surfaceCutouts = [sportsPavingCutout,...avenue.outlines.map(createPlanarCutout),...libraryGardens.outlines.map(createPlanarCutout),createPlanarCutout(rabeCourtyard.outline),...tianCourtyard.outlines.map(createPlanarCutout),createPlanarCutout(tangCourtyard.outline)];
+  const diningStreet=diningStreetLayout();
+  const surfaceCutouts = [sportsPavingCutout,...avenue.outlines.map(createPlanarCutout),...libraryGardens.outlines.map(createPlanarCutout),createPlanarCutout(rabeCourtyard.outline),...tianCourtyard.outlines.map(createPlanarCutout),createPlanarCutout(tangCourtyard.outline),createPlanarCutout(diningStreet.outline)];
   const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
   const lawnHeight = .20;
   const courtyardHeight = (x: number, z: number) => terrainHeight(x,z) + ([...raisedLawns].some(lawn => insidePolygon(x, z, lawn)) ? lawnHeight : .022);
@@ -349,6 +351,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const amenities=createDormitoryAmenities(map,ordinary.records,mats,[...solids,...moreSolids]);root.add(amenities.group);bicycles.push(...amenities.bicycles);moreSolids.push(...amenities.solids);lampPositions.push(...amenities.lamps);cameraSolids.push(...amenities.group.children);
     const parking=createTeachingBicycleParking(mats);root.add(parking.group);bicycles.push(...parking.bicycles);moreSolids.push(...parking.solids);cameraSolids.push(...parking.group.children);
     const diningForecourt=await createDiningForecourt(mats);root.add(diningForecourt.group);bicycles.push(...diningForecourt.bicycles);moreSolids.push(...diningForecourt.solids);fixedMeshes.push(...diningForecourt.fixedMeshes);cameraSolids.push(...diningForecourt.cameraSolids);vegetationUpdates.push(diningForecourt.updateVisibility);
+    const diningLane=createDiningStreet(diningStreet,mats,asphalt);root.add(diningLane.group);fixedMeshes.push(...diningLane.fixedMeshes);cameraSolids.push(...diningLane.cameraSolids);
     const forecourt=await createSportsHallForecourts(map,mats);root.add(forecourt.group);moreSolids.push(...forecourt.solids);cameraSolids.push(...forecourt.cameraSolids);vegetationUpdates.push(forecourt.updateVisibility);
     afterSector();
     sectors++;

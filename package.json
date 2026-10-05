@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.68.0",
+  "version": "0.69.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -95,7 +95,9 @@
     "test:tang-ground": "node scripts/tang-ground-check.mjs",
     "test:nanyuan-fountain": "node scripts/nanyuan-fountain-check.mjs",
     "test:nanyuan-dining": "node scripts/nanyuan-dining-check.mjs",
-    "test:nanyuan-dining-gallery": "node scripts/nanyuan-dining-gallery-check.mjs"
+    "test:nanyuan-dining-gallery": "node scripts/nanyuan-dining-gallery-check.mjs",
+    "test:nanyuan-dining-forecourt": "node scripts/nanyuan-dining-forecourt-check.mjs",
+    "test:nanyuan-dining-street": "DINING_STREET=1 node scripts/nanyuan-dining-forecourt-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",
