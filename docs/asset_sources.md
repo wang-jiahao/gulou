@@ -533,3 +533,10 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 
 - 四枚圆牌依据本地用户夜景 `references/phase33/guangzhou-gate-user.png` 与补充漫游 BV1HT4y1U7TE 的00:23画面。第一枚为单辆正面汽车；附牌小字未核实，不推断额外交通规则。程序原创重绘单张图集，支架与尺寸近似，无新增碰撞。
 - [南京大学校友会南大记忆页面](https://alumni.nju.edu.cn/aa/0a/c21691a502282/page.htm)及其中店面照片已实际查看，确认与中国邮政相邻；页面汉口路22号为校区地址，不能据此定位店铺。结合官方VR gl-1-12、gl-1-16仍未确定具体楼栋，暂不放置。原照片仅留本地。
+
+
+## v0.83 地点介绍与软院院牌纠错
+
+- 南京大学官方校园导览 https://vr.nju.edu.cn/newUI/#/ ：本地记录118/119/121/126/128/136/139/142/143/145/146/150等已读；转述建筑历史、用途及名称，并避免把导览旧用途当作最新安排。原始缓存尾部截断，仅解析完整条目。
+- 软件学院联系我们 https://software.nju.edu.cn/lxwm/index.html ：实际核对费彝民楼B座4—9层。用户指出原院牌位置错误，撤下院牌；官网通讯地址不作为实体院牌位置证明。用户标语原图实际查看，标语不改。
+- 南京大学医院简介 https://hospital.nju.edu.cn/yygk/yyjj/index.html ：成立1978、1996一级甲等、1998对社会开放及师生医疗健康服务。

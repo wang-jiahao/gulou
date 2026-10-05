@@ -125,14 +125,10 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  for(const v of[37.0,40.2,43.4,46.6,49.8,52.95])box(12.7,4.42,v,12,.17,.10,trim);
  const entry=point(39,37.04),yaw=-angle;
  addEntrance(b,meshes,doors,doorMats,f.tags.name,entry[0],entry[1],yaw,5.4,0);
- // Static canvas signs are merged with the building, with no per-frame work.
- // The official school footer confirms Fei Yimin; plaque placement/font are
- // provisional, and the building name is not replaced by one occupant's name.
- const schoolCanvas=document.createElement('canvas');schoolCanvas.width=1536;schoolCanvas.height=160;
- const schoolCtx=schoolCanvas.getContext('2d')!;schoolCtx.fillStyle='#edece3';schoolCtx.fillRect(0,0,1536,160);schoolCtx.fillStyle='#393a3c';schoolCtx.font='92px "Songti SC","STSong",serif';schoolCtx.textAlign='center';schoolCtx.textBaseline='middle';schoolCtx.fillText('南京大学软件学院',768,83,1400);
+ // The school confirms B block, floors 4–9, but not an exterior plaque here.
+ // Remove the user-rejected placement until a facade reference locates it.
+ // The photographed courtyard slogan remains a static canvas sign.
  function signMaterial(name:string,canvas:HTMLCanvasElement){const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;return new T.MeshStandardMaterial({name,map,roughness:.85});}
- const schoolPoint=point(39,37.11);
- b.add(new T.PlaneGeometry(8,.83),signMaterial('fei-software-school-plaque',schoolCanvas),schoolPoint[0],3.45,schoolPoint[1],new T.Euler(0,yaw,0));
  const sloganCanvas=document.createElement('canvas');sloganCanvas.width=1320;sloganCanvas.height=660;
  const sc=sloganCanvas.getContext('2d')!;sc.fillStyle='#803456';sc.fillRect(0,0,1320,660);
  // Reconstruct a restrained campus line drawing; never bundle the user photo
@@ -173,5 +169,5 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  const [wa,wc]=westEdge,signV=56.5,signU=wa[0]+(wc[0]-wa[0])*(signV-wa[1])/(wc[1]-wa[1]),slope=(wc[0]-wa[0])/(wc[1]-wa[1]);
  const signYaw=-Math.PI/2+Math.atan(slope)-angle,sign=point(signU,signV);
  b.add(new T.PlaneGeometry(1.15,5.52),signMat,sign[0]+Math.sin(signYaw)*.035,14.9,sign[1]+Math.cos(signYaw)*.035,new T.Euler(0,signYaw,0));
- return{id:f.id,name:f.tags.name,source:'NJU 2024 plan + official VR scene_gl-3 f / scene_gl-4-02 r + user south passage/slogan references + software.nju.edu.cn footer',height:68.4,windows,roof:'west tower / five-storey south podium / open court',dormitory:false,frontage:[entry[0],entry[1],Math.sin(yaw),Math.cos(yaw)],parts,approximateHeights:true,approximateLettering:true,localFrame:{origin,angle},recess:{u:[-1.5,6.2],v:[21,37.04],clearance:7.2,throughBuilding:false},canopy:{u:[6.8,18.6],v:[36.9,52.95],clearance:4.34},passage:{u:[49,55],v:[52.8,71.4],clearance,approximate:true},sloganAlcove:{u:[29,44],v:[52.8,56.4],clearance,lines:sloganLines,approximateLocation:true},labels:[{text:'费彝民楼',orientation:'vertical',face:'south wing west end'},{text:'南京大学软件学院',face:'tower courtyard entrance',approximatePlacement:true}]};
+ return{id:f.id,name:f.tags.name,source:'NJU 2024 plan + official VR scene_gl-3 f / scene_gl-4-02 r + user south passage/slogan references + software.nju.edu.cn/lxwm/index.html',height:68.4,windows,roof:'west tower / five-storey south podium / open court',dormitory:false,frontage:[entry[0],entry[1],Math.sin(yaw),Math.cos(yaw)],parts,approximateHeights:true,approximateLettering:true,localFrame:{origin,angle},recess:{u:[-1.5,6.2],v:[21,37.04],clearance:7.2,throughBuilding:false},canopy:{u:[6.8,18.6],v:[36.9,52.95],clearance:4.34},passage:{u:[49,55],v:[52.8,71.4],clearance,approximate:true},sloganAlcove:{u:[29,44],v:[52.8,56.4],clearance,lines:sloganLines,approximateLocation:true},labels:[{text:'费彝民楼',orientation:'vertical',face:'south wing west end'}]};
 }
