@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Builder, type Solid } from './geometry.ts';
 import { southEastGate } from './south-boundary-layout.ts';
 import type { Materials } from './materials.ts';
@@ -35,6 +36,15 @@ function readerDisplay(open:boolean){
  const map=new T.CanvasTexture(c);map.colorSpace=T.SRGBColorSpace;
  return new T.MeshBasicMaterial({name:open?'access-screen-pass':'access-screen-wait',map,toneMapped:false});
 }
+/** Parts share a parent, material and animation state. Keep the original UVs
+ * and non-shadow-casting flags; transparent moving flaps stay independent. */
+function mergeEquipment(parts:T.Mesh[],name:string){
+ const geometries=parts.map(part=>{part.updateMatrix();return part.geometry.applyMatrix4(part.matrix);});
+ const geometry=mergeGeometries(geometries)!;
+ for(const part of geometries)part.dispose();
+ geometry.computeBoundingSphere();
+ const mesh=new T.Mesh(geometry,parts[0].material);mesh.name=name;return mesh;
+}
 export function createAccessControls(mats:Materials){
  const group=new T.Group();group.name='campus access gates';const solids:Solid[]=[];
  const steel=new T.MeshStandardMaterial({name:'access-stainless-steel',color:0x9ca9a7,metalness:.68,roughness:.35});
@@ -43,34 +53,39 @@ export function createAccessControls(mats:Materials){
  const red=new T.MeshStandardMaterial({color:0xb53429,roughness:.57});
  const blue=new T.MeshStandardMaterial({color:0x97c6c7,transparent:true,opacity:.54,roughness:.24,metalness:.05,side:T.DoubleSide});
  const screenWait=readerDisplay(false),screenPass=readerDisplay(true);
+ const pedestrianMark=label('人行通道',1.2,.22);
  const readers:{entrance:string;x:number;z:number;flaps:T.Group[];screens:T.Mesh[];authorized:boolean;progress:number;indicator:T.MeshBasicMaterial}[]=[];
  const booms:{entrance:string;x:number;z:number;pivot:T.Group;progress:number}[]=[];
  for(const e of campusEntrances){
-  const base=new Builder(),local=new T.Group();local.name=e.name;local.position.set(e.x,0,e.z);local.rotation.y=e.angle;
+  const base=new Builder(),local=new T.Group(),lenses:T.Mesh[]=[];local.name=e.name;local.position.set(e.x,0,e.z);local.rotation.y=e.angle;
   const world=(x:number,z:number)=>({x:e.x+x*Math.cos(e.angle)+z*Math.sin(e.angle),z:e.z-x*Math.sin(e.angle)+z*Math.cos(e.angle)});
   for(const x of e.pedestrians){
-   const flaps:T.Group[]=[],screens:T.Mesh[]=[],indicator=new T.MeshBasicMaterial({color:0x7bc8af,toneMapped:false});
+   const flaps:T.Group[]=[],screens:T.Mesh[]=[],lights:T.Mesh[]=[],indicator=new T.MeshBasicMaterial({color:0x7bc8af,toneMapped:false});
    for(const side of[-1,1]){
     const sx=x+side*.66;
     base.box(.24,1.0,1.55,sx,.51,0,steel,true);
     base.box(.27,.10,1.59,sx,1.06,0,dark);
     base.box(.045,.45,.045,sx,1.34,.40,steel);
     base.box(.24,.37,.085,sx,1.54,.40,dark);
-    const screen=new T.Mesh(new T.PlaneGeometry(.18,.24),screenWait);screen.position.set(sx,1.51,.447);local.add(screen);screens.push(screen);
-    const lens=new T.Mesh(new T.SphereGeometry(.018,10,8),dark);lens.position.set(sx,1.67,.45);local.add(lens);
-    const light=new T.Mesh(new T.PlaneGeometry(.16,.035),indicator);light.position.set(sx,1.345,.448);local.add(light);
+    const screen=new T.Mesh(new T.PlaneGeometry(.18,.24),screenWait);screen.position.set(sx,1.51,.447);screens.push(screen);
+    const lens=new T.Mesh(new T.SphereGeometry(.018,10,8),dark);lens.position.set(sx,1.67,.45);lenses.push(lens);
+    const light=new T.Mesh(new T.PlaneGeometry(.16,.035),indicator);light.position.set(sx,1.345,.448);lights.push(light);
     const flap=new T.Group();flap.position.set(sx,0,.02);flap.userData.side=side;
     const panel=new T.Mesh(new T.BoxGeometry(.53,.64,.035),blue);panel.position.set(-side*.28,.59,0);flap.add(panel);flaps.push(flap);local.add(flap);
    }
-   const mark=label('人行通道',1.2,.22);mark.position.set(x,.035,1.15);mark.rotation.x=-Math.PI/2;local.add(mark);
-   readers.push({entrance:e.id,...world(x,0),flaps,screens,authorized:false,progress:0,indicator});
+   const display=mergeEquipment(screens,'paired reader displays');local.add(display,mergeEquipment(lights,'paired reader indicators'));
+   const mark=pedestrianMark.clone();mark.position.set(x,.035,1.15);mark.rotation.x=-Math.PI/2;local.add(mark);
+   readers.push({entrance:e.id,...world(x,0),flaps,screens:[display],authorized:false,progress:0,indicator});
   }
+  local.add(mergeEquipment(lenses,'reader lenses'));
   // A six-metre boom leaves the original centre road open when raised.
   base.box(.48,1.12,.50,3.15,.57,-1.45,white,true);
   base.box(.50,.17,.52,3.15,1.04,-1.45,red);
   const pivot=new T.Group();pivot.position.set(3.15,1.02,-1.45);
   const arm=new T.Mesh(new T.BoxGeometry(6.0,.095,.09),white);arm.position.x=-3.0;pivot.add(arm);
-  for(let x=-.4;x>-5.9;x-=.65){const stripe=new T.Mesh(new T.BoxGeometry(.25,.1,.096),red);stripe.position.x=x;stripe.rotation.z=.22;pivot.add(stripe);}
+  const stripes:T.Mesh[]=[];
+  for(let x=-.4;x>-5.9;x-=.65){const stripe=new T.Mesh(new T.BoxGeometry(.25,.1,.096),red);stripe.position.x=x;stripe.rotation.z=.22;stripes.push(stripe);}
+  pivot.add(mergeEquipment(stripes,'boom red stripes'));
   local.add(pivot);booms.push({entrance:e.id,...world(0,-1.45),pivot,progress:0});
   if(e.id!=='hankou'&&e.id!=='guangzhou'){
    for(const side of[-1,1]){base.box(.32,2.1,.32,side*6.0,1.05,0,mats.stone,true);base.box(.35,.13,.35,side*6,2.13,0,steel);}
