@@ -11,6 +11,7 @@ import {buildPearlMemorial} from './pearl-memorial.ts';
 import {buildZhongshan} from './zhongshan.ts';
 import {buildRabeHouse} from './rabe-house.ts';
 import {buildChemistryEntrance,chemistryFrontage} from './chemistry-entrance.ts';
+import {createChemistryFacade} from './chemistry-facade.ts';
 import {buildHospitalEntrance} from './hospital-entrance.ts';
 import {buildSportsHall} from './sports-halls.ts';
 import {buildLibraryComplex} from './library-complex.ts';
@@ -59,7 +60,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   };
   const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group}>();
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
-  const sufute=createSufuteFacade(),tian=createTianFacade(),tang=createTangFacade();
+  const sufute=createSufuteFacade(),tian=createTianFacade(),tang=createTangFacade(),chemistry=createChemistryFacade();
   let yifu:ReturnType<typeof buildYifuEntrance>|undefined;
   let yifuUpper:ReturnType<typeof buildYifuTower>|undefined;
   let tangEntrance:ReturnType<typeof buildTangEntrance>|undefined;
@@ -110,6 +111,9 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       };
       if(!ri)edges.push({len,x:mx,z:mz,angle,nx,nz});
       if(f.id==='plan-10')continue;
+      if(f.id==='plan-3'&&!ri&&chemistry.accepts({len,x:mx,z:mz,angle,nx,nz})){
+        windows+=chemistry.face(b,detail,{len,x:mx,z:mz,angle,nx,nz});continue;
+      }
       if(f.id==='plan-22'&&!ri&&tang.accepts({len,x:mx,z:mz,angle,nx,nz})){
         windows+=tang.face(b,detail,{len,x:mx,z:mz,angle,nx,nz},height);continue;
       }
@@ -194,6 +198,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       }
     }
     if(f.id==='plan-10'){yifuUpper=buildYifuTower(f,b,detail,fixedMeshes,cameraSolids,yifu!.localFrame);windows=yifuUpper.windows;}
+    if(f.id==='plan-3')chemistry.roof(b,detail,fixedMeshes,cameraSolids,edges,edges.find(chemistryFrontage)!);
     // Pitched roofs fit an inscribed rectangle; holes and irregular wings are never
     // covered with a bounding-box roof across their open courtyard.
     if(profile.roof!=='flat'&&!(f.holes?.length)){
@@ -307,6 +312,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.tangFacade=tang.metadata;
   group.userData.tangEntrance=tangEntrance;
   group.userData.chemistryEntrance=chemistryEntry;
+  group.userData.chemistryFacade=chemistry.metadata;
   if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;group.userData.yifuTower=yifuUpper;}
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
   let detailShadows=false;
