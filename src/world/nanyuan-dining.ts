@@ -135,6 +135,23 @@ export function buildNanyuanDining(f:MapFeature,b:Builder,meshes:CollisionMesh[]
   for(let s=-18;s<=18;s+=1.8)eastBox(s,(level+top)/2,-galleryDepth+.075,.06,top-level-.25,.10,metal);
   eastBox(0,level+.82,-galleryDepth+.085,36,.08,.12,metal);
  }
+ // The high-resolution gl110 b photograph resolves the southern gallery
+ // door's six characters. Keep its inset glazing closed; portal dimensions
+ // and typeface are approximate, and the partly hidden banner is omitted.
+ const restaurantS=-12,portalWidth=6.2,headerY=galleryFloor+2.64;
+ eastBox(restaurantS,headerY,-galleryDepth+.13,portalWidth,.68,.18,wall);
+ for(const side of[-1,1])eastBox(restaurantS+side*(portalWidth/2-.16),galleryFloor+1.2,-galleryDepth+.13,.32,2.4,.18,wall);
+ for(const offset of[-2.68,0,2.68])eastBox(restaurantS+offset,galleryFloor+1.15,-galleryDepth+.14,.065,2.3,.12,metal);
+ eastBox(restaurantS,galleryFloor+2.29,-galleryDepth+.14,5.42,.065,.12,metal);
+ for(const offset of[-.14,.14])eastBox(restaurantS+offset,galleryFloor+1.08,-galleryDepth+.23,.035,.42,.05,metal);
+ const signCanvas=document.createElement('canvas');signCanvas.width=1024;signCanvas.height=144;
+ const signContext=signCanvas.getContext('2d')!;
+ signContext.fillStyle='#3b534c';signContext.font='102px "Kaiti SC","STKaiti",serif';signContext.textAlign='center';signContext.textBaseline='middle';
+ [...'第二学生餐厅'].forEach((letter,i)=>signContext.fillText(letter,100+i*164,76));
+ const signTexture=new T.CanvasTexture(signCanvas);signTexture.colorSpace=T.SRGBColorSpace;
+ const signMaterial=new T.MeshStandardMaterial({name:'nanyuan-dining-second-student-restaurant-lettering',map:signTexture,transparent:true,alphaTest:.1,roughness:.85});
+ const[signX,signZ]=eastPoint(restaurantS,-galleryDepth+.226);
+ b.add(new T.PlaneGeometry(5.3,.57),signMaterial,signX,headerY,signZ,new T.Euler(0,eastYaw,0));
  const eastColumns=[-16,-8,0,8,16];
  for(const s of eastColumns){
   const[px,pz]=eastPoint(s,.10),bottom=galleryFloor,top=height+.18;
