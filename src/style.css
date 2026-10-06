@@ -24,3 +24,5 @@
 #touch-jump{grid-column:1 / span 2;border-radius:20px!important;min-height:38px!important} .touch-device #touch-altitude{bottom:205px}
 
 .place-about{pointer-events:auto;position:absolute;bottom:178px;left:50%;transform:translateX(-50%);background:#254234df;color:#f4f1df;padding:9px 14px;border:1px solid #ffffff44;border-radius:5px;font-size:12px}.touch-device .place-about{bottom:222px;max-width:65vw;min-height:40px}#info p{line-height:1.9}#info a{display:block;margin-top:22px;font-size:12px}
+
+#map-canvas:focus-visible{outline:3px solid #9c642d;outline-offset:3px}#map-help{font-size:12px;line-height:1.6;color:#52634e;margin:10px 0}

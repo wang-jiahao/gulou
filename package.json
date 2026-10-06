@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.92.0",
+  "version": "0.93.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -108,7 +108,9 @@
     "test:access-batching": "node scripts/access-batching-check.mjs",
     "test:nanyuan-teaching-layout": "node scripts/nanyuan-teaching-layout-check.mjs",
     "test:south-boundary-collision": "node scripts/south-boundary-collision-check.mjs",
-    "test:yifu-hall-courtyard": "node scripts/yifu-hall-courtyard-check.mjs"
+    "test:yifu-hall-courtyard": "node scripts/yifu-hall-courtyard-check.mjs",
+    "test:physics-courtyard": "node scripts/physics-courtyard-check.mjs",
+    "test:physics-garden-integration": "node scripts/physics-garden-integration-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

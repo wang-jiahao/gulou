@@ -96,13 +96,13 @@ function loadTree(lod: TreeLOD, foliage: T.Material): Promise<TreeAsset> {
   cache.assets.set(lod, result); return result;
 }
 
-export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', foliage: T.Material) {
+export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', foliage: T.Material, keep: (tree: TreeSpot) => boolean = () => true) {
   const names: TreeLOD[] = lod === 'near' ? ['near', 'far', 'distant'] : ['far', 'distant'];
   const [assets,crownAssets] = await Promise.all([Promise.all(names.map(name => loadTree(name, foliage))),loadCanopyCoverAssets()]);
   const box = assets[0].box, h = box.max.y - box.min.y, rand = rng(lod === 'near' ? 318 : 981);
   const solids: Solid[] = [], dummy = new T.Object3D(), group = new T.Group();
   group.name = `broadleaf trees ${lod} — CC0 model, approximate species`;
-  group.userData.trees = spots.map(tree => ({...tree}));
+  group.userData.trees = spots.filter(keep).map(tree => ({...tree}));
   const cells = new Map<string, { trees: TreeSpot[]; group: T.Group; levels: T.Group[]; center: T.Vector3; active: number;cover?:ReturnType<typeof createCanopyCover> }>();
   for (const tree of spots) {
     const gx = Math.floor(tree.x / 60), gz = Math.floor(tree.z / 60), key = `${gx}:${gz}`;
@@ -111,16 +111,21 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
       cells.set(key, cell); group.add(cell.group); cell.group.add(...cell.levels);
     }
     cells.get(key)!.trees.push(tree);
-    solids.push({ x: tree.x, y: tree.height * .22 + (tree.baseY ?? 0), z: tree.z, w: .8, h: tree.height * .44, d: .8 });
+    if (keep(tree)) solids.push({ x: tree.x, y: tree.height * .22 + (tree.baseY ?? 0), z: tree.z, w: .8, h: tree.height * .44, d: .8 });
   }
   const leafGeo = new T.PlaneGeometry(1, 1.6);
   for (const cell of cells.values()) {
+    // Keep the original cell order and consume every random draw, including
+    // removed trees' leaf sprays. Courtyard edits must not reshuffle other trees.
+    const retained = cell.trees.map(keep), indicesKept = cell.trees.map((_, i) => i).filter(i => retained[i]);
     const transforms = cell.trees.map(tree => {
       const scale = tree.height / h;
       dummy.position.set(tree.x, -box.min.y * scale + (tree.baseY ?? 0), tree.z); dummy.rotation.set(0, rand() * Math.PI * 2, 0);
       dummy.scale.set(scale * (.9 + rand() * .3), scale, scale * (.9 + rand() * .3)); dummy.updateMatrix(); return dummy.matrix.clone();
     });
-    cell.cover=createCanopyCover(cell.trees,foliage.userData.foliageLight,transforms,crownAssets);cell.group.add(cell.cover.mesh);
+    if (indicesKept.length) {
+      cell.cover=createCanopyCover(indicesKept.map(i=>cell.trees[i]),foliage.userData.foliageLight,indicesKept.map(i=>transforms[i]),crownAssets);cell.group.add(cell.cover.mesh);
+    }
     assets.forEach((asset, level) => {
       const layer = cell.levels[level]; layer.visible = level === 0;
       for (const { geometry, material } of asset.sources) {
@@ -129,7 +134,7 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
         // Raised beds keep the full band above soil instead of burying it.
         const batches = trunk ? [null, ...new Set(cell.trees.filter(t=>t.whitewash).map(t=>t.baseY??0))] : [null];
         for (const paintBase of batches) {
-          const indices = cell.trees.map((_, i) => i).filter(i => !trunk || (paintBase===null ? !cell.trees[i].whitewash : Boolean(cell.trees[i].whitewash)&&(cell.trees[i].baseY??0)===paintBase));
+          const indices = indicesKept.filter(i => !trunk || (paintBase===null ? !cell.trees[i].whitewash : Boolean(cell.trees[i].whitewash)&&(cell.trees[i].baseY??0)===paintBase));
           if (!indices.length) continue;
           const mesh = new T.InstancedMesh(geometry, paintBase!==null ? whitewashedTrunk(material,paintBase) : material, indices.length);
           indices.forEach((source, i) => { mesh.setMatrixAt(i, transforms[source]); mesh.setColorAt(i, new T.Color().setRGB(.91, .96, .87)); });
@@ -138,20 +143,22 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
       }
       const sprays = names[level] === 'near' ? 3200 : names[level] === 'far' ? 600 : 0;
       if (!sprays) return;
-      const leaves = new T.InstancedMesh(leafGeo, foliage, cell.trees.length * sprays); let index = 0;
-      cell.trees.forEach(spot => {
+      const leaves = new T.InstancedMesh(leafGeo, foliage, indicesKept.length * sprays); let index = 0;
+      cell.trees.forEach((spot, treeIndex) => {
         for (let i = 0; i < sprays; i++) {
           let x: number, y: number, z: number;
           do { x = rand() * 2 - 1; y = rand() * 2 - 1; z = rand() * 2 - 1; } while (x * x + y * y + z * z > 1);
           dummy.position.set(spot.x + x * spot.height * .31, spot.height * (.75 + y * .25) + (spot.baseY ?? 0), spot.z + z * spot.height * .32);
           dummy.rotation.set(rand() * 3, rand() * 6.28, rand() * 3); dummy.scale.setScalar(.50 + rand() * .40); dummy.updateMatrix();
           const shade=.76+rand()*.22;
-          leaves.setMatrixAt(index, dummy.matrix); leaves.setColorAt(index, new T.Color().setRGB(shade*.95,shade,shade*.9)); index++;
+          if (retained[treeIndex]) { leaves.setMatrixAt(index, dummy.matrix); leaves.setColorAt(index, new T.Color().setRGB(shade*.95,shade,shade*.9)); index++; }
         }
       });
-      leaves.castShadow = names[level] === 'near'; leaves.receiveShadow = true; leaves.computeBoundingSphere(); layer.add(leaves);
+      if (index) { leaves.castShadow = names[level] === 'near'; leaves.receiveShadow = true; leaves.computeBoundingSphere(); layer.add(leaves); }
+      else leaves.dispose();
     });
   }
+  for (const [key, cell] of cells) if (!cell.cover) { group.remove(cell.group); cells.delete(key); }
   const updateVisibility = (position: T.Vector3, quality: string, flying: boolean, camera=position) => {
     const range = flying ? 850 : quality === 'high' ? 550 : quality === 'low' ? 300 : 420;
     const near = flying ? (quality === 'high' ? 90 : 55) : quality === 'high' ? 125 : quality === 'low' ? 55 : 90;

@@ -6,6 +6,7 @@ export class CampusMapView {
   onSelect: (x: number, z: number, name: string) => void = () => {};
   onClear: () => void = () => {};
   private destination: [number, number] | null = null;
+  private playerPoint: [number, number] = [0, 0];
   private ctx: CanvasRenderingContext2D;
   private region = { ...bounds };
   private size = { scale: 1, x: 0, z: 0 };
@@ -16,12 +17,32 @@ export class CampusMapView {
     canvas.addEventListener('click', event => {
       const rect = canvas.getBoundingClientRect(), px = (event.clientX - rect.left) / rect.width * canvas.width, py = (event.clientY - rect.top) / rect.height * canvas.height;
       const x = (px - this.size.x) / this.size.scale, z = (py - this.size.z) / this.size.scale;
-      const feature = map.features.find(f => insidePolygon(x, z, f));
       if (x < bounds.minX || x > bounds.maxX || z < bounds.minZ || z > bounds.maxZ) return;
-      const marker=extraPlaces.find(p=>Math.hypot(p.x-x,p.z-z)<12);
-      const name = marker?.name ?? feature?.tags.name ?? '地图上的位置';
-      selection.textContent = `已选择：${name}`; this.destination = [x, z]; this.onSelect(x, z, name);
+      this.selectPoint(x, z);
     });
+    canvas.addEventListener('keydown', event => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      const directions: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+      const direction = directions[event.key];
+      if (!direction && event.key !== 'Home') return;
+      event.preventDefault();
+      const origin = event.key === 'Home' ? this.playerPoint : this.destination ?? this.playerPoint;
+      const step = event.shiftKey ? 10 : 2;
+      const x = origin[0] + (direction?.[0] ?? 0) * step;
+      const z = origin[1] + (direction?.[1] ?? 0) * step;
+      this.selectPoint(
+        Math.max(Math.max(bounds.minX, this.region.minX), Math.min(Math.min(bounds.maxX, this.region.maxX), x)),
+        Math.max(Math.max(bounds.minZ, this.region.minZ), Math.min(Math.min(bounds.maxZ, this.region.maxZ), z)),
+      );
+    });
+  }
+  private selectPoint(x: number, z: number) {
+    const feature = this.map.features.find(f => insidePolygon(x, z, f));
+    const marker = extraPlaces.find(p => Math.hypot(p.x - x, p.z - z) < 12);
+    const name = marker?.name ?? feature?.tags.name ?? '地图上的位置';
+    const distance = Math.round(Math.hypot(x - this.playerPoint[0], z - this.playerPoint[1]));
+    this.selection.textContent = `已选择：${name} · 距当前位置约 ${distance} 米`;
+    this.destination = [x, z]; this.onSelect(x, z, name);
   }
   setRegion(region: string) {
     this.destination = null; this.onClear();
@@ -63,6 +84,7 @@ export class CampusMapView {
   }
   private project(x: number, z: number): [number, number] { return [this.size.x + x * this.size.scale, this.size.z + z * this.size.scale]; }
   update(x: number, z: number, yaw: number) {
+    this.playerPoint = [x, z];
     const c = this.ctx; c.drawImage(this.background, 0, 0);
     if (this.destination) { const q = this.project(...this.destination); c.beginPath(); c.arc(...q, 9, 0, Math.PI * 2); c.strokeStyle = '#bf8149'; c.lineWidth = 4; c.stroke(); }
     const p = this.project(x, z);
