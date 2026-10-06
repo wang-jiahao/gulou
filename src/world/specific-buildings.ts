@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {buildYifuHallFacade,isYifuHallFront} from './yifu-hall-facade.ts';
+import {buildYifuHallFacade,isYifuHallFront,yifuHallVolumes} from './yifu-hall-facade.ts';
 import {teachingBrick,teachingFacade} from './teaching-facade.ts';
 import { splitBuildingRoof } from './building-roof.ts';
 import {addBuildingLettering} from './building-lettering.ts';
@@ -35,25 +35,31 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  const heightAt=(x:number,z:number)=>yifu?(z>24&&z<43&&x> -341?7.2:23.4):meng?(x>55&&x<85&&z>297&&z<325?59.4:12.8):teaching?(x> -90.655&&x< -77.271?20.2:x> -94&&x< -74?17.3:15.6):south?7.6:f.id==='new-teaching'?18.0:food?(f.id==='plan-113'?12.3:7.2):13;
  const xbreak=[minX,...(yifu?[-341]:meng?[55,85]:teaching?[-94,-90.655,-77.271,-74]:[]).filter(x=>x>minX&&x<maxX),maxX].sort((a,c)=>a-c);
  const zbreak=[minZ,...(yifu?[24,43]:meng?[297,325]:[]).filter(z=>z>minZ&&z<maxZ),maxZ].sort((a,c)=>a-c);
- const sections:{height:number;area:number;bounds:number[];points:number[][]}[]=[];
- for(let ix=0;ix<xbreak.length-1;ix++)for(let iz=0;iz<zbreak.length-1;iz++){
-  let points=f.points;for(const[axis,value,side]of[[0,xbreak[ix],1],[0,xbreak[ix+1],-1],[1,zbreak[iz],1],[1,zbreak[iz+1],-1]])points=clip(points,axis,value,side);
-  if(points.length<3||area(points)<.1)continue;
-  const height=heightAt((xbreak[ix]+xbreak[ix+1])/2,(zbreak[iz]+zbreak[iz+1])/2),shape=planShape({points});
-  const geometry=new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false}).rotateX(-Math.PI/2),proxy=new T.Mesh(geometry.clone());meshes.push(collisionMesh(proxy));cameraSolids.push(proxy);
-  const surfaces=splitBuildingRoof(geometry);
-  if(teaching){const p=surfaces.walls.getAttribute('position'),n=surfaces.walls.getAttribute('normal'),uv=surfaces.walls.getAttribute('uv');for(let i=0;i<p.count;i++)uv.setXY(i,(Math.abs(n.getX(i))>.7?p.getZ(i):p.getX(i))/2,p.getY(i)/2);}
-  b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
-  sections.push({height,area:area(points),points,bounds:[xbreak[ix],xbreak[ix+1],zbreak[iz],zbreak[iz+1]]});
- }
- let windows=0;
- const parcel=f.id==='plan-100';
- let parcelEntrance:ReturnType<typeof buildParcelEntrance>|undefined;
  const edges:{x:number;z:number;nx:number;nz:number;angle:number;len:number}[]=[];
  for(let edge=0;edge<f.points.length;edge++){
   const a=f.points[edge],c=f.points[(edge+1)%f.points.length],dx=c[0]-a[0],dz=c[1]-a[1],len=Math.hypot(dx,dz);if(len<.3)continue;
   let nx=-dz/len,nz=dx/len;const mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2;if(insidePolygon(mx+nx*.1,mz+nz*.1,f)){nx=-nx;nz=-nz;}const angle=Math.atan2(nx,nz);
   edges.push({x:mx,z:mz,nx,nz,angle,len});
+ }
+ const yifuFront=yifu?edges.find(isYifuHallFront):undefined;
+ const sections:{height:number;area:number;bounds:number[];points:number[][]}[]=[];
+ for(let ix=0;ix<xbreak.length-1;ix++)for(let iz=0;iz<zbreak.length-1;iz++){
+  let points=f.points;for(const[axis,value,side]of[[0,xbreak[ix],1],[0,xbreak[ix+1],-1],[1,zbreak[iz],1],[1,zbreak[iz+1],-1]])points=clip(points,axis,value,side);
+  if(points.length<3||area(points)<.1)continue;
+  const height=heightAt((xbreak[ix]+xbreak[ix+1])/2,(zbreak[iz]+zbreak[iz+1])/2);
+  for(const volume of yifuHallVolumes(points,height,yifuFront)){
+   const shape=planShape({points:volume.points});
+   const geometry=new T.ExtrudeGeometry(shape,{depth:volume.height,bevelEnabled:false}).rotateX(-Math.PI/2).translate(0,volume.y,0),proxy=new T.Mesh(geometry.clone());meshes.push(collisionMesh(proxy));cameraSolids.push(proxy);
+   const surfaces=splitBuildingRoof(geometry);
+   if(teaching){const p=surfaces.walls.getAttribute('position'),n=surfaces.walls.getAttribute('normal'),uv=surfaces.walls.getAttribute('uv');for(let i=0;i<p.count;i++)uv.setXY(i,(Math.abs(n.getX(i))>.7?p.getZ(i):p.getX(i))/2,p.getY(i)/2);}
+   b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
+  }
+  sections.push({height,area:area(points),points,bounds:[xbreak[ix],xbreak[ix+1],zbreak[iz],zbreak[iz+1]]});
+ }
+ let windows=0;
+ const parcel=f.id==='plan-100';
+ let parcelEntrance:ReturnType<typeof buildParcelEntrance>|undefined;
+ for(const {x:mx,z:mz,nx,nz,angle,len} of edges){
   if(yifu&&isYifuHallFront({x:mx,z:mz,nx,nz,angle,len}))continue;
   const put=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material)=>{const x=mx+u*Math.cos(angle)+v*nx,z=mz-u*Math.sin(angle)+v*nz;if(m===glass)b.add(new T.PlaneGeometry(w,h),m,x,y,z,new T.Euler(0,angle,0));else b.box(w,h,d,x,y,z,m,false,angle);};
   put(0,.35,.045,len,.7,.12,roof);

@@ -85,6 +85,8 @@ for(const [u,v]of[[0,12],[-8,8],[10,16],[24,25]]){
  const q=point(u,v,5),ray=new T.Raycaster(new T.Vector3(q.x,q.y,q.z),new T.Vector3(0,-1,0));
  const hits=ray.intersectObjects(court.cameraSolids,false);assert.ok(hits.length,'camera sees courtyard surface');cameraHits++;
 }
-const report={version:'0.89.0',passed:true,slabArea,expectedArea,pavingOverlap:overlap,buildingPolygonsChecked:neighbours.length/2,meshes,triangles:trianglesCount,fixedMeshes:court.fixedMeshes.length,stoneCapSolids:court.solids.length,closedFacadeSamples,cameraHits,walks,scope:'Actual plan-34 facade + courtyard meshes and caps with Rapier character motor. Five tree positions checked for route clearance; async GLB tree colliders and full-scene props not instantiated. Approximate map registration is not a surveyed boundary.'};
-await mkdir('docs/validation/v0.89',{recursive:true});await writeFile(`docs/validation/v0.89/courtyard-motor-${Date.now()}.json`,JSON.stringify(report,null,2),{flag:'wx'});
+const {version}=JSON.parse(await readFile('package.json','utf8'));
+const reportDir=`docs/validation/v${version.replace(/\.0$/,'')}`;
+const report={version,passed:true,slabArea,expectedArea,pavingOverlap:overlap,buildingPolygonsChecked:neighbours.length/2,meshes,triangles:trianglesCount,fixedMeshes:court.fixedMeshes.length,stoneCapSolids:court.solids.length,closedFacadeSamples,cameraHits,walks,scope:'Actual plan-34 facade + courtyard meshes and caps with Rapier character motor. Five tree positions checked for route clearance; async GLB tree colliders and full-scene props not instantiated. Approximate map registration is not a surveyed boundary.'};
+await mkdir(reportDir,{recursive:true});await writeFile(`${reportDir}/courtyard-motor-${Date.now()}.json`,JSON.stringify(report,null,2),{flag:'wx'});
 world.free();console.log(JSON.stringify({passed:true,meshes,triangles:trianglesCount,walks:walks.length,closedFacadeSamples,cameraHits,slabArea}));
