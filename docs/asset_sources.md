@@ -555,3 +555,10 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 - 实看用户店面照片（本地references/phase33/nju-memory-user.png）、校友会照片 https://alumni.nju.edu.cn/aa/0a/c21691a502282/page.htm （本地references/phase83/memory-alumni-2020.png）、南园官方地图。临街看左邮政、右南大记忆，浅色二层、灰门楣金字、玻璃门及橱窗。程序几何和原创文字绘制，未分发原图。
 - 保留plan76地图轮廓；楼高、窗距、邮政占比、铺装和隐蔽立面为近似。两端栅栏接楼，保留街面公共通行，未实现室内。
 - 类型、ESLint src、构建通过。布局脚本对比ed19121，旧版店前被围栏阻挡，新版12条步行/骑行包络进出路线及332处校界阻挡采样通过，含接缝；这不是完整玩家动力学测试。复用4173实际查看正面、邻邮政和围栏接缝，浏览器无console error。截图及独占创建报告留在docs/validation/v0.85，不覆盖before。
+
+
+## v0.86 南园教学楼
+
+- 官方校园 VR https://vr.nju.edu.cn/newUI/#/ 的 gl-1-13 正面、左右面，本地 references/official-vr/phase10/scene_gl-1-13-{f,r,l}.jpg 及 phase18/scene_gl-1-13-f-full.jpg；正面入口裁切已实际查看并与最终游戏 front-sign-reviewed.png 对照。gl13 后向视图朝喷泉，不是教学楼背面。
+- plan105 采用官方地图轮廓，北向两层浅色立面、三角山墙和小阁窗、两柱凹廊、两级低阶、蓝灰题字，二层上部暗窗、中部浅覆盖带及下部窄玻璃。右侧中国电信属于邻楼；未添加到教学楼。楼高、窗距、背面和隐藏翼面为近似；VR 旧用途不直接代表2026现状。
+- 类型、ESLint src、构建通过；独立 Rapier 建筑测试6条包络、43处阻挡/屋顶检查、6次角色控制器台阶进出通过。与游戏使用相同胶囊、autostep和snap设置，但未含全场周边道具；不宣称全场动力学或性能已验证。浏览器外观已实看，console无error。日志和截图留本地 docs/validation/v0.86，报告独占创建，保留旧失败及before。

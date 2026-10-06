@@ -82,7 +82,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-102': profile(dorm,'gl-1-24','southern dormitory block, pale plaster'),
   'plan-103': profile(dorm,'gl-1-07','apartment elevation opposite Taoyuan, pale facade and exposed AC'),
   'plan-104': profile(modern,'gl-1-21','cream hotel, deep horizontal ledges, small window openings',{levels:3,wall:0xc5bfa8,ac:true,windowHeight:1.45}),
-  'plan-105': profile(modern,'gl-1-13','low teaching block, pale facade, generous windows and pitched crown',{levels:3,roof:'hip',wall:0xb8bbaa}),
+  'plan-105': profile(modern,'gl-1-13','two visible storeys, north recessed column porch, blue-grey name and central straight gable; hidden wings approximate',{levels:2,roof:'hip',wall:0xd2d5c5}),
   'plan-106': profile(dorm,'gl-1-24','central residential row, pale plaster and rooftop enclosure'),
   'plan-107': profile(dorm,'gl-1-24','east-side residence named on campus plan; aerial context only, height retains the prior estimate',{levels:2}),
   'plan-110': profile(dorm,'gl-1-22','pale residential tower with narrow windows and AC units',{levels:7,wall:0xc9c7bc}),

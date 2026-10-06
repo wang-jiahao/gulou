@@ -27,6 +27,7 @@ import {buildTangEntrance} from './tang-entrance.ts';
 import {buildNanyuanDining} from './nanyuan-dining.ts';
 import {buildYaoliangHall} from './yaoliang-hall.ts';
 import {buildNjuMemory} from './nju-memory.ts';
+import {buildNanyuanTeaching} from './nanyuan-teaching.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
 export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, roads:MapPolygon[] = []) {
@@ -75,6 +76,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(f.id==='plan-50'){records.push(buildPearlMemorial(f,mats,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-128'){records.push(buildRabeHouse(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-77'){records.push(buildZhongshan(f,b,fixedMeshes,cameraSolids,doors));continue;}
+    if(f.id==='plan-105'){records.push(buildNanyuanTeaching(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-76'){records.push(buildNjuMemory(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-113'){records.push(buildNanyuanDining(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-114'){records.push(buildYaoliangHall(f,mats,b,fixedMeshes,cameraSolids,doors));continue;}

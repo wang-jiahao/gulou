@@ -2,14 +2,14 @@ import * as T from 'three';
 import {teachingBrick,teachingFacade} from './teaching-facade.ts';
 import { splitBuildingRoof } from './building-roof.ts';
 import {addBuildingLettering} from './building-lettering.ts';
-import {Builder,curvedRoof} from './geometry.ts';
+import {Builder} from './geometry.ts';
 import {insidePolygon,planShape,type MapFeature} from './campus-map.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
 import {addEntrance,type DoorRecord,entranceMaterials} from './building-entrances.ts';
 import {buildParcelEntrance} from './parcel-entrance.ts';
 import type {Materials} from './materials.ts';
 
-const ids=new Set(['plan-34','plan-71','teaching-priority','new-teaching','plan-73','plan-105','plan-113','plan-100','plan-117']);
+const ids=new Set(['plan-34','plan-71','teaching-priority','new-teaching','plan-73','plan-113','plan-100','plan-117']);
 const clip=(points:number[][],axis:number,value:number,side:number)=>{
  const out:number[][]=[];for(let i=0;i<points.length;i++){const a=points[i],c=points[(i+1)%points.length],ai=(a[axis]-value)*side>=0,ci=(c[axis]-value)*side>=0;if(ai)out.push(a);if(ai!==ci){const t=(value-a[axis])/(c[axis]-a[axis]);out.push([a[0]+t*(c[0]-a[0]),a[1]+t*(c[1]-a[1])]);}}return out;
 };
@@ -30,8 +30,8 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  const food=['plan-113','plan-100','plan-117'].includes(f.id),yifu=f.id==='plan-34',meng=f.id==='plan-71',teaching=f.id==='teaching-priority',south=f.id==='plan-73',newTeaching=f.id==='new-teaching';
  const color=teaching?0x969288:yifu?0xcec7af:food?0xc5baa3:0xd1d2c9;
  const wall=teaching?teachingBrick():mat(`specific-wall-${f.id}`,color);
- const xs=f.points.map(p=>p[0]),zs=f.points.map(p=>p[1]),minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs),cx=(minX+maxX)/2,cz=(minZ+maxZ)/2;
- const heightAt=(x:number,z:number)=>yifu?(z>24&&z<43&&x> -341?7.2:23.4):meng?(x>55&&x<85&&z>297&&z<325?59.4:12.8):teaching?(x> -90.655&&x< -77.271?20.2:x> -94&&x< -74?17.3:15.6):south?7.6:f.id==='new-teaching'?18.0:f.id==='plan-105'?10.2:food?(f.id==='plan-113'?12.3:7.2):13;
+ const xs=f.points.map(p=>p[0]),zs=f.points.map(p=>p[1]),minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs),cx=(minX+maxX)/2;
+ const heightAt=(x:number,z:number)=>yifu?(z>24&&z<43&&x> -341?7.2:23.4):meng?(x>55&&x<85&&z>297&&z<325?59.4:12.8):teaching?(x> -90.655&&x< -77.271?20.2:x> -94&&x< -74?17.3:15.6):south?7.6:f.id==='new-teaching'?18.0:food?(f.id==='plan-113'?12.3:7.2):13;
  const xbreak=[minX,...(yifu?[-341]:meng?[55,85]:teaching?[-94,-90.655,-77.271,-74]:[]).filter(x=>x>minX&&x<maxX),maxX].sort((a,c)=>a-c);
  const zbreak=[minZ,...(yifu?[24,43]:meng?[297,325]:[]).filter(z=>z>minZ&&z<maxZ),maxZ].sort((a,c)=>a-c);
  const sections:{height:number;area:number;bounds:number[];points:number[][]}[]=[];
@@ -93,7 +93,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  let lettering:ReturnType<typeof addBuildingLettering>|undefined;
  let facade:ReturnType<typeof teachingFacade>['facade']|undefined;
  const preferred=edges.filter(e=>e.len>7).sort((a,c)=>{
-  const score=(e:typeof a)=>parcel?Math.abs(e.x-maxX)+(e.nx>.9?0:100):yifu?Math.abs(e.x+320)+Math.abs(e.z-33)*2+(e.nx<.5?100:0):meng?Math.abs(e.z-maxZ)+(e.nz>.5?0:80):newTeaching||south?Math.abs(e.x-minX)+(e.nx<-.5?0:80):teaching?Math.abs(e.x+85)*2+Math.abs(e.z-136):f.id==='plan-105'?Math.abs(e.x+84)*2+Math.abs(e.z-maxZ):Math.abs(e.x-cx)+Math.abs(e.z-minZ)+(e.nz<-.5?0:80);
+  const score=(e:typeof a)=>parcel?Math.abs(e.x-maxX)+(e.nx>.9?0:100):yifu?Math.abs(e.x+320)+Math.abs(e.z-33)*2+(e.nx<.5?100:0):meng?Math.abs(e.z-maxZ)+(e.nz>.5?0:80):newTeaching||south?Math.abs(e.x-minX)+(e.nx<-.5?0:80):teaching?Math.abs(e.x+85)*2+Math.abs(e.z-136):Math.abs(e.x-cx)+Math.abs(e.z-minZ)+(e.nz<-.5?0:80);
   return score(a)-score(c);
  })[0];
  if(preferred){
@@ -133,7 +133,6 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
   }
  }
  if(meng){for(const x of[57,83]){b.box(3.2,4.3,4.1,x,61,310,pale);b.box(4.5,.55,5.5,x,63.4,310,roof);}b.box(28,.55,4,70,62.1,310,pale);}
- if(f.id==='plan-105'){const rb=new Builder();curvedRoof(rb,cx,cz,maxX-minX+1,19,10.3,2.4,roof,pale,false);const g=rb.finish('south garden teaching roof');for(const child of g.children)if(child instanceof T.Mesh){meshes.push(collisionMesh(child,true));cameraSolids.push(child);b.add(child.geometry.clone(),child.material as T.Material);}}
  if(food){for(const x of[minX+1,maxX-1])for(const z of[minZ+1,maxZ-1])b.box(.55,heightAt(x,z),.55,x,heightAt(x,z)/2,z,pale);}
  const height=Math.max(...sections.map(s=>s.height));
  return{id:f.id,name:f.tags.name,source:parcel?'User parcel-point correction + matching screenshot; east door design, dimensions and sign approximate':yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'user photograph; official VR gl-2-10; map footprint; dimensions and hidden faces approximate':south?'NJU official VR gl-2-53 west entry; 2024 map; dimensions and hidden faces approximate':f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,lettering,facade,parcelEntrance,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
