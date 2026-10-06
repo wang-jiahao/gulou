@@ -24,6 +24,12 @@ export function buildHospitalEntrance(b:Builder,meshes:CollisionMesh[],camera:T.
  box(0,.16,2.46,9.25,.32,.36,stone,'upper-step');
  box(0,.08,2.82,9.4,.16,.36,stone,'lower-step');
  for(const [v,y,w]of[[2.277,.48,9.1],[2.637,.32,9.25],[2.997,.16,9.4]])box(0,y-.018,v,w,.035,.025,cladding);
+ // note_191 shows a transverse drain beyond the steps. Its span and offset
+ // are approximate; shallow decorative bars reuse existing merged materials
+ // and do not add a raised obstacle to the entrance approach.
+ box(0,.026,4.75,10.2,.016,.46,dark);
+ for(const v of[4.52,4.98])box(0,.045,v,10.28,.025,.045,frame);
+ for(let i=-25;i<=25;i++)box(i*.204,.045,4.75,.044,.025,.46,frame);
  box(0,1.94,1.485,8.32,2.92,.055,glass,'closed-glass');
  // Window frames, central door leaves and the upper transom remain legible at
  // a walking distance; there are no speculative indoor access turnstiles.
