@@ -1,5 +1,6 @@
 import * as T from 'three';
-import {buildYifuHallFacade,isYifuHallFront,yifuHallVolumes} from './yifu-hall-facade.ts';
+import {buildYifuHallFacade,isYifuHallFront,yifuHallSideFront,yifuHallVolumes} from './yifu-hall-facade.ts';
+import {buildYifuHallSideEntrance} from './yifu-hall-side-entrance.ts';
 import {teachingBrick,teachingFacade} from './teaching-facade.ts';
 import { splitBuildingRoof } from './building-roof.ts';
 import {addBuildingLettering} from './building-lettering.ts';
@@ -42,12 +43,13 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
   edges.push({x:mx,z:mz,nx,nz,angle,len});
  }
  const yifuFront=yifu?edges.find(isYifuHallFront):undefined;
+ const yifuSide=yifuHallSideFront(edges,yifuFront);
  const sections:{height:number;area:number;bounds:number[];points:number[][]}[]=[];
  for(let ix=0;ix<xbreak.length-1;ix++)for(let iz=0;iz<zbreak.length-1;iz++){
   let points=f.points;for(const[axis,value,side]of[[0,xbreak[ix],1],[0,xbreak[ix+1],-1],[1,zbreak[iz],1],[1,zbreak[iz+1],-1]])points=clip(points,axis,value,side);
   if(points.length<3||area(points)<.1)continue;
   const height=heightAt((xbreak[ix]+xbreak[ix+1])/2,(zbreak[iz]+zbreak[iz+1])/2);
-  for(const volume of yifuHallVolumes(points,height,yifuFront)){
+  for(const volume of yifuHallVolumes(points,height,yifuFront,yifuSide)){
    const shape=planShape({points:volume.points});
    const geometry=new T.ExtrudeGeometry(shape,{depth:volume.height,bevelEnabled:false}).rotateX(-Math.PI/2).translate(0,volume.y,0),proxy=new T.Mesh(geometry.clone());meshes.push(collisionMesh(proxy));cameraSolids.push(proxy);
    const surfaces=splitBuildingRoof(geometry);
@@ -61,7 +63,11 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  let parcelEntrance:ReturnType<typeof buildParcelEntrance>|undefined;
  for(const {x:mx,z:mz,nx,nz,angle,len} of edges){
   if(yifu&&isYifuHallFront({x:mx,z:mz,nx,nz,angle,len}))continue;
-  const put=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material)=>{const x=mx+u*Math.cos(angle)+v*nx,z=mz-u*Math.sin(angle)+v*nz;if(m===glass)b.add(new T.PlaneGeometry(w,h),m,x,y,z,new T.Euler(0,angle,0));else b.box(w,h,d,x,y,z,m,false,angle);};
+  const sideU=yifuSide&&Math.abs(angle-yifuSide.angle)<.001?(yifuSide.x-mx)*Math.cos(angle)-(yifuSide.z-mz)*Math.sin(angle):undefined;
+  const put=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material)=>{
+   const spans=sideU!==undefined&&y+h/2>0&&y-h/2<4.8?[[u-w/2,Math.min(u+w/2,sideU-3.3)],[Math.max(u-w/2,sideU+3.3),u+w/2]]:[[u-w/2,u+w/2]];
+   for(const [lo,hi]of spans){if(hi<=lo)continue;const at=(lo+hi)/2,x=mx+at*Math.cos(angle)+v*nx,z=mz-at*Math.sin(angle)+v*nz;if(m===glass)b.add(new T.PlaneGeometry(hi-lo,h),m,x,y,z,new T.Euler(0,angle,0));else b.box(hi-lo,h,d,x,y,z,m,false,angle);}
+  };
   put(0,.35,.045,len,.7,.12,roof);
   const bayWidth=yifu?5.2:food?4.3:meng?2.9:teaching?3.25:3.4,bays=Math.max(1,Math.floor(len/bayWidth));
   for(let bay=0;bay<bays;bay++){
@@ -71,6 +77,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
     // Keep both window bays while leaving the user-confirmed east door clear.
     const w=parcel&&nx>.9&&level===0?2.2:Math.min(len/bays-.65,yifu?4.1:food?3.5:teaching?1.7:2.1);
     const y=floor*(level+.58),h=teaching?2.05:yifu?1.65:food?1.65:2.05;
+    if(sideU!==undefined&&Math.abs(u-sideU)<3.3+(w+.4)/2&&y+h/2+.3>0&&y-h/2-.3<4.8)continue;
     put(u,y,.05,w+.18,h+.15,.12,dark);put(u,y,.14,w,h,.01,glass);
     for(const side of[-1,1]){put(u+side*w/2,y,.19,.075,h,.2,pale);put(u,y+side*h/2,.19,w+.18,.075,.2,pale);}
     const panes=yifu||food?4:2;for(let k=1;k<panes;k++)put(u-w/2+w*k/panes,y,.2,.045,h,.21,dark);
@@ -99,6 +106,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  // Pick the documented main approach, rather than reuse a randomly selected
  // generic wall. The footprints still determine the exact exterior boundary.
  let yifuHallFacade:ReturnType<typeof buildYifuHallFacade>|undefined;
+ const yifuSideEntrance=yifuSide?buildYifuHallSideEntrance(b,meshes,cameraSolids,doors,yifuSide,{pale,dark,glass,red:mat('yifu-side-door-red-stripe',0xa83132)}):undefined;
  let lettering:ReturnType<typeof addBuildingLettering>|undefined;
  let facade:ReturnType<typeof teachingFacade>['facade']|undefined;
  const preferred=edges.filter(e=>e.len>7).sort((a,c)=>{
@@ -144,5 +152,5 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  if(meng){for(const x of[57,83]){b.box(3.2,4.3,4.1,x,61,310,pale);b.box(4.5,.55,5.5,x,63.4,310,roof);}b.box(28,.55,4,70,62.1,310,pale);}
  if(food){for(const x of[minX+1,maxX-1])for(const z of[minZ+1,maxZ-1])b.box(.55,heightAt(x,z),.55,x,heightAt(x,z)/2,z,pale);}
  const height=Math.max(...sections.map(s=>s.height));
- return{id:f.id,name:f.tags.name,source:parcel?'User parcel-point correction + matching screenshot; east door design, dimensions and sign approximate':yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'user photograph; official VR gl-2-10; map footprint; dimensions and hidden faces approximate':south?'NJU official VR gl-2-53 west entry; 2024 map; dimensions and hidden faces approximate':f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,lettering,facade,yifuHallFacade,parcelEntrance,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
+ return{id:f.id,name:f.tags.name,source:parcel?'User parcel-point correction + matching screenshot; east door design, dimensions and sign approximate':yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'user photograph; official VR gl-2-10; map footprint; dimensions and hidden faces approximate':south?'NJU official VR gl-2-53 west entry; 2024 map; dimensions and hidden faces approximate':f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,lettering,facade,yifuHallFacade,yifuSideEntrance,parcelEntrance,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
 }

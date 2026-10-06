@@ -19,7 +19,7 @@ const {version}=JSON.parse(await readFile('package.json','utf8'));
 const reportDir=`docs/validation/v${version.replace(/\.0$/,'')}`;
 const data=await fixture(await readFile('src/world/specific-buildings.ts','utf8'));
 assert.deepEqual(data.record.sections,before.record.sections,'original footprint/height sections retained');
-assert.equal(data.doors.length,1);
+assert.deepEqual(data.doors.map(d=>d.name).sort(),['逸夫馆','逸夫馆侧门']);
 function render(group){const r={meshes:0,triangles:0};group.traverse(m=>{if(m.isMesh){r.meshes++;r.triangles+=(m.geometry.index?.count??m.geometry.attributes.position.count)/3;assert.ok(m.geometry.attributes.position.array.every(Number.isFinite));}});return r;}
 await RAPIER.init();
 const world=new RAPIER.World({x:0,y:-9.81,z:0});

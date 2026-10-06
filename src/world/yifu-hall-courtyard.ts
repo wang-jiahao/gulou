@@ -22,7 +22,7 @@ export function yifuHallCourtyardLayout() {
     {id:'north',top:.16,polygon:polygon([[9.5,6.8],[13.2,8.5],[14,21],[9.5,24],[7,22],[7,8]])},
   ];
   // Leave v18–25 on the south wing free for the observed side stair,
-  // whose exact footprint and elevation still need corroboration.
+  // registered approximately in yifu-hall-side-entrance.ts.
   const planting=[[-8.1,6.3,11,.5],[-7.6,11.8,12,.5],[10,10,12,.16],[11.4,18,14,.16],[12,21.6,9,.16]];
   const trees:TreeSpot[]=planting.map(([u,v,height,baseY])=>{const[x,z]=point(u,v);return{x,z,height,baseY,whitewash:true};});
   return{point,frame:{cx,cz,nx,nz},outline,northPath,outlines:[outline,northPath],beds,trees};
@@ -76,7 +76,7 @@ export function createYifuHallCourtyardGround(layout:ReturnType<typeof yifuHallC
   }
   const surfaces=b.finish('yifu hall paving stone beds and shrubs');
   surfaces.children.forEach(o=>{o.castShadow=o.name!=='yifu hall grey stone paving'&&o.name!=='yifu hall north red garden path';});group.add(surfaces);
-  group.userData={source:'official VR gl-4-13 f/l/r and user campus plan',approximate:true,bedHeights:layout.beds.map(b=>b.top),surfaceMeshes:surfaces.children.length,sideStair:'observed; registration pending; south approach kept clear'};
+  group.userData={source:'official VR gl-4-13 f/l/r and user campus plan',approximate:true,bedHeights:layout.beds.map(b=>b.top),surfaceMeshes:surfaces.children.length,sideStair:'official VR south-wing stair; approximate registration and dimensions'};
   return{group,solids:b.solids,fixedMeshes,cameraSolids};
 }
 

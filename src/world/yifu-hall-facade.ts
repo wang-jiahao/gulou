@@ -1,10 +1,12 @@
 import * as T from 'three';
 import {Builder} from './geometry.ts';
+import {yifuHallSideInset} from './yifu-hall-side-entrance.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
 import type {DoorRecord} from './building-entrances.ts';
 
 type Frontage={x:number;z:number;nx:number;nz:number;angle:number;len:number};
 const recess={depth:1.65,halfWidth:9.3,floor:.6,ceiling:3.15};
+const sideRecess={depth:.9+yifuHallSideInset,halfWidth:3.1,floor:0,ceiling:4.65};
 /** Official VR gl-4-13 front: three upper windows over a recessed colonnade.
  * This is plan-34 (逸夫馆), not plan-10 (逸夫管理科学楼). Sizes are approximate. */
 export function isYifuHallFront(e:Frontage){
@@ -13,8 +15,19 @@ export function isYifuHallFront(e:Frontage){
 /** Cut only the ground-floor porch out of the actual building shell. Work in
  * frontage coordinates so its slightly oblique wall meets both wings cleanly.
  * The map footprint and upper volume remain unchanged. */
-export function yifuHallVolumes(points:number[][],height:number,e?:Frontage){
- const whole=[{points,y:0,height}];if(!e)return whole;
+export function yifuHallSideFront(edges:Frontage[],front?:Frontage){
+ if(!front)return;
+ const edge=edges.find(e=>e.x> -308&&e.x< -300&&e.z>42&&e.z<45&&e.nz<-.9&&e.len>30&&e.len<40);
+ if(!edge)return;
+ // Left wing when facing the main door, opening north into its courtyard.
+ // VR and map establish the relationship; the 22m station is approximate.
+ const t=(22-(edge.x-front.x)*front.nx-(edge.z-front.z)*front.nz)/(Math.cos(edge.angle)*front.nx-Math.sin(edge.angle)*front.nz);
+ return{...edge,x:edge.x+t*Math.cos(edge.angle),z:edge.z-t*Math.sin(edge.angle),len:sideRecess.halfWidth*2};
+}
+type Volume={points:number[][];y:number;height:number};
+function cutRecess(volume:Volume,e:Frontage,r:typeof recess,maxV:number):Volume[]{
+ const {points,y,height}=volume,whole=[volume],floor=Math.max(y,r.floor),ceiling=Math.min(y+height,r.ceiling);
+ if(ceiling<=floor)return whole;
  const local=points.map(([x,z])=>[(x-e.x)*Math.cos(e.angle)-(z-e.z)*Math.sin(e.angle),(x-e.x)*e.nx+(z-e.z)*e.nz]);
  const clip=(ring:number[][],axis:number,value:number,side:number)=>{
   const out:number[][]=[];
@@ -26,20 +39,29 @@ export function yifuHallVolumes(points:number[][],height:number,e?:Frontage){
   return out;
  };
  const area=(p:number[][])=>Math.abs(p.reduce((s,a,i)=>{const b=p[(i+1)%p.length];return s+a[0]*b[1]-b[0]*a[1];},0))/2;
- const front=clip(local,1,-recess.depth,1);
- if(area(clip(clip(front,0,-recess.halfWidth,1),0,recess.halfWidth,-1))<1e-6)return whole;
+ const strip=(ring:number[][])=>clip(clip(ring,1,-r.depth,1),1,maxV,-1);
+ const opening=(ring:number[][])=>clip(clip(strip(ring),0,-r.halfWidth,1),0,r.halfWidth,-1);
+ if(area(opening(local))<1e-6)return whole;
  // A half-plane can split a concave wing into separate islands. Clipping
  // the whole ring would join them with a phantom wall across the courtyard.
  // Triangulate first so every retained fragment is convex and stays inside
  // the original footprint; the builder batches their visible surfaces.
  const triangles=T.ShapeUtils.triangulateShape(local.map(([u,v])=>new T.Vector2(u,v)),[]);
  const retained=triangles.flatMap(ids=>{
-  const ring=ids.map(i=>local[i]),front=clip(ring,1,-recess.depth,1);
-  if(area(clip(clip(front,0,-recess.halfWidth,1),0,recess.halfWidth,-1))<1e-6)return [ring];
-  return [clip(ring,1,-recess.depth,-1),clip(front,0,-recess.halfWidth,-1),clip(front,0,recess.halfWidth,1)];
+  const ring=ids.map(i=>local[i]),front=strip(ring);
+  if(area(opening(ring))<1e-6)return [ring];
+  return [clip(ring,1,-r.depth,-1),clip(ring,1,maxV,1),clip(front,0,-r.halfWidth,-1),clip(front,0,r.halfWidth,1)];
  });
- return [{points,y:0,height:recess.floor},{points,y:recess.ceiling,height:height-recess.ceiling},
-  ...retained.filter(p=>area(p)>1e-6).map(p=>({points:p.map(([u,v])=>[e.x+u*Math.cos(e.angle)+v*e.nx,e.z-u*Math.sin(e.angle)+v*e.nz]),y:recess.floor,height:recess.ceiling-recess.floor}))];
+ return [{points,y,height:floor-y},{points,y:ceiling,height:y+height-ceiling},
+  ...retained.filter(p=>area(p)>1e-6).map(p=>({points:p.map(([u,v])=>[e.x+u*Math.cos(e.angle)+v*e.nx,e.z-u*Math.sin(e.angle)+v*e.nz]),y:floor,height:ceiling-floor}))].filter(v=>v.height>1e-6);
+}
+export function yifuHallVolumes(points:number[][],height:number,e?:Frontage,side?:Frontage){
+ let volumes:Volume[]=[{points,y:0,height}];
+ if(e)volumes=volumes.flatMap(v=>cutRecess(v,e,recess,.05));
+ // A bounded strip is essential: an unbounded forward cut also opens the
+ // opposite courtyard wing when it intersects the same footprint section.
+ if(side)volumes=volumes.flatMap(v=>cutRecess(v,side,sideRecess,.05));
+ return volumes;
 }
 export function buildYifuHallFacade(b:Builder,meshes:CollisionMesh[],camera:T.Object3D[],doors:DoorRecord[],e:Frontage,m:{pale:T.Material;dark:T.Material;glass:T.Material}){
  const point=(u:number,v:number)=>[e.x+u*Math.cos(e.angle)+v*e.nx,e.z-u*Math.sin(e.angle)+v*e.nz];
