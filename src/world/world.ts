@@ -39,6 +39,7 @@ import {createZhongdaAvenue, zhongdaAvenueLayout, trimAvenueCurb, avenueTreePosi
 import {createLibraryWestGardens, libraryWestGardenLayout} from './library-west-gardens.ts';
 import {createRabeCourtyard, rabeCourtyardLayout} from './rabe-courtyard.ts';
 import {createTianCourtyard, tianCourtyardLayout} from './tian-courtyard.ts';
+import {createYifuHallCourtyardGround,createYifuHallCourtyardTrees,yifuHallCourtyardLayout} from './yifu-hall-courtyard.ts';
 import {createTangCourtyard,tangCourtyardLayout} from './tang-courtyard.ts';
 import {createTangCourtyardAccess} from './tang-courtyard-access.ts';
 import {createTangCourtyardGround} from './tang-courtyard-ground.ts';
@@ -112,6 +113,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const sportsPaving = sportsHallPavingLayout(map), sportsPavingCutout = createPlanarCutout(sportsPaving.outline);
   const avenue = zhongdaAvenueLayout(), libraryGardens=libraryWestGardenLayout(), rabeCourtyard=rabeCourtyardLayout(), tianCourtyard=tianCourtyardLayout(), tangCourtyard=tangCourtyardLayout(map);
   const diningStreet=diningStreetLayout();
+  const yifuCourtyard=yifuHallCourtyardLayout();
   const yaoliangForecourt=yaoliangForecourtLayout();
   const lowerEntries=diningLowerEntryLayout(map.features.find(f=>f.id==='plan-113')!);
   const lowerCuts=lowerEntries.outlines.map(createPlanarCutout);
@@ -119,7 +121,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const foundationShape=planShape({points:[[-1030,-790],[770,-790],[770,1110],[-1030,1110]],holes:lowerEntries.outlines.map(o=>o.points)});
   const groundCameraProxy=new T.Mesh(new T.ShapeGeometry(foundationShape).rotateX(-Math.PI/2).translate(0,.005,0),new T.MeshBasicMaterial({side:T.DoubleSide}));
   groundCameraProxy.updateMatrixWorld();cameraSolids.push(groundCameraProxy);
-  const surfaceCutouts = [sportsPavingCutout,...avenue.outlines.map(createPlanarCutout),...libraryGardens.outlines.map(createPlanarCutout),createPlanarCutout(rabeCourtyard.outline),...tianCourtyard.outlines.map(createPlanarCutout),createPlanarCutout(tangCourtyard.outline),createPlanarCutout(diningStreet.outline),createPlanarCutout(yaoliangForecourt.outline)];
+  const surfaceCutouts = [sportsPavingCutout,...avenue.outlines.map(createPlanarCutout),...libraryGardens.outlines.map(createPlanarCutout),createPlanarCutout(rabeCourtyard.outline),...tianCourtyard.outlines.map(createPlanarCutout),createPlanarCutout(tangCourtyard.outline),createPlanarCutout(diningStreet.outline),createPlanarCutout(yaoliangForecourt.outline),...yifuCourtyard.outlines.map(createPlanarCutout)];
   const raisedLawns = new Set(map.lawns.filter(lawn => lawn.points.every(([x, z]) => x > -40 && x < 40 && z > 14 && z < 84)));
   const lawnHeight = .20;
   const courtyardHeight = (x: number, z: number) => terrainHeight(x,z) + ([...raisedLawns].some(lawn => insidePolygon(x, z, lawn)) ? lawnHeight : .022);
@@ -195,6 +197,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   b.box(12, .06, 5, 0, .025 + terraceHeight, 16.4, mats.path);
   b.box(8.5, .06, 6.5, -31, .025, 99, mats.path);
   const ground = b.finish('registered campus roads lawns and playing fields'); root.add(ground); solids.push(...b.solids);
+  const yifuGround=createYifuHallCourtyardGround(yifuCourtyard,mats);root.add(yifuGround.group);solids.push(...yifuGround.solids);fixedMeshes.push(...yifuGround.fixedMeshes);cameraSolids.push(...yifuGround.cameraSolids);
   root.add(createSportsHallPaving(sportsPaving,mats));
   root.add(createZhongdaAvenue(avenue,mats,asphalt));
   root.add(createPublicStreets(mats));
@@ -325,6 +328,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     // Filter after sampling so correcting this forecourt never reshuffles
     // the seeded avenue/woodland planting elsewhere on campus.
     for (let i=farTrees.length-1;i>=0;i--) if (insidePolygon(farTrees[i].x,farTrees[i].z,sportsPaving.surface)) farTrees.splice(i,1);
+    for (let i=farTrees.length-1;i>=0;i--) if (yifuCourtyard.outlines.some(p=>insidePolygon(farTrees[i].x,farTrees[i].z,p))) farTrees.splice(i,1);
     farTrees.forEach(tree=>{tree.baseY=courtyardHeight(tree.x,tree.z);});
     root.add(createSouthTreeDetails(farTrees, map, mats));
     const far = await createModelTrees(farTrees.filter(t => !map.features.some(f => f.tags.leisure === 'track' && insideRing(t.x, t.z, f.points))), 'far', mats.leaves); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);
@@ -334,6 +338,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const tangAccess=createTangCourtyardAccess(mats);root.add(tangAccess.group);moreSolids.push(...tangAccess.solids);cameraSolids.push(...tangAccess.cameraSolids);
     const tangGround=createTangCourtyardGround();root.add(tangGround.group);moreSolids.push(...tangGround.solids);cameraSolids.push(...tangGround.cameraSolids);
     const tianPlanting=await createTianCourtyard(tianCourtyard,mats);root.add(tianPlanting.group);moreSolids.push(...tianPlanting.solids);vegetationUpdates.push(tianPlanting.updateVisibility);
+    const yifuPlanting=await createYifuHallCourtyardTrees(yifuCourtyard,mats);root.add(yifuPlanting.group);moreSolids.push(...yifuPlanting.solids);vegetationUpdates.push(yifuPlanting.updateVisibility);
     const jinyinPlanting=await createJinyinStreetTrees(mats);root.add(jinyinPlanting.group);moreSolids.push(...jinyinPlanting.solids);vegetationUpdates.push(jinyinPlanting.updateVisibility);
     const props = new Builder();
     for (const p of benchLocations) {

@@ -572,3 +572,9 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 - 官方校园VR https://vr.nju.edu.cn/newUI/#/ ，本地 references/official-vr/phase10/scene_gl-4-13-f.jpg 正面已实际查看。plan34为逸夫馆，与plan10逸夫管理科学楼不同。三组二层横窗、底层石柱、贴墙入口与金色“逸夫館”替换通用门斗；保留原高低楼体分段。尺寸与字形近似，侧翼楼梯未证实不添加，门前院路继续完善。
 - 类型、ESLint src、构建通过；独立Rapier fixture保留楼体sections，19条穿楼阻挡、三条台阶登台/门前停止/退回地面共6次进退通过，使用游戏相同角色胶囊、autostep与snap。局部批次12→6、三角形60,338→59,858；不宣称全场性能或周边动力学验证。
 - 复用4173，游戏正面与官方参考、before已实际查看，console无error；截图和独占时间戳报告存docs/validation/v0.88，不提交原媒体，不覆盖旧基线。
+
+
+## v0.89 逸夫馆庭院
+- 实际查看官方校园VR https://vr.nju.edu.cn/newUI/#/ gl-4-13 f/l/r全景面及用户校园地图plan34：宽灰板铺地、南侧高石花床、北侧低石缘圆灌木、北侧红色小径和白刷树干。尺寸、树种与树位近似；侧翼高阶已见但准确落位待核，不宣称整个院落已经完全还原。
+- 地面5个渲染网格/2360三角形，单张256px灰板贴图；铺装与花床、相邻建筑及红小径交叠检查通过。独立Rapier角色控制器13路线、19处封闭楼体阻挡、4条相机射线通过；5棵树仅检查路线净距，未加载异步GLB树碰撞及全场道具。v88入口19阻挡/6次进退回归通过，types/ESLint src/build通过。
+- IAB庭院全景及北侧红小径已与官方图实际对照，console无error；截图与报告在本地docs/validation/v0.89。复查发现v88底层门廊仍偏平，单独列入下一版，不将其当作已解决；before保持原样，未提交原参考媒体。
