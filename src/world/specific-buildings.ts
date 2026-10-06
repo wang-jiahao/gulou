@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {buildYifuHallFacade,isYifuHallFront} from './yifu-hall-facade.ts';
 import {teachingBrick,teachingFacade} from './teaching-facade.ts';
 import { splitBuildingRoof } from './building-roof.ts';
 import {addBuildingLettering} from './building-lettering.ts';
@@ -53,6 +54,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
   const a=f.points[edge],c=f.points[(edge+1)%f.points.length],dx=c[0]-a[0],dz=c[1]-a[1],len=Math.hypot(dx,dz);if(len<.3)continue;
   let nx=-dz/len,nz=dx/len;const mx=(a[0]+c[0])/2,mz=(a[1]+c[1])/2;if(insidePolygon(mx+nx*.1,mz+nz*.1,f)){nx=-nx;nz=-nz;}const angle=Math.atan2(nx,nz);
   edges.push({x:mx,z:mz,nx,nz,angle,len});
+  if(yifu&&isYifuHallFront({x:mx,z:mz,nx,nz,angle,len}))continue;
   const put=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material)=>{const x=mx+u*Math.cos(angle)+v*nx,z=mz-u*Math.sin(angle)+v*nz;if(m===glass)b.add(new T.PlaneGeometry(w,h),m,x,y,z,new T.Euler(0,angle,0));else b.box(w,h,d,x,y,z,m,false,angle);};
   put(0,.35,.045,len,.7,.12,roof);
   const bayWidth=yifu?5.2:food?4.3:meng?2.9:teaching?3.25:3.4,bays=Math.max(1,Math.floor(len/bayWidth));
@@ -90,6 +92,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  }
  // Pick the documented main approach, rather than reuse a randomly selected
  // generic wall. The footprints still determine the exact exterior boundary.
+ let yifuHallFacade:ReturnType<typeof buildYifuHallFacade>|undefined;
  let lettering:ReturnType<typeof addBuildingLettering>|undefined;
  let facade:ReturnType<typeof teachingFacade>['facade']|undefined;
  const preferred=edges.filter(e=>e.len>7).sort((a,c)=>{
@@ -99,10 +102,10 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  if(preferred){
   const e=preferred,width=Math.min(e.len-1,yifu?7.6:food||newTeaching?7.2:teaching?8.4:4.5),entryY=teaching?1.20:yifu?.60:newTeaching?.45:0;
   if(parcel)parcelEntrance=buildParcelEntrance(b,meshes,cameraSolids,doors,f.tags.name,e.x,e.z,e.angle);
-  else if(!teaching)addEntrance(b,meshes,doors,doorMats,f.tags.name,e.x,e.z,e.angle,width,entryY);
+  else if(!teaching&&!yifu)addEntrance(b,meshes,doors,doorMats,f.tags.name,e.x,e.z,e.angle,width,entryY);
   const put=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material)=>b.box(w,h,d,e.x+u*Math.cos(e.angle)+v*e.nx,y,e.z-u*Math.sin(e.angle)+v*e.nz,m,false,e.angle);
-  if(entryY&&!teaching)for(let step=0;step<Math.round(entryY/.15);step++){const h=(step+1)*.15,v=1.72+(Math.round(entryY/.15)-1-step)*.31;put(0,h/2,v,width+1,h,.34,pale);const proxy=new T.Mesh(new T.BoxGeometry(width+1,h,.34));proxy.position.set(e.x+v*e.nx,h/2,e.z+v*e.nz);proxy.rotation.y=e.angle;meshes.push(collisionMesh(proxy));}
-  if(yifu){put(0,5.2,.16,Math.min(e.len,18),2.05,.25,glass);for(const u of[-6,-2,2,6])put(u,3.5,.55,.26,7,.50,pale);}
+  if(entryY&&!teaching&&!yifu)for(let step=0;step<Math.round(entryY/.15);step++){const h=(step+1)*.15,v=1.72+(Math.round(entryY/.15)-1-step)*.31;put(0,h/2,v,width+1,h,.34,pale);const proxy=new T.Mesh(new T.BoxGeometry(width+1,h,.34));proxy.position.set(e.x+v*e.nx,h/2,e.z+v*e.nz);proxy.rotation.y=e.angle;meshes.push(collisionMesh(proxy));}
+  if(yifu){yifuHallFacade=buildYifuHallFacade(b,meshes,cameraSolids,doors,e,{pale,dark,glass});windows+=6;}
   if(newTeaching){
    // Official scene_gl-3-16: broad blank side bays, three central window
    // strips, a projecting canopy, and three entrance risers at the lower grade.
@@ -126,7 +129,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
    lettering=addBuildingLettering(b,'southTeaching',e.x+e.nx*1.62,3.18,e.z+e.nz*1.62,5.3,e.angle);
   }
   else if(newTeaching){lettering=addBuildingLettering(b,'newTeaching',e.x+e.nx*.48,4.65,e.z+e.nz*.48,5.6,e.angle);}
-  else if(!teaching&&!parcel){
+  else if(!teaching&&!parcel&&!yifu){
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#c9c9bd';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#957534';ctx.font=`64px "Kaiti SC","STKaiti",serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(yifu?'逸 夫 館':teaching?'教 学 楼':f.tags.name,512,66,980);
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const signMat=new T.MeshStandardMaterial({map:texture,roughness:.8});
   b.add(new T.PlaneGeometry(Math.min(width+1,9),.70),signMat,e.x+e.nx*.8,teaching?4.55:yifu?3.8:3.7,e.z+e.nz*.8,new T.Euler(0,e.angle,0));
@@ -135,5 +138,5 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  if(meng){for(const x of[57,83]){b.box(3.2,4.3,4.1,x,61,310,pale);b.box(4.5,.55,5.5,x,63.4,310,roof);}b.box(28,.55,4,70,62.1,310,pale);}
  if(food){for(const x of[minX+1,maxX-1])for(const z of[minZ+1,maxZ-1])b.box(.55,heightAt(x,z),.55,x,heightAt(x,z)/2,z,pale);}
  const height=Math.max(...sections.map(s=>s.height));
- return{id:f.id,name:f.tags.name,source:parcel?'User parcel-point correction + matching screenshot; east door design, dimensions and sign approximate':yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'user photograph; official VR gl-2-10; map footprint; dimensions and hidden faces approximate':south?'NJU official VR gl-2-53 west entry; 2024 map; dimensions and hidden faces approximate':f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,lettering,facade,parcelEntrance,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
+ return{id:f.id,name:f.tags.name,source:parcel?'User parcel-point correction + matching screenshot; east door design, dimensions and sign approximate':yifu?'VR gl-4-13/3-01':meng?'VR gl-2-23/39':teaching?'user photograph; official VR gl-2-10; map footprint; dimensions and hidden faces approximate':south?'NJU official VR gl-2-53 west entry; 2024 map; dimensions and hidden faces approximate':f.id==='new-teaching'?'NJU 2023-02-08 location diagram + official classroom guide (2/5 floors); unseen facades approximate':food?'NJU dining guide + VR gl-1-22/24; hidden faces approximate':'official VR',height,windows,lettering,facade,yifuHallFacade,parcelEntrance,roof:'individual',dormitory:false,frontage:preferred?[preferred.x,preferred.z,preferred.nx,preferred.nz]:undefined,sections,door:true,footprintArea:area(f.points)};
 }

@@ -566,3 +566,9 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 ## v0.87 医院门前排水篦子
 - 实际重新查看本机references/phase53/hospital-note191.jpg（官方VR https://vr.nju.edu.cn/newUI/static/krpano/image/notes/191.jpg），照片显示门前横向金属篦子。沿用已有11组材质合批，入口增加648三角形；9份碰撞和原门位置逐值比较不变。未建临时排队杆为永久扶手，未凭白墙局部猜测院界。
 - 宽度、与台阶距离和程序入口方位仍近似。types/ESLint/build通过，IAB校医院正面实际查看且console无error。before/after、独立CPU比较报告存docs/validation/v0.87；仅入口fixture比较，不是全场性能或动力学验证。最初npm不可用的两份失败日志保留，改用捆绑node运行现有工具成功。
+
+
+## v0.88 逸夫馆入口
+- 官方校园VR https://vr.nju.edu.cn/newUI/#/ ，本地 references/official-vr/phase10/scene_gl-4-13-f.jpg 正面已实际查看。plan34为逸夫馆，与plan10逸夫管理科学楼不同。三组二层横窗、底层石柱、贴墙入口与金色“逸夫館”替换通用门斗；保留原高低楼体分段。尺寸与字形近似，侧翼楼梯未证实不添加，门前院路继续完善。
+- 类型、ESLint src、构建通过；独立Rapier fixture保留楼体sections，19条穿楼阻挡、三条台阶登台/门前停止/退回地面共6次进退通过，使用游戏相同角色胶囊、autostep与snap。局部批次12→6、三角形60,338→59,858；不宣称全场性能或周边动力学验证。
+- 复用4173，游戏正面与官方参考、before已实际查看，console无error；截图和独占时间戳报告存docs/validation/v0.88，不提交原媒体，不覆盖旧基线。
