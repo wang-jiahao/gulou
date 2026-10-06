@@ -5,7 +5,11 @@ import { publicStreets, streetLocation } from '../src/world/street-layout.ts';
 
 const map = JSON.parse(await readFile('public/data/campus-layout.json', 'utf8'));
 const runs = southBoundaryRuns.map(r => r.points);
-const polygon = runs.flat(); // The three joins are the only gate apertures.
+const polygon = runs.flat(); // Three gates plus the street-facing shop shell.
+const shop=map.features.find(f=>f.id==='plan-76');
+assert.deepEqual(southBoundaryRuns.map(r=>r.name),['south-west','south-memory-west','south-east','south-north-east']);
+assert.deepEqual(runs[0].at(-1),shop.points[0],'eastern railing meets shop corner');
+assert.deepEqual(runs[1][0],shop.points[1],'western railing meets shop corner');
 const edges = ps => ps.map((a, i) => [a, ps[(i + 1) % ps.length]]);
 const cross = (a, b, c) => (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
 const intersects = (a, b, c, d) => cross(a,b,c)*cross(a,b,d)<0 && cross(c,d,a)*cross(c,d,b)<0;
@@ -18,9 +22,15 @@ const segments=runs.flatMap(ps=>ps.slice(1).map((b,i)=>[ps[i],b]));
 let minimumBuildingClearance=Infinity,buildingCount=0;
 for(const f of map.features.filter(f=>f.tags.building && f.tags.garden==='south')) {
  buildingCount++;
- for(const p of f.points)assert.ok(inside(p),`${f.id} enclosed by campus perimeter`);
+ for(const [i,p] of f.points.entries()) {
+  if(f.id===shop.id&&i<2)continue; // Only these two facade endpoints lie on the perimeter.
+  assert.ok(inside(p),`${f.id} enclosed by campus perimeter`);
+ }
  for(const [a,b] of segments)for(const [c,d] of edges(f.points)) {
   assert.ok(!intersects(a,b,c,d),`${f.id}: fence crosses building`);
+  // Only the two segments touching plan-76 intentionally meet a building.
+  // All other segment/building pairs retain the original clearance check.
+  if(f.id===shop.id&&((a===runs[0].at(-2)&&b===runs[0].at(-1))||(a===runs[1][0]&&b===runs[1][1])))continue;
   const gap=Math.min(distance(c,a,b),distance(d,a,b),distance(a,c,d),distance(b,c,d));
   minimumBuildingClearance=Math.min(gap,minimumBuildingClearance);
   assert.ok(gap>.35,`${f.id}: fence thickness reaches building (${gap})`);
@@ -35,15 +45,17 @@ for(const road of [...publicStreets,xiaofen]) {
  let minimum=Infinity;
  for(const [a,b] of segments)for(let t=0;t<=1;t+=.025) {
   const x=a[0]+t*(b[0]-a[0]),z=a[1]+t*(b[1]-a[1]);
-  const gap=Math.abs(streetLocation(road,x,z).lateral)-road.width/2-road.sidewalk;
+  const gap=road===xiaofen
+   ? Math.min(...road.profile.slice(1).map((p,i)=>distance([x,z],road.profile[i],p)))-road.width/2
+   : Math.abs(streetLocation(road,x,z).lateral)-road.width/2-road.sidewalk;
   minimum=Math.min(minimum,gap);
  }
  assert.ok(minimum>.35,`${road.name}: perimeter must leave pavement clear (${minimum})`);
  roads.push({name:road.name,minimumClearance:minimum});
 }
-const gateWidths=runs.map((r,i)=>Math.hypot(...r.at(-1).map((x,j)=>x-runs[(i+1)%runs.length][0][j])));
+const gateWidths=runs.slice(1).map((r,i)=>Math.hypot(...r.at(-1).map((x,j)=>x-runs[(i+2)%runs.length][0][j])));
 assert.deepEqual(gateWidths.map(x=>Math.round(x*100)/100),[27.4,12,12]);
 const report={status:'passed',buildingCount,segments:segments.length,minimumBuildingClearance,roads,gateWidths};
-await mkdir('docs/validation/phase42',{recursive:true});
-await writeFile('docs/validation/phase42/layout.json',JSON.stringify(report,null,2));
+await mkdir('docs/validation/south-boundary',{recursive:true});
+await writeFile(`docs/validation/south-boundary/layout-${Date.now()}.json`,JSON.stringify(report,null,2),{flag:'wx'});
 console.log(report);
