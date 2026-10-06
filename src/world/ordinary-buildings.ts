@@ -16,6 +16,7 @@ import {buildHospitalEntrance} from './hospital-entrance.ts';
 import {buildSportsHall} from './sports-halls.ts';
 import {buildLibraryComplex} from './library-complex.ts';
 import {buildSpecific} from './specific-buildings.ts';
+import {createYifuHallIvy} from './yifu-hall-ivy.ts';
 import {entranceMaterials,addEntrance,type DoorRecord} from './building-entrances.ts';
 import { getBuildingProfile } from './building-profiles.ts';
 import {createSufuteFacade} from './sufute-facade.ts';
@@ -63,6 +64,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group}>();
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
   const sufute=createSufuteFacade(),tian=createTianFacade(),tang=createTangFacade(),chemistry=createChemistryFacade();
+  const courtyardClimbers:T.Group[]=[];
   let yifu:ReturnType<typeof buildYifuEntrance>|undefined;
   let yifuUpper:ReturnType<typeof buildYifuTower>|undefined;
   let tangEntrance:ReturnType<typeof buildTangEntrance>|undefined;
@@ -81,7 +83,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(f.id==='plan-113'){records.push(buildNanyuanDining(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-114'){records.push(buildYaoliangHall(f,mats,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-6'||f.id==='plan-13'){records.push(buildSportsHall(f,b,fixedMeshes,cameraSolids,doors));continue;}
-    const specific=buildSpecific(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials);if(specific){records.push(specific);continue;}
+    const specific=buildSpecific(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials);if(specific){records.push(specific);if(specific.yifuIvy)courtyardClimbers.push(createYifuHallIvy(specific.yifuIvy,mats));continue;}
     const profile=getBuildingProfile(f),teaching=f.id==='teaching-priority',points=f.points,shape=planShape(f);
     const height=teaching?16.6:f.id==='plan-10'?yifuTower.height:profile.levels*3.25, floorHeight=height/profile.levels;
     const wall=paint(profile.wall,profile.style==='historic'||profile.style==='villa'),defaultFrame=paint(profile.frame);
@@ -308,6 +310,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   // Every triangle remains present. Independent bounds let the renderer cull
   // buildings outside the camera or shadow frustum instead of drawing campus-wide batches.
   const group=b.finish('plan-based campus buildings with VR facade profiles',120);
+  group.add(...courtyardClimbers);
   group.add(plaques);
   for(const mesh of group.children)if(mesh instanceof T.Mesh&&(glass.includes(mesh.material as T.MeshStandardMaterial)||mesh.material===gardenGlass)){mesh.receiveShadow=false;mesh.castShadow=false;}
   group.userData.buildings=records;
