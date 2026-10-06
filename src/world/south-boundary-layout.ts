@@ -100,12 +100,20 @@ export const southBoundaryRuns = [
         378.576
       ],
       [
-        -113.751,
-        378.05
-      ],
+        -104.704,
+        382.225
+      ]
+    ]
+  },
+  {
+    // The street-facing shop shell closes this interval. Railings meet both
+    // facade corners instead of crossing its publicly accessible frontage.
+    "name": "south-memory-west",
+    "pixelControls": [],
+    "points": [
       [
-        -129.76,
-        377.51
+        -133.138,
+        381.661
       ],
       [
         -145.738,
