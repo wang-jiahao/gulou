@@ -562,3 +562,7 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 - 官方校园 VR https://vr.nju.edu.cn/newUI/#/ 的 gl-1-13 正面、左右面，本地 references/official-vr/phase10/scene_gl-1-13-{f,r,l}.jpg 及 phase18/scene_gl-1-13-f-full.jpg；正面入口裁切已实际查看并与最终游戏 front-sign-reviewed.png 对照。gl13 后向视图朝喷泉，不是教学楼背面。
 - plan105 采用官方地图轮廓，北向两层浅色立面、三角山墙和小阁窗、两柱凹廊、两级低阶、蓝灰题字，二层上部暗窗、中部浅覆盖带及下部窄玻璃。右侧中国电信属于邻楼；未添加到教学楼。楼高、窗距、背面和隐藏翼面为近似；VR 旧用途不直接代表2026现状。
 - 类型、ESLint src、构建通过；独立 Rapier 建筑测试6条包络、43处阻挡/屋顶检查、6次角色控制器台阶进出通过。与游戏使用相同胶囊、autostep和snap设置，但未含全场周边道具；不宣称全场动力学或性能已验证。浏览器外观已实看，console无error。日志和截图留本地 docs/validation/v0.86，报告独占创建，保留旧失败及before。
+
+## v0.87 医院门前排水篦子
+- 实际重新查看本机references/phase53/hospital-note191.jpg（官方VR https://vr.nju.edu.cn/newUI/static/krpano/image/notes/191.jpg），照片显示门前横向金属篦子。沿用已有11组材质合批，入口增加648三角形；9份碰撞和原门位置逐值比较不变。未建临时排队杆为永久扶手，未凭白墙局部猜测院界。
+- 宽度、与台阶距离和程序入口方位仍近似。types/ESLint/build通过，IAB校医院正面实际查看且console无error。before/after、独立CPU比较报告存docs/validation/v0.87；仅入口fixture比较，不是全场性能或动力学验证。最初npm不可用的两份失败日志保留，改用捆绑node运行现有工具成功。
