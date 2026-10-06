@@ -19,7 +19,7 @@ export function fixture(f){
  const record=buildPhysicsBuilding(f,b,meshes,camera,doors);
  const layout=physicsCourtyardLayout();
  const court=createPhysicsCourtyardGround(layout,{stone:new T.MeshStandardMaterial(),grass:new T.MeshStandardMaterial(),textures:new Map()});
- return {record,meshes,doors,building:b.finish('physics building'),layout,court};
+ return {record,meshes,camera,doors,building:b.finish('physics building'),layout,court};
 }`,resolveDir:resolve('src/world'),loader:'ts'},bundle:true,write:false,platform:'node',format:'esm'});
 const {T,createPlanarCutout,fixture}=await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
 const data=fixture(map.features.find(f=>f.id==='plan-70')),{layout,court}=data;
@@ -62,7 +62,7 @@ world.createCollider(RAPIER.ColliderDesc.cuboid(90,.1,90).setTranslation(cx,-.1,
 const point=(u,v,y=.91)=>{const[x,z]=layout.point(u,v);return{x,y,z};};
 const uv=p=>[(p.x-cx)*nz-(p.z-cz)*nx,(p.x-cx)*nx+(p.z-cz)*nz];
 const walks=[];
-function walk(name,start,end,{blocked=false,landing=false}={}){
+function walk(name,start,end,{blocked=false,closedDoor=false,landing=false}={}){
  const s=point(...start),body=world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(s.x,s.y,s.z));
  const collider=world.createCollider(RAPIER.ColliderDesc.capsule(.57,.27),body),motor=world.createCharacterController(.02);
  motor.enableAutostep(.3,.2,false);motor.enableSnapToGround(.4);world.step();
@@ -75,12 +75,16 @@ function walk(name,start,end,{blocked=false,landing=false}={}){
   const d=motor.computedMovement();body.setNextKinematicTranslation({x:p.x+d.x,y:p.y+d.y,z:p.z+d.z});world.step();
  }
  const at={...body.translation()},endUV=uv(at);
- if(blocked){assert.ok(!reached,`${name}: expected hedge to block`);assert.ok(Math.abs(endUV[0])<8.8,`${name}: hedge stops character before bed`);}
+ if(closedDoor){assert.ok(!reached,`${name}: closed door must block`);assert.ok(endUV[1]>1.7&&endUV[1]<1.85,`${name}: stopped before glass at ${endUV[1]}`);}
+ else if(blocked){assert.ok(!reached,`${name}: expected hedge to block`);assert.ok(Math.abs(endUV[0])<8.8,`${name}: hedge stops character before bed`);}
  else {assert.ok(reached,`${name}: stopped at ${JSON.stringify({endUV,y:at.y})}`);assert.ok(minTreeClearance>.85,`${name}: tree envelope clearance ${minTreeClearance}`);}
  if(landing)assert.ok(at.y>1.30&&at.y<1.42,`${name}: landing height`);
  walks.push({name,reached,endUV,y:at.y,minTreeClearance});world.removeCharacterController(motor);world.removeRigidBody(body);world.step();
 }
 for(const u of[-3.6,0,3.6]){walk(`entrance inward ${u}`,[u,52],[u,2.2],{landing:true});walk(`entrance outward ${u}`,[u,2.2,1.34],[u,52]);}
+for(const u of[-3.6,0,3.6])walk(`closed entrance ${u}`,[u,7],[u,.5],{closedDoor:true,landing:true});
+walk('behind columns east',[-4.8,2.15,1.34],[4.8,2.15],{landing:true});
+walk('behind columns west',[4.8,2.15,1.34],[-4.8,2.15],{landing:true});
 walk('transverse walkway east',[-29,7.5],[29,7.5]);walk('transverse walkway west',[29,7.5],[-29,7.5]);
 walk('Zhongda Road east',[-29,55],[29,55]);walk('Zhongda Road west',[29,55],[-29,55]);
 for(const side of[-1,1])walk(`hedge blocks ${side}`,[side*4,25],[side*11,25],{blocked:true});
@@ -90,6 +94,20 @@ for(let u=-9;u<=9;u++){
  assert.ok(hit,`closed facade ${u}`);closedFacadeSamples++;
 }
 // Camera proxies remain raycastable after the render builder merges/disposes originals.
+for(const mesh of data.camera)mesh.updateMatrixWorld(true);
+const entranceSamples=[];
+for(const u of[-6,-5,-4.55,-3.6,-2.65,-2,-1.4,0,1.4,2,2.65,3.6,4.55,5,6]){
+ const q=point(u,2.3,2),direction={x:-nx,y:0,z:-nz};
+ const hit=world.castShape(q,{x:0,y:0,z:0,w:1},direction,new RAPIER.Ball(.025),0,1.05,true);
+ assert.ok(hit,`entrance wall/door collision at ${u}`);
+ const ray=new T.Raycaster(new T.Vector3(q.x,q.y,q.z),new T.Vector3(-nx,0,-nz),0,1.05);
+ const hits=ray.intersectObjects(data.camera,false);assert.ok(hits.length,`camera sees entrance wall/door at ${u}`);
+ entranceSamples.push({u,collisionToi:hit.time_of_impact,cameraDistance:hits[0].distance});
+}
+for(const u of[-3.6,0,3.6]){
+ const q=point(u,2.1,2.7),ray=new T.Raycaster(new T.Vector3(q.x,q.y,q.z),new T.Vector3(0,1,0),0,1.6);
+ assert.ok(ray.intersectObjects(data.camera,false).length,`camera sees porch ceiling ${u}`);
+}
 let cameraHits=0;
 for(const [u,v]of[[0,12],[-15,20],[15,35],[0,51]]){
  const q=point(u,v,5),ray=new T.Raycaster(new T.Vector3(q.x,q.y,q.z),new T.Vector3(0,-1,0));
@@ -97,6 +115,6 @@ for(const [u,v]of[[0,12],[-15,20],[15,35],[0,51]]){
 }
 const {version}=JSON.parse(await readFile('package.json','utf8'));
 const reportDir=`docs/validation/v${version.replace(/\.0$/,'')}`;
-const report={version,passed:true,slabArea,expectedArea,buildingPolygonsChecked:neighbours.length,roadsChecked,meshes,triangles:trianglesCount,fixedMeshes:court.fixedMeshes.length,stoneCapSolids:court.solids.length,closedFacadeSamples,cameraHits,walks,scope:'Actual plan-70 building and courtyard geometry, kerbs and hedge cores with Rapier character motor. Eight tree positions checked for route clearance; async GLB tree colliders and full-scene props not instantiated. Species, sizes and map registration approximate.'};
+const report={version,passed:true,slabArea,expectedArea,buildingPolygonsChecked:neighbours.length,roadsChecked,meshes,triangles:trianglesCount,fixedMeshes:court.fixedMeshes.length,stoneCapSolids:court.solids.length,closedFacadeSamples,cameraHits,entranceSamples,walks,scope:'Actual plan-70 building and courtyard geometry, kerbs and hedge cores with Rapier character motor. Eight tree positions checked for route clearance; async GLB tree colliders and full-scene props not instantiated. Species, sizes and map registration approximate.'};
 await mkdir(reportDir,{recursive:true});await writeFile(`${reportDir}/physics-courtyard-motor-${Date.now()}.json`,JSON.stringify(report,null,2),{flag:'wx'});
-world.free();console.log(JSON.stringify({passed:true,meshes,triangles:trianglesCount,walks:walks.length,closedFacadeSamples,cameraHits,slabArea}));
+world.free();console.log(JSON.stringify({passed:true,meshes,triangles:trianglesCount,walks:walks.length,closedFacadeSamples,cameraHits,entranceSamples:entranceSamples.length,slabArea}));

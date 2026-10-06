@@ -603,3 +603,10 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 - 实际查看官方 VR `gl-2-15-f`（本地 `references/phase36/physics-front-full.jpg`），对齐中央无遮挡灰沥青院路、低绿篱、浅石缘及成熟白刷树干树。依据平面图70号楼入口注册；8棵树的株位、树种、床宽和高度为近似，原图不分发。
 - 庭院替换区域同步裁旧草坪、石沿、围栏及碰撞；旧24棵图书馆西侧树保留11棵，新增8棵庭院树。真实生成逻辑配小型GLB/纹理fixture验证保留实例，未代表全场GPU或性能测量。
 - 两庭院检查改为读取地图顶层 `roads` 并断言非空，建筑相交检查覆盖全部建筑；有效重跑通过。最终画面 `docs/validation/v0.93/after-courtyard-integrated.png` 已实看，旧失败截图与before保留。门厅凹深、门侧单车和铭牌仍待核。
+
+
+## 本地 v0.94 物理楼凹入入口
+
+- 实际查看官方 VR https://vr.nju.edu.cn/newUI/#/ 的 `gl-2-15-f`（本地 `references/phase36/physics-front-full.jpg`）及入口裁图，门墙后退、中央较宽玻璃门、两侧较窄门、扁圆顶灯、中央门红条与浅色纸块据此建模；门宽2.8/1.9米、退距和灯位均为近似，旁侧铭牌不可读，未编造文字。
+- 门墙每侧保留3厘米接缝交叠；人物与相机代理同步。独立楼体/庭院fixture通过17条角色路线、19处楼体阻挡、15组门墙物理/相机接缝采样、三处廊顶射线和4条庭院相机射线；未含全场道具及异步GLB树碰撞，不作为全场性能结论。
+- types/ESLint/build通过（构建仅既有大chunk提示）；IAB复用4173，最终 `docs/validation/v0.94/after-entrance-near.png` 与官方图实看，console无error。保留before、首次失败日志及修复后独占时间戳报告；门左车辆待完善，原媒体不提交。

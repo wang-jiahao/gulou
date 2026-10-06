@@ -13,6 +13,7 @@ export function buildPhysicsBuilding(f:MapFeature,b:Builder,meshes:CollisionMesh
  const wall=mat('pale-grey-render',0xc2c4bd),stone=mat('projecting-stone',0xd0d0c5),edge=mat('stone-edge',0xb5b8b0),roof=mat('flat-roof',0x777f77);
  const recess=mat('recess',0x3b4541),glass=mat('grey-green-glass',0x7e9493,.32,.18),frame=mat('window-frame',0x7f8d86,.58,.2);
  const cage=mat('beige-louvres',0xb5ad98,.76,.12),cageDark=mat('louvre-shadow',0x727870),doorGlass=mat('door-glass',0x344943,.36,.2);
+ const doorStripe=mat('door-red-band',0x963c3f),soffit=mat('portico-soffit',0x999d92);
  const solid=(g:T.BufferGeometry,x=0,y=0,z=0,yaw=0)=>{const p=new T.Mesh(g);p.position.set(x,y,z);p.rotation.y=yaw;meshes.push(collisionMesh(p));camera.push(p);};
  const geometry=new T.ExtrudeGeometry(planShape(f),{depth:height,bevelEnabled:false,steps:1}).rotateX(-Math.PI/2);
  solid(geometry.clone());const surfaces=splitBuildingRoof(geometry);b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
@@ -58,12 +59,30 @@ export function buildPhysicsBuilding(f:MapFeature,b:Builder,meshes:CollisionMesh
  for(let i=0;i<3;i++){const h=(3-i)*.16,v=4.63+i*.42;box(0,h/2,v,12.35,h,.44,stone,'step');box(0,h-.025,v+.19,12.35,.025,.04,edge);}
  for(const u of[-5.4,-1.8,1.8,5.4]){box(u,2.33,3.1,.72,3.70,.72,stone,'column');box(u,.54,3.1,.80,.12,.80,edge);box(u,4.03,3.1,.78,.15,.78,edge);}
  box(0,4.31,2,12.4,.30,3.65,stone,'canopy');box(0,4.49,2,12.65,.06,3.88,edge);
+ // gl-2-15: the doors already sit behind the four columns. Close the rear
+ // reveals and lintel, retaining that external portico instead of cutting the U shell.
+ box(0,3.86,.78,12.35,.60,1.44,wall,'rear-lintel');
+ // Overlap under the 75mm door frames so Float32 edges leave no camera slit.
+ for(const [left,right]of[[-6.175,-4.55],[-2.65,-1.4],[1.4,2.65],[4.55,6.175]])
+  box((left+right)/2,2.02,.78,right-left+.06,3.08,1.44,wall,'rear-jamb');
+ box(0,4.15,2,12.25,.02,3.50,soffit);
  for(const u of[0,-3.6,3.6]){
-  const w=2.80;box(u,1.98,.11,w,3,.12,recess);box(u,2.02,1.45,w,3.08,.07,doorGlass,'door');
+  const w=u===0?2.80:1.90;box(u,1.98,.11,w,3,.12,recess);box(u,2.02,1.45,w,3.08,.07,doorGlass,'door');
   for(const side of[-1,1])box(u+side*w/2,2.02,1.51,.075,3.08,.1,frame);
   for(const y of[.50,2.92,3.54])box(u,y,1.51,w,.06,.1,frame);
   box(u,2.02,1.51,.065,3.08,.1,frame);
   for(const side of[-1,1])box(u+side*.11,1.79,1.59,.045,.48,.055,stone);
+  // Opaque diffuser geometry, no extra dynamic light or per-frame update.
+  const[lx,lz]=point(u,2.35);
+  b.add(new T.SphereGeometry(.25,12,6).scale(1,.24,1),stone,lx,4.10,lz);
+  box(u,4.13,2.35,.56,.055,.56,edge);
+  if(u===0){
+   box(u,1.72,1.555,w-.10,.10,.014,doorStripe);
+   // Only the observed pale notice blocks are represented; their text is unreadable.
+   for(const side of[-1,1])for(let row=0;row<3;row++)for(let col=0;col<3;col++)
+    box(side*(.29+col*.32),1.20+row*.18,1.55,.27,.11,.012,edge);
+   for(const side of[-1,1])box(side*.69,.81,1.55,1.26,.035,.016,frame);
+  }
   const[x,z]=point(u,1.45);doors.push({name:f.tags.name,x,y:.48,z,yaw:e.yaw,width:w});
  }
  const sign=point(0,.48),lettering=addBuildingLettering(b,'physics',sign[0],4.69,sign[1],7.8,e.yaw);
