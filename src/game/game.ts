@@ -9,6 +9,7 @@ import { createAvatar, type CharacterKind, type OutfitStyle } from '../player/av
 import { WalkCamera } from '../player/camera.ts';
 import {StreetTraffic} from './street-traffic.ts';
 import { Football } from './football.ts';
+import { Basketball } from './basketball.ts';
 import { Music } from '../audio/music.ts';
 import { Ambience } from '../audio/ambience.ts';
 import { Atmosphere } from '../world/atmosphere.ts';
@@ -27,6 +28,7 @@ export class Game {
   player!: Player;
   atmosphere!: Atmosphere;
   football!: Football;
+  basketball!: Basketball;
   traffic!:StreetTraffic;
   mode: Mode = 'loading';
   quality: Quality = 'medium';
@@ -90,6 +92,8 @@ export class Game {
     this.player = new Player(this.scene, this.world.solids, await createAvatar(this.character),this.world.fixedMeshes);
     this.player.avatar.setOutfit(this.outfit);
     this.football = new Football(this.scene, this.player, this.world.pitch); this.football.onGoal = () => this.onNotice('进球！足球即将回到中场。');
+    this.basketball = new Basketball(this.scene, this.player);
+    this.basketball.onScore = points => this.onNotice(`${points === 3 ? '三分' : '两分'}命中！`);
     this.traffic=new StreetTraffic(this.scene,this.player);
     const initialMeshes=this.world.fixedMeshes.length;
     this.shadow = this.createContactShadow(); this.scene.add(this.shadow);
@@ -151,6 +155,7 @@ export class Game {
     if(this.player.flying){this.player.land();this.onNotice('正在降落，可用 WASD 微调位置。');return;}
     if(this.world.sectors<3){this.onNotice('正在准备空中视野，请稍候再起飞。');return;}
     if(!this.player.startFlight()){this.onNotice('上方有遮挡，先走到开阔处再起飞。');return;}
+    this.basketball.cancel();
     this.onNotice('空格上升 · Ctrl 下降 · F 降落');
   }
   setOutfit(style: OutfitStyle) { this.outfit = style; this.player?.avatar.setOutfit(style); }
@@ -171,11 +176,13 @@ export class Game {
     if(this.windTime)this.windTime.value+=dt*(1+(this.atmosphere?.state.rain??0)*1.5);
     this.frameMs = T.MathUtils.lerp(this.frameMs, Math.min(rawDt * 1000, 200), .03);
     this.football.prepare(this.mode === 'playing');
+    this.basketball.prepare(this.mode === 'playing');
     this.traffic.prepare(dt,this.mode==='playing');
     this.player.update(dt, this.cameraRig.yaw, this.mode === 'playing');
     this.traffic.sync();
     if(this.player.riding)this.cameraRig.yaw+=this.player.rideCameraTurn;
     this.football.update(dt);
+    this.basketball.update(dt);
     this.cameraRig.update(this.player.position, dt, this.world.cameraSolids, this.player.seated,this.player.flying,this.player.avatar.height,Boolean(this.player.riding));
     this.atmosphere.update(dt,this.mode==='playing',this.camera.position);
     if(this.foliageLight)this.foliageLight.value=this.atmosphere.daylight;
@@ -204,7 +211,7 @@ export class Game {
     this.onTick();
   }
   stats() {
-    return { mode: this.mode, renderSize: [this.renderer.domElement.width, this.renderer.domElement.height], pixelRatio: this.renderer.getPixelRatio(), fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, outfit: this.outfit, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,grounded:this.player.grounded,verticalSpeed:this.player.velocityY,bicycle:this.player.riding?.id??null,rideSpeed:this.player.rideSpeed,flag:this.world.dadaoping.snapshot(),traffic:this.traffic.snapshot(),environment:this.atmosphere.snapshot,music:this.music.snapshot,audio:this.audio.snapshot,football:this.football.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
+    return { mode: this.mode, renderSize: [this.renderer.domElement.width, this.renderer.domElement.height], pixelRatio: this.renderer.getPixelRatio(), fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, outfit: this.outfit, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,grounded:this.player.grounded,verticalSpeed:this.player.velocityY,bicycle:this.player.riding?.id??null,rideSpeed:this.player.rideSpeed,flag:this.world.dadaoping.snapshot(),traffic:this.traffic.snapshot(),environment:this.atmosphere.snapshot,music:this.music.snapshot,audio:this.audio.snapshot,football:this.football.snapshot,basketball:this.basketball.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
   }
   async savePhoto() {
     if (this.photoSaving) throw new Error('照片正在生成，请稍候。');

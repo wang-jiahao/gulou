@@ -21,6 +21,7 @@
           <div class="loading-line"><span id="loading-text" role="status">准备场景与光照</span><span id="loading-percent">0%</span></div>
           <div class="loading-track"><div id="loading-bar"></div></div>
         </div>
+        <nav class="project-links" aria-label="项目与作者"><a href="https://wang-jiahao.github.io/" target="_blank" rel="noopener noreferrer">作者主页 ↗</a><a href="https://github.com/wang-jiahao/gulou" target="_blank" rel="noopener noreferrer">项目仓库 ↗</a><button type="button" data-sponsor-open>赞赏支持 ♡</button></nav>
         <footer class="welcome-footer"><span id="welcome-atmosphere">北大楼 · 晴日下午</span><span>电脑与手机均可游玩 · 支持步行、飞行与拍照</span></footer>
       </section>
       <div id="hud" hidden>
@@ -33,7 +34,13 @@
         <button id="place-about" class="place-about" hidden></button>
         <button id="interact" class="interact" hidden><kbd>E</kbd> <span>坐一会儿</span></button>
         <button id="resume" class="resume" hidden>点击画面，继续漫步</button>
-<div id="football-hud" hidden><span>苏浙球场练习 · 进球 <strong id="football-score">0</strong></span><button id="football-reset">球回中场</button><small id="football-help">靠近球按 E 踢球 · Shift 加力</small></div>
+<div id="basketball-hud" hidden>
+          <span>篮球练习 · 得分 <strong id="basketball-score">0</strong> · 出手 <strong id="basketball-shots">0</strong></span>
+          <button id="basketball-reset" aria-label="篮球回到罚球线">取球 R</button>
+          <small id="basketball-help">靠近球按 E 拿起，再按 E 投篮 · 金色区出手更准</small>
+          <div id="basketball-charge" hidden><span>出手时机</span><div class="basketball-track" aria-hidden="true"><i id="basketball-meter"></i><b></b></div><small>金色区再按 E / 点「投篮」</small></div>
+        </div>
+        <div id="football-hud" hidden><span>苏浙球场练习 · 进球 <strong id="football-score">0</strong></span><button id="football-reset">球回中场</button><small id="football-help">靠近球按 E 踢球 · Shift 加力</small></div>
         <div class="attribution"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a></div>
       </div>
       <div id="touch-controls" hidden aria-label="触屏游戏操作">
@@ -42,6 +49,14 @@
         <div class="touch-buttons"><button id="touch-view" aria-label="切换第一第三人称">视角</button><button id="touch-run" aria-pressed="false">快走</button><button id="touch-fly">起飞</button><button id="touch-jump">跳跃</button></div>
         <div id="touch-altitude" hidden><button data-hold-key="Space" aria-label="上升">↑</button><button data-hold-key="ControlLeft" aria-label="下降">↓</button></div>
       </div>
+      <dialog id="sponsor" aria-labelledby="sponsor-title" aria-describedby="sponsor-description">
+        <form method="dialog"><div class="dialog-heading"><div><small>THANK YOU FOR BEING HERE</small><h2 id="sponsor-title">为下一次漫步加点油</h2></div><button class="close" aria-label="关闭赞赏" autofocus>×</button></div></form>
+        <p id="sponsor-description">从一张地图到可以漫步的校园，这个项目投入了大量时间，也消耗了大量 AI token。如果鼓楼让你想起一段校园时光，欢迎自愿赞赏，帮作者补贴一点开发开销。</p>
+        <a class="sponsor-code" href="./assets/support/wechat-appreciation.png" target="_blank" rel="noopener noreferrer" aria-label="打开 Zackaria 的微信赞赏码原图"><img src="./assets/support/wechat-appreciation.png" alt="Zackaria 的微信赞赏码" width="1152" height="1152" loading="lazy"></a>
+        <p class="sponsor-caption">微信扫码赞赏 · 手机可保存图片后在微信中识别</p>
+        <a class="subtle sponsor-save" href="./assets/support/wechat-appreciation.png" download="Zackaria-微信赞赏码.png">保存赞赏码 ↓</a>
+        <p class="sponsor-note">赞赏完全自愿，所有游玩功能均无需付费。愿意指出问题、提供校园资料，也是一份支持。</p>
+      </dialog>
       <dialog id="settings" aria-labelledby="settings-title">
         <form method="dialog"><div class="dialog-heading"><div><small>TAKE YOUR TIME</small><h2 id="settings-title">慢慢走，随心看。</h2></div><button class="close" aria-label="关闭设置">×</button></div></form>
         <label class="setting-row" for="quality"><span>画面质量<small>根据设备调整阴影与分辨率</small></span><select id="quality"><option value="high">高 · 细腻</option><option value="medium" selected>中 · 均衡</option><option value="low">低 · 流畅</option></select></label>
@@ -52,6 +67,7 @@
         <label class="setting-row" for="sensitivity"><span>视角灵敏度</span><input id="sensitivity" type="range" min="1" max="10" value="5"></label>
         <div class="setting-row"><span>当前视角</span><button id="view-toggle" class="subtle">第三人称 ⇄</button></div>
         <div class="dialog-actions"><button id="reset" class="subtle">回到起点</button><button id="settings-resume" class="primary">继续漫步 →</button></div>
+        <nav class="project-links" aria-label="项目与作者"><a href="https://wang-jiahao.github.io/" target="_blank" rel="noopener noreferrer">作者主页 ↗</a><a href="https://github.com/wang-jiahao/gulou" target="_blank" rel="noopener noreferrer">项目仓库 ↗</a><button type="button" data-sponsor-open>赞赏支持 ♡</button></nav>
         <details><summary>关于这片校园</summary><p>北大楼与周边空间依据开放地图和公开照片近似重建，细部持续完善。地图 © OpenStreetMap contributors（ODbL），部分材质来自 Poly Haven（CC0）。本项目为校园漫步创作。</p><a href="./credits.html" target="_blank">查看资料与资产来源 ↗</a></details>
       </dialog>
       <dialog id="world-settings" aria-labelledby="world-title">

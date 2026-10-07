@@ -6,6 +6,7 @@ import {terrainSurface} from './courtyard-terrain.ts';
 import {createModelTrees} from './model-trees.ts';
 import type {Materials} from './materials.ts';
 import type {TreeSpot} from './vegetation.ts';
+import {createPhysicsParking} from './physics-parking.ts';
 
 // Official VR gl-2-15-f: asphalt approach, low clipped hedges, stone kerbs,
 // mature trees with whitewashed trunks. Registered to plan-70 edge 14;
@@ -69,6 +70,8 @@ export function createPhysicsCourtyardGround(layout:ReturnType<typeof physicsCou
   }
   const surfaces=b.finish('physics court asphalt beds and hedges');
   surfaces.children.forEach(o=>{o.castShadow=o.name!=='physics courtyard asphalt';});group.add(surfaces);
+  const parking=createPhysicsParking(layout.point,yaw);group.add(parking.group);
+  b.solids.push(...parking.solids);cameraSolids.push(...parking.cameraSolids);
   group.userData={source:'official VR gl-2-15-f and campus plan-70',approximate:true,trees:layout.trees.length,transverseWalk:'v6–9 left open',surfaceMeshes:surfaces.children.length};
   return{group,solids:b.solids,fixedMeshes,cameraSolids};
 }

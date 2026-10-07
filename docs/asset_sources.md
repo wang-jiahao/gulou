@@ -610,3 +610,12 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 - 实际查看官方 VR https://vr.nju.edu.cn/newUI/#/ 的 `gl-2-15-f`（本地 `references/phase36/physics-front-full.jpg`）及入口裁图，门墙后退、中央较宽玻璃门、两侧较窄门、扁圆顶灯、中央门红条与浅色纸块据此建模；门宽2.8/1.9米、退距和灯位均为近似，旁侧铭牌不可读，未编造文字。
 - 门墙每侧保留3厘米接缝交叠；人物与相机代理同步。独立楼体/庭院fixture通过17条角色路线、19处楼体阻挡、15组门墙物理/相机接缝采样、三处廊顶射线和4条庭院相机射线；未含全场道具及异步GLB树碰撞，不作为全场性能结论。
 - types/ESLint/build通过（构建仅既有大chunk提示）；IAB复用4173，最终 `docs/validation/v0.94/after-entrance-near.png` 与官方图实看，console无error。保留before、首次失败日志及修复后独占时间戳报告；门左车辆待完善，原媒体不提交。
+
+
+### 用户授权赞赏码（2026-10-07）
+`public/assets/support/wechat-appreciation.png` 为作者此次提供、明确要求在 README / 游戏网页 / 个人主页使用的微信赞赏码；按原图复制，未重新生成或修改码点。仅用于自愿支持作者，不赋予第三方素材再分发许可。
+
+### v0.96 篮球交互与 v0.95 停车核对
+
+- 篮球场沿用已核实的五场九篮架布局；新增程序生成篮球、蓄力抛物线、篮圈/篮板碰撞、2/3分与持球双臂姿态，没有新外部美术素材。正常UI及20次物理投篮检查通过，见docs/validation/v0.96。
+- 物理楼门左车辆依据本地references/phase36/physics-front-full.jpg（官方VR gl-2-15-f）；五辆电动车及一辆自行车的细节与间距近似，宽视角已实看，证据docs/validation/v0.95/after-vehicles-wide.jpg。

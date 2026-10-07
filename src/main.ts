@@ -11,6 +11,19 @@ const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElem
 let game: Game;
 let uiHidden = false, toastTimer = 0, entered = false, dragging = false, tick = 0;
 const mapDialog = el<HTMLDialogElement>('campus-map');
+const sponsor = el<HTMLDialogElement>('sponsor');
+let sponsorOpener: HTMLElement | null = null;
+document.querySelectorAll<HTMLButtonElement>('[data-sponsor-open]').forEach(button => {
+  button.onclick = () => {
+    sponsorOpener = button;
+    if (entered) { game.mode = 'paused'; game.player.clearInput(); dragging = false; document.exitPointerLock?.(); }
+    sponsor.showModal();
+  };
+});
+sponsor.addEventListener('close', () => {
+  sponsorOpener?.focus();
+  if (entered && game.mode === 'paused') el('resume').hidden = false;
+});
 let mapView: CampusMapView;
 let touchControls: TouchControls;
 let selectedMapPoint: { x: number; z: number; name: string } | null = null;
@@ -19,10 +32,10 @@ const toast = (message: string) => { el('toast').textContent = message; el('toas
 const fatal = (e: unknown) => { console.error(e); el('fatal').hidden = false; el('fatal-message').textContent = e instanceof Error ? e.message : '请检查网络或换用支持 WebGL2 的浏览器。'; };
 const saveSettings = () => { try { const a=game.atmosphere?.state;localStorage.setItem('gulou-settings-v1', JSON.stringify({ quality: game.quality, character: game.character, outfit: game.outfit, volume: game.audio.volume, musicVolume: game.music.volume, musicEnabled: game.music.enabled, sensitivity: game.cameraRig.sensitivity,world:a?{hour:a.hour,autoTime:a.autoTime,cycleMinutes:a.cycleMinutes,weatherMode:a.weatherMode}:undefined })); } catch { /* Optional preferences. */ } };
 function lockPointer() { if (touchDevice || !game.renderer.domElement.requestPointerLock) return; const r = game.renderer.domElement.requestPointerLock(); if (r) void r.catch(() => toast('也可以按住鼠标拖动视角，WASD 行走。')); }
-function resume() { settings.close(); info.close();worldSettings.close(); mapDialog.close(); game.mode = 'playing'; el('resume').hidden = true; lockPointer(); }
+function resume() { sponsor.close(); settings.close(); info.close();worldSettings.close(); mapDialog.close(); game.mode = 'playing'; el('resume').hidden = true; lockPointer(); }
 function openSettings() { if (!entered) return; game.mode = 'paused'; game.player.clearInput(); document.exitPointerLock?.(); el('photo-panel').hidden = true; el('hud').hidden = uiHidden; settings.showModal(); el('view-toggle').textContent = game.cameraRig.firstPerson ? '第一人称 ⇄' : '第三人称 ⇄'; }
 function togglePhoto() {
-  if (!entered || settings.open || info.open||worldSettings.open||mapDialog.open) return;
+  if (!entered || settings.open || info.open||worldSettings.open||mapDialog.open||sponsor.open) return;
   if (game.mode === 'photo') { el('photo-panel').hidden = true; el('hud').hidden = uiHidden; resume(); }
   else { game.mode = 'photo'; game.player.clearInput(); document.exitPointerLock?.(); el('photo-panel').hidden = false; el('hud').hidden = true; }
 }
@@ -53,18 +66,18 @@ async function boot() {
   touchControls = new TouchControls(game.player, game.cameraRig, canvas);
   el('touch-view').onclick = () => game.cameraRig.toggle();
   el('touch-fly').onclick = () => { if (game.mode === 'playing') game.toggleFlight(); };
-  canvas.addEventListener('click', () => { if (entered && game.mode !== 'photo' && !settings.open && !info.open&&!worldSettings.open&&!mapDialog.open) resume(); });
+  canvas.addEventListener('click', () => { if (entered && game.mode !== 'photo' && !settings.open && !info.open&&!worldSettings.open&&!mapDialog.open&&!sponsor.open) resume(); });
   canvas.addEventListener('pointerdown', e => { if (e.button === 0 && e.pointerType === 'mouse') dragging = true; });
   window.addEventListener('pointerup', () => { dragging = false; });
-  window.addEventListener('mousemove', e => { if (entered && !settings.open && !info.open&&!worldSettings.open&&!mapDialog.open && (document.pointerLockElement === canvas || dragging)) game.cameraRig.look(e.movementX, e.movementY); });
+  window.addEventListener('mousemove', e => { if (entered && !settings.open && !info.open&&!worldSettings.open&&!mapDialog.open&&!sponsor.open && (document.pointerLockElement === canvas || dragging)) game.cameraRig.look(e.movementX, e.movementY); });
   canvas.addEventListener('wheel', e => { if (!game.cameraRig.firstPerson) game.cameraRig.distance = Math.max(1.2, Math.min(8, game.cameraRig.distance + e.deltaY * .003)); }, { passive: true });
   document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && game.mode === 'playing') { game.mode = 'paused'; game.player.clearInput(); el('resume').hidden = false; } });
   window.addEventListener('blur', () => { game.player.clearInput(); if (game.mode === 'playing') { game.mode = 'paused'; el('resume').hidden = false; } });
   window.addEventListener('keydown', e => {
     if (!entered || (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement)) return;
+    if (e.code === 'Escape') { if (game.mode === 'photo') togglePhoto(); else if (!settings.open && !info.open&&!worldSettings.open&&!mapDialog.open&&!sponsor.open) openSettings(); return; }
+    if (settings.open || info.open||worldSettings.open||mapDialog.open||sponsor.open) return;
     if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
-    if (e.code === 'Escape') { if (game.mode === 'photo') togglePhoto(); else if (!settings.open && !info.open&&!worldSettings.open&&!mapDialog.open) openSettings(); return; }
-    if (settings.open || info.open||worldSettings.open||mapDialog.open) return;
     if(e.shiftKey)game.player.keys.add('ShiftLeft');
     game.player.keys.add(e.code);
     if (e.repeat) return;
@@ -76,7 +89,7 @@ async function boot() {
     if(e.code==='KeyF'&&game.mode==='playing')game.toggleFlight();
     if (e.code === 'KeyH') { uiHidden = !uiHidden; if (game.mode !== 'photo') el('hud').hidden = uiHidden; if (uiHidden) toast('界面已隐藏，按 H 恢复。'); }
     if (e.code === 'KeyE') interact();
-    if (e.code === 'KeyR' && game.mode === 'playing' && game.football.nearby) game.football.resetBall();
+    if (e.code === 'KeyR' && game.mode === 'playing') { if (game.basketball.nearby) game.basketball.resetBall(); else if (game.football.nearby) game.football.resetBall(); }
     if (e.code === 'Backquote' && import.meta.env.DEV) el('debug').hidden = !el('debug').hidden;
   });
   window.addEventListener('keyup', e => {game.player.keys.delete(e.code);if(!e.shiftKey){game.player.keys.delete('ShiftLeft');game.player.keys.delete('ShiftRight');}});
@@ -97,7 +110,7 @@ async function boot() {
   el('world-reset').onclick=()=>{const a=game.atmosphere.state;a.cycleMinutes=DEFAULT_CYCLE_MINUTES;a.resetForEntry();syncWorld();saveSettings();};
   settings.addEventListener('close', () => { if (game.mode === 'paused') { el('resume').hidden = false; } });
   info.addEventListener('close', () => { el('resume').hidden = false; });
-  el('reset').onclick = () => { game.player.reset(); game.cameraRig.reset(); toast('已回到北大楼前。'); };
+  el('reset').onclick = () => { game.basketball.cancel(); game.player.reset(); game.cameraRig.reset(); toast('已回到北大楼前。'); };
   el('view-toggle').onclick = () => { game.cameraRig.toggle(); el('view-toggle').textContent = game.cameraRig.firstPerson ? '第一人称 ⇄' : '第三人称 ⇄'; };
   el<HTMLSelectElement>('character-style').onchange = async e => {
     const select = e.target as HTMLSelectElement, kind = select.value === 'female' ? 'female' : 'male'; select.disabled = true;
@@ -139,12 +152,14 @@ async function boot() {
     if (game.world.sectors < 3) { el('map-selection').textContent = '校园区域正在加载，请稍候再传送。'; return; }
     const target = game.player.travelTo(x, z);
     if (!target) { el('map-selection').textContent = '这个位置暂时无法站立，请换一个位置。'; return; }
-    game.cameraRig.reset(); game.cameraRig.yaw = yaw; if (pitch !== undefined) game.cameraRig.pitch = pitch; if (firstPerson !== undefined) game.cameraRig.firstPerson = firstPerson; if (photoFov !== undefined) { game.photoFov = photoFov; el<HTMLInputElement>('photo-fov').value = String(photoFov); } resume();
+    game.basketball.cancel(); game.cameraRig.reset(); game.cameraRig.yaw = yaw; if (pitch !== undefined) game.cameraRig.pitch = pitch; if (firstPerson !== undefined) game.cameraRig.firstPerson = firstPerson; if (photoFov !== undefined) { game.photoFov = photoFov; el<HTMLInputElement>('photo-fov').value = String(photoFov); } resume();
     toast(`已抵达${name}${target.y > 3 ? ' · 屋顶' : ''}${target.adjusted ? '附近的安全落点' : ''}`);
   };
   mapView.onSelect = (x, z, name) => { selectedMapPoint = { x, z, name }; el<HTMLButtonElement>('map-teleport').disabled = false; };
   el('map-teleport').onclick = () => { if (selectedMapPoint) travel(selectedMapPoint.x, selectedMapPoint.z, selectedMapPoint.name); };
   el('travel-place-go').onclick = () => { const value = el<HTMLSelectElement>('travel-place').value; if (value === '') return; const p = travelPlaces[Number(value)]; if (p) travel(p.x, p.z, p.name, p.yaw, p.pitch, p.firstPerson, p.photoFov); };
+  el('basketball-reset').onclick = () => { if (game.basketball.canPlay) game.basketball.resetBall(); };
+  el('basketball-help').textContent = touchDevice ? '靠近球点拿起，再点投篮 · 金色区出手更准' : '靠近球按 E 拿起，再按 E 投篮 · 金色区出手更准 · R 取球';
   el('football-reset').onclick = () => game.football.resetBall();
   el('football-help').textContent = touchDevice ? '靠近球点踢球 · 快走时可加力' : '靠近球按 E 踢球 · Shift 加力 · R 回球';
   if (!touchDevice) el('football-reset').setAttribute('aria-keyshortcuts', 'R');
@@ -163,6 +178,7 @@ async function boot() {
   function interact() {
     if(game.mode !== 'playing' || game.player.flying)return;
     if(game.player.riding){if(!game.player.dismount())toast('两侧空间不足，请移到开阔处再下车。');return;}
+    if (game.basketball.held || game.basketball.inReach) { game.basketball.interact(); return; }
     let bicycle:typeof game.world.bicycles[number]|undefined,nearestDistance=2.3;
     for(const candidate of game.world.bicycles){const distance=candidate.group.position.distanceTo(game.player.position);if(distance<nearestDistance){bicycle=candidate;nearestDistance=distance;}}
     if(bicycle&&!game.player.seated){if(game.player.mount(bicycle)){game.cameraRig.yaw=game.player.rideYaw;toast(touchDevice?'摇杆向前骑行，左右转向；点提示下车。':'W 骑行 · 鼠标/A/D 转向 · Shift 加速 · S 倒车/减速 · 空格刹车 · E 下车');}else toast('车旁空间不足，请从另一侧靠近。');return;}
@@ -186,6 +202,12 @@ async function boot() {
   game.onTick = () => {
     touchControls?.update(game.mode === 'playing' && !uiHidden, game.player.flying);
     el('space-label').textContent=game.player.riding?'刹车':game.player.flying?'上升':'跳跃';
+    const basketball = game.basketball;
+    el('basketball-hud').hidden = !basketball.nearby || !basketball.canPlay;
+    el('basketball-charge').hidden = !basketball.held;
+    el('basketball-meter').style.width = `${basketball.power * 100}%`;
+    el('basketball-score').textContent = String(basketball.physics.score);
+    el('basketball-shots').textContent = String(basketball.physics.shots);
     if (++tick % 15) return;
     const pos = game.player.position, onBench = game.player.seated || (game.world.sectors >= 3 && (benchLocations.some(p => p.distanceTo(pos) < 2.4)||Boolean(game.world.garden.nearby(pos))));
     const nearBuilding = game.world.doors.find(d=>Math.hypot(d.x-pos.x,d.z-pos.z)<4&&Math.abs(pos.y-d.y)<4)??campusPlaces.find(p=>Math.hypot(pos.x-p.x,pos.z-p.z)<5.5);
@@ -194,11 +216,11 @@ async function boot() {
     const about=nearbyPlace();el('place-about').hidden=!about||game.mode!=='playing'||game.player.flying;el('place-about').textContent=about?`了解${about.name}${touchDevice?'':' · I'}`:'';
     const flagState=game.world.dadaoping.snapshot();
     const nearDirectory = game.world.directory.nearby(pos);
-    el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!nearFlag && !game.player.riding && !nearBicycle && !onBench && !nearBuilding && !nearDirectory && !game.football.canKick);
-    el('interact').querySelector('span')!.textContent = game.player.riding ? '下自行车' : nearBicycle&&!game.player.seated ? '骑自行车' : nearFlag ? (flagState.state==='raising'?`升旗中 ${Math.round(flagState.progress*100)}% · 点击降旗`:flagState.state==='lowering'?'降旗中 · 点击升旗':flagState.state==='raised'?'降下国旗':'升起国旗') : game.football.canKick ? '踢球' : game.player.seated ? '起身' : onBench ? '坐一会儿' : nearDirectory ? '查看校园地图' : `认识${nearBuilding?.name??'校园'}`;
+    el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!nearFlag && !game.player.riding && !nearBicycle && !onBench && !nearBuilding && !nearDirectory && !game.football.canKick && !basketball.held && !basketball.inReach);
+    el('interact').querySelector('span')!.textContent = game.player.riding ? '下自行车' : basketball.held ? '投篮' : basketball.inReach ? '拿起篮球' : nearBicycle&&!game.player.seated ? '骑自行车' : nearFlag ? (flagState.state==='raising'?`升旗中 ${Math.round(flagState.progress*100)}% · 点击降旗`:flagState.state==='lowering'?'降旗中 · 点击升旗':flagState.state==='raised'?'降下国旗':'升起国旗') : game.football.canKick ? '踢球' : game.player.seated ? '起身' : onBench ? '坐一会儿' : nearDirectory ? '查看校园地图' : `认识${nearBuilding?.name??'校园'}`;
     el('movement-label').textContent=game.player.riding?`骑行 ${Math.round(game.player.speed*3.6)} km/h · 空格刹车 · E 下车`:'行走';
     el('location-name').textContent = locationName(game.world.map,pos.x,pos.z,game.player.flying);
-    el('football-hud').hidden = Boolean(game.player.riding) || !game.football.nearby || game.mode !== 'playing'; el('football-score').textContent = String(game.football.goals);
+    el('football-hud').hidden = Boolean(game.player.riding) || basketball.nearby || !game.football.nearby || game.mode !== 'playing'; el('football-score').textContent = String(game.football.goals);
     if (mapDialog.open) mapView.update(pos.x, pos.z, game.cameraRig.yaw);
     const a=game.atmosphere.state;el('clock-chip').textContent=`${a.clock} · ${a.weatherLabel}`;el('welcome-atmosphere').textContent=`北大楼 · ${a.clock} · ${a.weatherLabel}`;
     if(worldSettings.open)el('weather-value').textContent=a.weatherLabel;
@@ -207,12 +229,12 @@ async function boot() {
     el('compass-arrow').style.transform = `rotate(${-game.cameraRig.yaw * 180 / Math.PI - 8.2}deg)`;
     if (!el('debug').hidden) { const s = game.stats(); el('debug-stats').textContent = `FPS             ${s.fps}\nFrame           ${s.frameMs} ms\nCPU submission  ${s.cpuMs} ms\nGPU             ${s.gpuMs ?? 'unavailable'} ms\nTriangles       ${s.triangles.toLocaleString()}\nDraw calls      ${s.drawCalls}\nTextures        ${s.textures}\nPosition        ${s.position.map(n => n.toFixed(1)).join(', ')}\nLoaded sectors  ${s.sectors}/3\nQuality         ${s.quality}\nReady           ${s.readyMs} ms`; }
   };
-  el('debug-reset').onclick = () => { game.player.reset(); game.cameraRig.reset(); };
+  el('debug-reset').onclick = () => { game.basketball.cancel(); game.player.reset(); game.cameraRig.reset(); };
   el('debug-noclip').onclick = () => { game.player.noclip = !game.player.noclip; el('debug-noclip').textContent = `Noclip: ${game.player.noclip ? 'on' : 'off'}`; };
-  el('debug-front').onclick = () => game.player.teleport(0, .03, 24);
+  el('debug-front').onclick = () => { game.basketball.cancel(); game.player.teleport(0, .03, 24); };
   el<HTMLInputElement>('debug-time').oninput = e => game.setTime(Number((e.target as HTMLInputElement).value));
   if (import.meta.env.DEV || new URLSearchParams(location.search).get('debug') === '1') {
-    Object.assign(window, { __GULOU__: { stats: () => game.stats(), teleport: (x: number, y: number, z: number) => game.player.teleport(x, y, z), game } });
+    Object.assign(window, { __GULOU__: { stats: () => game.stats(), teleport: (x: number, y: number, z: number) => { game.basketball.cancel(); game.player.teleport(x, y, z); }, game } });
   }
 }
 void boot().catch(fatal);

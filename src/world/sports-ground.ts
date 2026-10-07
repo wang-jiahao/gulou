@@ -4,14 +4,10 @@ import {insideRing,planShape} from './campus-map.ts';
 import type {Materials} from './materials.ts';
 import {sportsCourts,sportsFence,sportsGates,sportsStand} from './sports-layout.ts';
 
+import {courtFrame as frame} from './court-frame.ts';
+import {basketballCourtLayout} from './basketball-layout.ts';
+
 type Point = [number,number];
-function frame(points:number[][]){
-  const x=points.reduce((s,p)=>s+p[0],0)/points.length,z=points.reduce((s,p)=>s+p[1],0)/points.length;
-  const width=(Math.hypot(points[1][0]-points[0][0],points[1][1]-points[0][1])+Math.hypot(points[2][0]-points[3][0],points[2][1]-points[3][1]))/2;
-  const length=(Math.hypot(points[3][0]-points[0][0],points[3][1]-points[0][1])+Math.hypot(points[2][0]-points[1][0],points[2][1]-points[1][1]))/2;
-  const angle=Math.atan2(points[3][0]+points[2][0]-points[0][0]-points[1][0],points[3][1]+points[2][1]-points[0][1]-points[1][1]);
-  return{x,z,width,length,angle,point:(u:number,y:number,v:number)=>new T.Vector3(x+u*Math.cos(angle)+v*Math.sin(angle),y,z-u*Math.sin(angle)+v*Math.cos(angle))};
-}
 
 /** Keep planting out of playing surfaces and the paths immediately around them. */
 export function sportsClearance(x:number,z:number){
@@ -67,19 +63,16 @@ export function createSportsGround(mats:Materials){
       box(w+1.3,.045,.05,0,1.0,0,paint);
       const q=p(0,.51,0);b.solids.push({x:q.x,y:q.y,z:q.z,w:w+1.3,h:.96,d:.07,angle:f.angle});
     }else{
-      const half=court.kind==='half',w=half?f.length-1.1:Math.min(15,f.width-1.1),l=half?(f.width-1.2)*2:Math.min(28,f.length-1.4);
-      // The small northern half court has its hoop to the east in the plan.
-      const cp=(u:number,y:number,v:number)=>half?p(v,y,-u):p(u,y,v);
-      const cb=(ww:number,h:number,dd:number,u:number,y:number,v:number,mat:T.Material,solid=false)=>{const q=cp(u,y,v);b.box(ww,h,dd,q.x,q.y,q.z,mat,solid,f.angle+(half?Math.PI/2:0));};
+      const {half,w,l,cp,angle:rotation,hoops}=basketballCourtLayout(court);
+      const cb=(ww:number,h:number,dd:number,u:number,y:number,v:number,mat:T.Material,solid=false)=>{const q=cp(u,y,v);b.box(ww,h,dd,q.x,q.y,q.z,mat,solid,rotation);};
       const cl=(u:number,v:number,ww:number,dd:number)=>cb(ww,.006,dd,u,.071,v,paint);
       const ca=(u:number,v:number,r:number,start:number,end:number)=>b.line(Array.from({length:49},(_,i)=>cp(u+Math.cos(start+(end-start)*i/48)*r,.075,v+Math.sin(start+(end-start)*i/48)*r)),.035,paint,4);
-      const mid=half?-l/4:0,ends=half?[1]:[-1,1];
+      const mid=half?-l/4:0;
       cb(w,.008,half?l/2:l,0,.062,0,green);
       for(const s of [-1,1])cl(s*w/2,0,.06,half?l/2:l);
       for(const s of [-1,1])cl(0,s*(half?l/4:l/2),w,.06);
       cl(0,mid,w,.06);if(!half)arc(0,0,Math.min(1.8,w*.13));
-      for(const s of ends){
-        const end=s*(half?l/4:l/2),free=end-s*Math.min(5.8,(half?l/2:l)*.35),basket=end-s*1.2;
+      for(const {side:s,end,free,basket} of hoops){
         cl(0,free,4.8,.06);for(const side of [-1,1])cl(side*2.4,(free+end)/2,.06,Math.abs(end-free));
         ca(0,free,1.8,s>0?Math.PI:0,s>0?Math.PI*2:Math.PI);
         const radius=Math.min(6.25,w/2-.5);ca(0,basket,radius,s>0?Math.PI:0,s>0?Math.PI*2:Math.PI);

@@ -26,3 +26,33 @@
 .place-about{pointer-events:auto;position:absolute;bottom:178px;left:50%;transform:translateX(-50%);background:#254234df;color:#f4f1df;padding:9px 14px;border:1px solid #ffffff44;border-radius:5px;font-size:12px}.touch-device .place-about{bottom:222px;max-width:65vw;min-height:40px}#info p{line-height:1.9}#info a{display:block;margin-top:22px;font-size:12px}
 
 #map-canvas:focus-visible{outline:3px solid #9c642d;outline-offset:3px}#map-help{font-size:12px;line-height:1.6;color:#52634e;margin:10px 0}
+
+/* Project support stays outside the play HUD. */
+.project-links{display:flex;align-items:center;flex-wrap:wrap;gap:10px 20px;font-size:12px}
+.project-links a,.project-links button{color:inherit;text-decoration:none;background:none;border:0;padding:8px 0;font:inherit;cursor:pointer;border-bottom:1px solid currentColor}
+.project-links a:hover,.project-links button:hover{opacity:.75}
+.project-links :focus-visible{outline:2px solid currentColor;outline-offset:5px}
+#welcome>.project-links{position:absolute;left:8%;bottom:80px;color:#fff8e8}
+#settings>.project-links{margin:22px 0;color:#425640}
+#sponsor{width:490px;max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+#sponsor .dialog-heading{margin-bottom:18px}
+#sponsor-description{font-size:14px;line-height:1.8;margin:0}
+.sponsor-code{display:block;width:min(300px,100%);margin:16px auto 10px;background:white;border-radius:8px;overflow:hidden}
+.sponsor-code img{display:block;width:100%;height:auto}
+.sponsor-caption,.sponsor-note{font-size:12px;line-height:1.7;color:#556451;text-align:center}
+.sponsor-save{display:table;margin:14px auto;text-decoration:none}
+.sponsor-note{margin:16px 0 0}
+@media(max-height:650px){#welcome>.project-links{left:auto;right:4.5%;bottom:68px;max-width:260px;justify-content:flex-end}#sponsor .sponsor-code{width:210px}}
+@media(max-width:520px){#welcome>.project-links{left:8%;right:auto;bottom:80px;max-width:84%;justify-content:flex-start;gap:16px}#sponsor{padding:22px}}
+@media(max-height:480px) and (min-width:521px){#welcome>.project-links{bottom:62px;flex-direction:column;align-items:flex-end;gap:4px}}
+
+/* Practice controls share a compact corner panel on keyboard and touch. */
+#basketball-hud { position:absolute; top:105px; left:35px; width:min(340px,calc(100vw - 32px)); padding:12px 15px; border:1px solid #ffffff30; border-radius:12px; background:#172b29e8; color:#fff; box-shadow:0 5px 22px #14242128; pointer-events:auto; }
+#basketball-hud>span { font-size:13px; }
+#basketball-hud button { float:right; padding:3px 8px; border:1px solid #ffffff40; border-radius:6px; background:#ffffff12; color:inherit; cursor:pointer; }
+#basketball-hud small { display:block; margin-top:7px; font-size:11px; line-height:1.7; color:#e1e6dc; }
+#basketball-charge { margin-top:10px; font-size:12px; }
+.basketball-track { position:relative; height:12px; margin-top:6px; border-radius:6px; background:#ffffff20; overflow:hidden; }
+#basketball-meter { display:block; height:100%; background:#91bfa8; }
+.basketball-track b { position:absolute; left:69.5%; width:5%; top:0; bottom:0; background:#ffd775; box-shadow:0 0 6px #ffdf98; }
+@media(max-width:600px) { #basketball-hud { top:80px; left:16px; padding:9px 12px; } }

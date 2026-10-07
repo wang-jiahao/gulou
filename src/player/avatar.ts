@@ -101,6 +101,36 @@ export async function createAvatar(kind: CharacterKind = 'male') {
     },
     dispose() { mixer.stopAllAction(); mixer.uncacheRoot(model); geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); skeletons.forEach(s => s.dispose()); cloth.dispose(); },
     kick() { kickTime = .32; },
+    poseBasketball(held: boolean, followThrough: number) {
+      root.updateMatrixWorld(true);
+      for (const side of ['Left', 'Right']) {
+        const sign = side === 'Left' ? 1 : -1;
+        const a = bones[side + 'Arm'], b = bones[side + 'ForeArm'], c = bones[side + 'Hand'];
+        const release = held ? 0 : Math.sin(Math.min(1, followThrough * 2) * Math.PI / 2);
+        const target = root.localToWorld(new T.Vector3(sign * (held ? .11 : .16), height + .01 + release * .13, -.36 - release * .10));
+        const origin = a.getWorldPosition(new T.Vector3());
+        const upper = origin.distanceTo(b.getWorldPosition(new T.Vector3()));
+        const lower = b.getWorldPosition(new T.Vector3()).distanceTo(c.getWorldPosition(new T.Vector3()));
+        const direction = target.clone().sub(origin);
+        const d = T.MathUtils.clamp(direction.length(), Math.abs(upper - lower) + .002, upper + lower - .002);
+        direction.normalize();
+        const bend = new T.Vector3(sign * .65, -.55, -.3).applyQuaternion(root.quaternion);
+        bend.addScaledVector(direction, -bend.dot(direction)).normalize();
+        const along = (upper * upper + d * d - lower * lower) / (2 * d);
+        const h = Math.sqrt(Math.max(0, upper * upper - along * along));
+        align(a, b, origin.clone().addScaledVector(direction, along).addScaledVector(bend, h));
+        align(b, c, target);
+        if (handBasis[side]) {
+          const normal = new T.Vector3(-sign, .25, 0).normalize().applyQuaternion(root.quaternion);
+          const forward = new T.Vector3(0, 1, held ? -.12 : -.65).applyQuaternion(root.quaternion);
+          forward.addScaledVector(normal, -forward.dot(normal)).normalize();
+          const across = new T.Vector3().crossVectors(normal, forward).normalize();
+          const rotation = new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(across, normal, forward));
+          c.quaternion.copy(c.parent!.getWorldQuaternion(new T.Quaternion()).invert().multiply(rotation).multiply(handBasis[side].clone().invert()));
+          c.updateWorldMatrix(false, true);
+        }
+      }
+    },
     setGroundSampler(sampler:(x:number,z:number)=>number){groundSampler=sampler;},
     get gaitPhase(){return phase;},
     update(dt: number, speed: number, seated: boolean, flying=false, seatHeight=.55, cyclingPhase?:number, steering=0,airborne=false) {

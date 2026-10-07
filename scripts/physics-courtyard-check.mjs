@@ -13,7 +13,8 @@ import {Builder} from './geometry.ts';
 import {buildPhysicsBuilding} from './physics-building.ts';
 import {createPlanarCutout} from './planar-cutout.ts';
 import {physicsCourtyardLayout,createPhysicsCourtyardGround} from './physics-courtyard.ts';
-export {T,createPlanarCutout};
+import {physicsParkingSpots} from './physics-parking.ts';
+export {T,createPlanarCutout,physicsParkingSpots};
 export function fixture(f){
  const b=new Builder(),meshes=[],camera=[],doors=[];
  const record=buildPhysicsBuilding(f,b,meshes,camera,doors);
@@ -21,7 +22,7 @@ export function fixture(f){
  const court=createPhysicsCourtyardGround(layout,{stone:new T.MeshStandardMaterial(),grass:new T.MeshStandardMaterial(),textures:new Map()});
  return {record,meshes,camera,doors,building:b.finish('physics building'),layout,court};
 }`,resolveDir:resolve('src/world'),loader:'ts'},bundle:true,write:false,platform:'node',format:'esm'});
-const {T,createPlanarCutout,fixture}=await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
+const {T,createPlanarCutout,fixture,physicsParkingSpots}=await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
 const data=fixture(map.features.find(f=>f.id==='plan-70')),{layout,court}=data;
 const area=ring=>Math.abs(ring.reduce((s,a,i)=>{const b=ring[(i+1)%ring.length];return s+a[0]*b[1]-b[0]*a[1];},0)/2);
 function triangles(p){const rings=[p.points,...(p.holes??[])].map(r=>r.map(([x,z])=>new T.Vector2(x,z))),points=rings.flat();return T.ShapeUtils.triangulateShape(rings[0],rings.slice(1)).map(ids=>ids.map(i=>[points[i].x,points[i].y]));}
@@ -62,7 +63,7 @@ world.createCollider(RAPIER.ColliderDesc.cuboid(90,.1,90).setTranslation(cx,-.1,
 const point=(u,v,y=.91)=>{const[x,z]=layout.point(u,v);return{x,y,z};};
 const uv=p=>[(p.x-cx)*nz-(p.z-cz)*nx,(p.x-cx)*nx+(p.z-cz)*nz];
 const walks=[];
-function walk(name,start,end,{blocked=false,closedDoor=false,landing=false}={}){
+function walk(name,start,end,{blocked=false,closedDoor=false,landing=false,parked=false}={}){
  const s=point(...start),body=world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(s.x,s.y,s.z));
  const collider=world.createCollider(RAPIER.ColliderDesc.capsule(.57,.27),body),motor=world.createCharacterController(.02);
  motor.enableAutostep(.3,.2,false);motor.enableSnapToGround(.4);world.step();
@@ -76,6 +77,7 @@ function walk(name,start,end,{blocked=false,closedDoor=false,landing=false}={}){
  }
  const at={...body.translation()},endUV=uv(at);
  if(closedDoor){assert.ok(!reached,`${name}: closed door must block`);assert.ok(endUV[1]>1.7&&endUV[1]<1.85,`${name}: stopped before glass at ${endUV[1]}`);}
+ else if(parked){assert.ok(!reached,`${name}: parked vehicle must block`);assert.ok(endUV[1]>end[1]+.9&&endUV[1]<start[1]-.5,`${name}: stopped by vehicle at ${endUV}`);}
  else if(blocked){assert.ok(!reached,`${name}: expected hedge to block`);assert.ok(Math.abs(endUV[0])<8.8,`${name}: hedge stops character before bed`);}
  else {assert.ok(reached,`${name}: stopped at ${JSON.stringify({endUV,y:at.y})}`);assert.ok(minTreeClearance>.85,`${name}: tree envelope clearance ${minTreeClearance}`);}
  if(landing)assert.ok(at.y>1.30&&at.y<1.42,`${name}: landing height`);
@@ -88,6 +90,13 @@ walk('behind columns west',[4.8,2.15,1.34],[-4.8,2.15],{landing:true});
 walk('transverse walkway east',[-29,7.5],[29,7.5]);walk('transverse walkway west',[29,7.5],[-29,7.5]);
 walk('Zhongda Road east',[-29,55],[29,55]);walk('Zhongda Road west',[29,55],[-29,55]);
 for(const side of[-1,1])walk(`hedge blocks ${side}`,[side*4,25],[side*11,25],{blocked:true});
+for(const [i,spot]of physicsParkingSpots.entries())walk(`parked vehicle ${i}`,[spot.u,7],[spot.u,spot.v],{parked:true});
+walk('parked row front bypass east',[-20,6.15],[0,6.15]);
+walk('parked row front bypass west',[0,6.15],[-20,6.15]);
+walk('parked row rear bypass east',[-20,2.1],[-6.8,2.1]);
+walk('parked row rear bypass west',[-6.8,2.1],[-20,2.1]);
+walk('gap between parked scooters inward',[-8.28,7],[-8.28,2.1]);
+walk('gap between parked scooters outward',[-8.28,2.1],[-8.28,7]);
 let closedFacadeSamples=0;
 for(let u=-9;u<=9;u++){
  const a=point(u,1,2),b=point(u,-4,2),hit=world.castShape(a,{x:0,y:0,z:0,w:1},{x:b.x-a.x,y:0,z:b.z-a.z},new RAPIER.Capsule(.57,.27),0,1,true);
@@ -113,8 +122,19 @@ for(const [u,v]of[[0,12],[-15,20],[15,35],[0,51]]){
  const q=point(u,v,5),ray=new T.Raycaster(new T.Vector3(q.x,q.y,q.z),new T.Vector3(0,-1,0));
  const hits=ray.intersectObjects(court.cameraSolids,false);assert.ok(hits.length,'camera sees courtyard surface');cameraHits++;
 }
+let parkingCameraHits=0;
+for(const spot of physicsParkingSpots){
+ const q=point(spot.u,spot.v+2,.8),ray=new T.Raycaster(new T.Vector3(q.x,q.y,q.z),new T.Vector3(-nx,0,-nz),0,1.8);
+ const hits=ray.intersectObjects(court.cameraSolids,false);assert.ok(hits.length,`camera sees ${spot.kind} at ${spot.u}`);parkingCameraHits++;
+}
+const parkingGroup=court.group.getObjectByName('physics entrance parked vehicles');
+assert.equal(parkingGroup.children.length,7,'vehicles share seven merged material batches');
+const parkingBounds=new T.Box3().setFromObject(parkingGroup);
+for(const x of[parkingBounds.min.x,parkingBounds.max.x])for(const z of[parkingBounds.min.z,parkingBounds.max.z]){
+ const [u,v]=uv({x,z});assert.ok(u< -6.45&&v<6&&v>1.5,'vehicles clear stairs, facade and transverse walkway');
+}
 const {version}=JSON.parse(await readFile('package.json','utf8'));
 const reportDir=`docs/validation/v${version.replace(/\.0$/,'')}`;
-const report={version,passed:true,slabArea,expectedArea,buildingPolygonsChecked:neighbours.length,roadsChecked,meshes,triangles:trianglesCount,fixedMeshes:court.fixedMeshes.length,stoneCapSolids:court.solids.length,closedFacadeSamples,cameraHits,entranceSamples,walks,scope:'Actual plan-70 building and courtyard geometry, kerbs and hedge cores with Rapier character motor. Eight tree positions checked for route clearance; async GLB tree colliders and full-scene props not instantiated. Species, sizes and map registration approximate.'};
+const report={version,passed:true,slabArea,expectedArea,buildingPolygonsChecked:neighbours.length,roadsChecked,meshes,triangles:trianglesCount,fixedMeshes:court.fixedMeshes.length,simpleSolids:court.solids.length,closedFacadeSamples,cameraHits,parkingCameraHits,entranceSamples,walks,scope:'Actual plan-70 building, courtyard, kerbs, hedges and static parked vehicle envelopes with Rapier character motor. Eight tree positions checked for route clearance; async GLB tree colliders and full-scene props not instantiated. Species, sizes, vehicle count and map registration approximate.'};
 await mkdir(reportDir,{recursive:true});await writeFile(`${reportDir}/physics-courtyard-motor-${Date.now()}.json`,JSON.stringify(report,null,2),{flag:'wx'});
-world.free();console.log(JSON.stringify({passed:true,meshes,triangles:trianglesCount,walks:walks.length,closedFacadeSamples,cameraHits,entranceSamples:entranceSamples.length,slabArea}));
+world.free();console.log(JSON.stringify({passed:true,meshes,triangles:trianglesCount,walks:walks.length,closedFacadeSamples,cameraHits,parkingCameraHits,entranceSamples:entranceSamples.length,slabArea}));
