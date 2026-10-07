@@ -22,7 +22,7 @@ export function teachingBrick(){
 export function teachingFacade(b:Builder,meshes:CollisionMesh[],cameraSolids:T.Object3D[],doors:DoorRecord[],name:string,x:number,z:number,yaw:number){
  const mat=(name:string,color:number,roughness=.86,metalness=0)=>new T.MeshStandardMaterial({name:`teaching-${name}`,color,roughness,metalness});
  const stone=mat('pale-stone',0xd0d0c5),edge=mat('stone-edge',0xb6b8ae),inset=mat('inset-stone',0xc2c4bb),joint=mat('stone-joint',0x92988e);
- const frame=mat('green-grey-frame',0x606e68,.60),recess=mat('window-recess',0x3d4843),glass=mat('glazing',0x7b9497,.30,.16),doorGlass=mat('door-glazing',0x344c43,.40,.15),silver=mat('silver-lettering',0xd9ddd4,.43,.45);
+ const frame=mat('green-grey-frame',0x606e68,.60),recess=mat('window-recess',0x3d4843),glass=mat('glazing',0x7b9497,.30,.16),doorGlass=mat('door-glazing',0x344c43,.40,.15),silver=mat('silver-lettering',0xffffff,.55,.08);
  const bronze=mat('lamp-metal',0x505749,.48,.5),lamp=new T.MeshStandardMaterial({name:'teaching-warm-lantern',color:0xe4d6a1,emissive:0xba9e53,emissiveIntensity:.18,roughness:.65});
  const nx=Math.sin(yaw),nz=Math.cos(yaw),point=(u:number,y:number,v:number)=>new T.Vector3(x+u*nz+v*nx,y,z-u*nx+v*nz);
  const boxes:{kind:string;u:number;y:number;v:number;w:number;h:number;d:number}[]=[];
@@ -113,8 +113,8 @@ export function teachingFacade(b:Builder,meshes:CollisionMesh[],cameraSolids:T.O
  // Keeping their normal distinct from the central facade prevents floating sills.
  const shoulder=8.33;
  const shoulderFrame=(u:number,y:number,offset:number)=>{
-  const slope=u<0?.98/3.31:-1.11/3.03,turn=-Math.atan(slope);
-  return{p:point(u+Math.sin(turn)*offset,y,slope*(u-Math.sign(u)*6.7)+Math.cos(turn)*offset),yaw:yaw+turn};
+  const slope=u<0?1.1239/3.7999:-1.1061/3.0367,turn=-Math.atan(slope);
+  return{p:point(u+Math.sin(turn)*offset,y,slope*(u-Math.sign(u)*6.695)+Math.cos(turn)*offset),yaw:yaw+turn};
  };
  const shoulderBox=(u:number,y:number,offset:number,w:number,h:number,d:number,m:T.Material)=>{
   const f=shoulderFrame(u,y,offset);b.box(w,h,d,f.p.x,f.p.y,f.p.z,m,false,f.yaw);
@@ -126,18 +126,29 @@ export function teachingFacade(b:Builder,meshes:CollisionMesh[],cameraSolids:T.O
    shoulderBox(u+.38*side,y,.18,.045,2.04,.07,frame);shoulderBox(u+.38*side,y+.39,.18,.79,.05,.07,frame);
    for(const s of[-1,1])shoulderBox(u+.38*side,y+s*1.14,.12,1.19,.16,.37,stone);
   }
-  const outer=side<0?-10.01:9.73,inner=side*6.7,length=Math.hypot(outer-inner,side<0?.98:1.11);
+  const outer=side<0?-10.4949:9.7317,inner=side*6.695,length=Math.hypot(outer-inner,side<0?1.1239:1.1061);
   shoulderBox((outer+inner)/2,17.31,.04,length+.08,.19,.38,stone);
  }
  // Reconstruct the square-line emblem as an approximate geometric mark.
  const emblem=document.createElement('canvas');emblem.width=emblem.height=256;const ec=emblem.getContext('2d')!;
- ec.strokeStyle='#e0e1d8';ec.lineWidth=12;
+ ec.strokeStyle='#ffffff';ec.lineWidth=14;
  for(const [a,c,d,e]of [[35,35,220,35],[220,35,220,220],[220,220,35,220],[35,220,35,35],[35,87,170,87],[87,35,87,170],[87,170,220,170],[170,87,170,220],[121,35,121,132],[121,132,35,132],[170,35,170,57],[35,170,60,170],[121,170,121,220],[170,121,220,121]]){ec.beginPath();ec.moveTo(a,c);ec.lineTo(d,e);ec.stroke();}
- const et=new T.CanvasTexture(emblem);et.colorSpace=T.SRGBColorSpace;const em=new T.MeshStandardMaterial({name:'teaching-square-emblem-approximation',map:et,transparent:true,depthWrite:false,roughness:.8});
- const ef=shoulderFrame(shoulder,16.38,.10);b.add(new T.PlaneGeometry(.85,.85),em,ef.p.x,ef.p.y,ef.p.z,new T.Euler(0,ef.yaw,0));
- const label=document.createElement('canvas');label.width=128;label.height=512;const lc=label.getContext('2d')!;lc.fillStyle='#e0e4da';lc.font='104px "Kaiti SC","STKaiti",serif';lc.textAlign='center';lc.textBaseline='middle';['郑','钢','楼'].forEach((char,i)=>lc.fillText(char,64,78+i*166));
- const lt=new T.CanvasTexture(label);lt.colorSpace=T.SRGBColorSpace;const lm=silver.clone();lm.map=lt;lm.transparent=true;lm.depthWrite=false;
- const lf=shoulderFrame(7.68,13.21,.12);b.add(new T.PlaneGeometry(.49,2.0),lm,lf.p.x,lf.p.y,lf.p.z,new T.Euler(0,lf.yaw,0));
- const letterPoint=point(0,6.02,4.03),lettering=addBuildingLettering(b,'teaching',letterPoint.x,letterPoint.y,letterPoint.z,9.50,yaw);
- return{lettering,facade:{source:'user photograph + official VR gl-2-10-f; dimensions, lettering and emblem approximate',columns:columns.map(u=>({u,v:3.02,width:.95,base:1.2,top:5.52})),boxes,arches,windows:9,doorBays:3,porticoDepth:3.88,platformHeight:1.2,crownInscription:'pending reliable tracing; no invented transcription'}};
+ // Alpha-tested cutouts keep the empty canvas from casting a rectangular shadow.
+ const et=new T.CanvasTexture(emblem);et.colorSpace=T.SRGBColorSpace;const em=new T.MeshStandardMaterial({name:'teaching-square-emblem-approximation',map:et,alphaTest:.4,roughness:.8});
+ for(const side of[-1,1]){
+  const ef=shoulderFrame(side*shoulder,16.38,.16);b.add(new T.PlaneGeometry(1.40,1.40),em,ef.p.x,ef.p.y,ef.p.z,new T.Euler(0,ef.yaw,0));
+ }
+ const label=document.createElement('canvas');label.width=128;label.height=512;const lc=label.getContext('2d')!;lc.fillStyle='#ffffff';lc.font='104px "Kaiti SC","STKaiti",serif';lc.textAlign='center';lc.textBaseline='middle';['郑','钢','楼'].forEach((char,i)=>lc.fillText(char,64,78+i*166));
+ const lt=new T.CanvasTexture(label);lt.colorSpace=T.SRGBColorSpace;const lm=silver.clone();lm.name='teaching-zhenggang-lettering';lm.map=lt;lm.alphaTest=.4;
+ const lf=shoulderFrame(7.68,13.25,.20);b.add(new T.PlaneGeometry(.96,3.10),lm,lf.p.x,lf.p.y,lf.p.z,new T.Euler(0,lf.yaw,0));
+ // Photo shows eight silver characters across the crown; official school
+ // history confirms the wording. Calligraphy and dimensions remain approximate.
+ const motto='嚴謹求實勤奮創新',crown=document.createElement('canvas');crown.width=2048;crown.height=256;
+ const cc=crown.getContext('2d')!;cc.fillStyle='#ffffff';cc.font='210px "Kaiti SC","STKaiti",serif';cc.textAlign='center';cc.textBaseline='middle';
+ [...motto].forEach((char,i)=>cc.fillText(char,128+i*256,128));
+ const ct=new T.CanvasTexture(crown);ct.colorSpace=T.SRGBColorSpace;
+ const cm=silver.clone();cm.name='teaching-crown-motto';cm.map=ct;cm.alphaTest=.4;
+ const cp=point(0,19.48,.24);b.add(new T.PlaneGeometry(12.1,1.13),cm,cp.x,cp.y,cp.z,new T.Euler(0,yaw,0));
+ const letterPoint=point(0,6.02,4.03),lettering=addBuildingLettering(b,'teaching',letterPoint.x,letterPoint.y,letterPoint.z,9.50,yaw,mat('gold-sign',0xe3bd60,.52,.25));
+ return{lettering,facade:{source:'user photograph phase96 teaching-zhenggang + official VR gl-2-10-f; dimensions, calligraphy and emblem approximate',columns:columns.map(u=>({u,v:3.02,width:.95,base:1.2,top:5.52})),boxes,arches,windows:9,doorBays:3,porticoDepth:3.88,platformHeight:1.2,crownInscription:motto,crownWordingSource:'https://scit.nju.edu.cn/36/eb/c10985a210667/pagem.htm'}};
 }

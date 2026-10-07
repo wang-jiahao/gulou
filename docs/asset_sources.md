@@ -626,3 +626,10 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 实际查看用户新图 `references/phase96-user/software-entry.png`、`feiyimin-passage-title.png`、`crest-stone-panel.png`，结合官方VR侧面与[学院通讯地址](https://software.nju.edu.cn/lxwm/index.html)。银色软件学院竖牌在左石柱，金色繁体費彝民樓在双通道上方，中央红柱；校徽在间隔石墙上，铁栏不挂校徽。尺寸、字体、隐蔽面为近似。原图不分发。
 
 真实Player/Rapier传送10项、Fei14条路线/10屏障和相机/3坡面、校界连续碰撞与石墙断言通过。普通UI最终软件入口、费楼通道、校徽墙画面已实看，console无error。证据见docs/validation/v0.98；初次传送失败与修复后报告均保留。
+
+
+### v0.99 教学楼／郑钢楼与南园教学楼
+
+实际查看用户 `references/phase96-user/teaching-zhenggang.png`、`south-teaching-color.png` 与官方 VR `references/phase18/scene_gl-1-13-f-full.jpg`。北园正面顶部银白标语、两侧校徽、右上白色竖排郑钢楼及金色教學樓按照片调整；标语文字参照 https://scit.nju.edu.cn/36/eb/c10985a210667/pagem.htm 。南园暖黄色墙面依据新图，题名以官方VR可读“南园教学楼”为准，不把记忆中的删字当作核实结果。两栋位置区分参考 https://jw.nju.edu.cn/33/b6/c24683a603062/page.htm 及 https://www.nju.edu.cn/info/3191/152251.htm 。字体、颜色与未见面近似，原图不分发。
+
+类型、src ESLint、构建及南园入口6路线/43阻挡/6角色行走通过；局部9mesh/5014tri，不代表全场性能测量。普通UI两处最终画面实看，console无error，证据docs/validation/v0.99。日志/tmp/gulou-v99-{types-final,lint-final,build-final,south-layout-final}.log；旧基线保留。

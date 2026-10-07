@@ -54,6 +54,8 @@ for(const u of[-4.5,0,4.5]){
  walks.push({u,entered,exited,inFrames,outFrames});world.removeCharacterController(motor);world.removeRigidBody(body);world.step();
 }
 const render={meshes:0,triangles:0};data.group.traverse(m=>{if(m.isMesh){render.meshes++;render.triangles+=(m.geometry.index?.count??m.geometry.attributes.position.count)/3;assert.ok(m.geometry.attributes.position.array.every(Number.isFinite));}});
-const report={version:'0.86.0',passed:true,routes,blocked,walks,record:data.record,render,scope:'Isolated building colliders and Rapier motor; no browser input/camera or adjacent props. Official reference and whole-scene appearance reviewed separately.'};
-await mkdir('docs/validation/v0.86',{recursive:true});await writeFile(`docs/validation/v0.86/layout-${Date.now()}.json`,JSON.stringify(report,null,2),{flag:'wx'});
+const version=JSON.parse(await readFile('package.json','utf8')).version;
+const outputDir=`docs/validation/v${version.split('.').slice(0,2).join('.')}`;
+const report={version,passed:true,routes,blocked,walks,record:data.record,render,scope:'Isolated building colliders and Rapier motor; no browser input/camera or adjacent props. Official reference and whole-scene appearance reviewed separately.'};
+await mkdir(outputDir,{recursive:true});await writeFile(`${outputDir}/layout-${Date.now()}.json`,JSON.stringify(report,null,2),{flag:'wx'});
 world.free();console.log(JSON.stringify({passed:true,routes,blocked,motorWalks:walks.length*2,render}));

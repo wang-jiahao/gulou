@@ -10,7 +10,9 @@ import type {DoorRecord} from './building-entrances.ts';
  * are approximate. The recessed porch is open, the interior is not modelled. */
 export function buildNanyuanTeaching(f:MapFeature,b:Builder,meshes:CollisionMesh[],camera:T.Object3D[],doors:DoorRecord[]){
  const mat=(name:string,color:number)=>new T.MeshStandardMaterial({name:`nanyuan-teaching-${name}`,color,roughness:.88});
- const wall=mat('plaster',0xd2d5c5),base=mat('lower-plaster',0xbfc8c6),stone=mat('stone',0x9b9e91),trim=mat('ivory-frame',0xcbd0c5),dark=mat('recess',0x364440),glass=mat('glass',0x617877),shade=mat('upper-window-shade',0xc8cec6),roof=mat('roof',0x69766a);
+ // The user's newer side photograph shows warm ochre plaster and pale trim.
+ // Colour is approximate: trees shade much of the facade in that reference.
+ const wall=mat('plaster',0xd8ba78),base=mat('lower-plaster',0xcdb279),stone=mat('stone',0xa39b84),trim=mat('ivory-frame',0xe1dcc5),dark=mat('recess',0x364440),glass=mat('glass',0x617877),shade=mat('upper-window-shade',0xd9d7c5),roof=mat('roof',0x555951);
  glass.roughness=.3;glass.metalness=.2;
  const a=f.points[3],c=f.points[4],len=Math.hypot(c[0]-a[0],c[1]-a[1]),cx=(a[0]+c[0])/2,cz=(a[1]+c[1])/2;
  let nx=-(c[1]-a[1])/len,nz=(c[0]-a[0])/len;if(insidePolygon(cx+nx*.2,cz+nz*.2,f)){nx=-nx;nz=-nz;}
@@ -85,5 +87,5 @@ export function buildNanyuanTeaching(f:MapFeature,b:Builder,meshes:CollisionMesh
   }
  }
  const[dx,dz]=point(0,-depth+.22);doors.push({name:f.tags.name,x:dx,y:.24,z:dz,yaw,width:4.4});
- return{id:f.id,name:f.tags.name,source:'Official NJU VR gl-1-13 north facade; asset-office footprint; dimensions and hidden elevations approximate',height:10.93,windows,roof:'central straight gable; hidden wings approximate',dormitory:false,frontage:[cx,cz,nx,nz],storeys:2,porch:{width:halfPorch*2,depth,stepHeight:.24},lettering:'南园教学楼'};
+ return{id:f.id,name:f.tags.name,source:'Official NJU VR gl-1-13 north facade; user phase96 south-teaching-color for ochre plaster; asset-office footprint; colours, dimensions and hidden elevations approximate',height:10.93,windows,roof:'central straight gable; hidden wings approximate',dormitory:false,frontage:[cx,cz,nx,nz],storeys:2,porch:{width:halfPorch*2,depth,stepHeight:.24},lettering:'南园教学楼'};
 }
