@@ -1,10 +1,11 @@
 export type WeatherMode = 'clear' | 'rain' | 'random';
-export const DEFAULT_CYCLE_MINUTES = 96;
-export const CYCLE_MINUTES = [48, DEFAULT_CYCLE_MINUTES, 192];
-/** Preserve the relative speed of pre-v0.82 preferences while slowing every old preset. */
+export const DEFAULT_CYCLE_MINUTES = 64;
+export const CYCLE_MINUTES = [32, DEFAULT_CYCLE_MINUTES, 128];
+/** Preserve fast/normal/slow preferences across both previous sets of presets. */
 export function restoreCycleMinutes(value: unknown) {
   if (typeof value !== 'number') return DEFAULT_CYCLE_MINUTES;
-  if ([6, 12, 24].includes(value)) return value * 8;
+  if ([6, 12, 24].includes(value)) return value * 16 / 3;
+  if ([48, 96, 192].includes(value)) return value * 2 / 3;
   return CYCLE_MINUTES.includes(value) ? value : DEFAULT_CYCLE_MINUTES;
 }
 

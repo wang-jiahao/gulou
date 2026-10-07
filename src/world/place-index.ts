@@ -23,7 +23,10 @@ export function distanceToFeature(x:number,z:number,f:MapFeature) {
  * that labels everything west of the courtyard as one landmark. */
 export function locationName(map:CampusMap,x:number,z:number,flying=false) {
   let name='';
-  if(x>-258&&x<-220&&z>91&&z<129)name='大纛坪';
+  // The gate has no building footprint. Cover its immediate approaches without
+  // extending the gate label into nearby dormitories or along Guangzhou Road.
+  if(Math.abs(x-map.gates.guangzhou[0])<15&&z>map.gates.guangzhou[1]-13&&z<map.gates.guangzhou[1]+16)name='广州路门';
+  else if(x>-258&&x<-220&&z>91&&z<129)name='大纛坪';
   else if(x>-30&&x<28&&z>249&&z<283)name='校史博物馆';
   else if(Math.hypot(x+200.11745,z+141.1906)<4.5)name='费彝民楼附近';
   else if(Math.abs(x)<4&&z>18&&z<86)name=z>81?'金大路 · 北大楼南台阶':'金大路';
