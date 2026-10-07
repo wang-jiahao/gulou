@@ -29,6 +29,7 @@ import {buildNanyuanDining} from './nanyuan-dining.ts';
 import {buildYaoliangHall} from './yaoliang-hall.ts';
 import {buildNjuMemory} from './nju-memory.ts';
 import {buildNanyuanTeaching} from './nanyuan-teaching.ts';
+import {buildWestHeritage} from './west-heritage.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
 export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, roads:MapPolygon[] = []) {
@@ -83,6 +84,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(f.id==='plan-113'){records.push(buildNanyuanDining(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-114'){records.push(buildYaoliangHall(f,mats,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-6'||f.id==='plan-13'){records.push(buildSportsHall(f,b,fixedMeshes,cameraSolids,doors));continue;}
+    if(f.id==='plan-38'||f.id==='plan-51'){records.push(buildWestHeritage(f,b,fixedMeshes,cameraSolids,doors));continue;}
     const specific=buildSpecific(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials);if(specific){records.push(specific);if(specific.yifuIvy)courtyardClimbers.push(createYifuHallIvy(specific.yifuIvy,mats));continue;}
     const profile=getBuildingProfile(f),teaching=f.id==='teaching-priority',points=f.points,shape=planShape(f);
     const height=teaching?16.6:f.id==='plan-10'?yifuTower.height:profile.levels*3.25, floorHeight=height/profile.levels;

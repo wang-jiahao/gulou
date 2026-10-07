@@ -4,6 +4,8 @@ const story=(summary:string,detail:string,source=vr,sourceLabel='南京大学官
 /** Concise paraphrases of the named official source. Unverified places fall
  * back to existing wayfinding text; no invented dates or building histories. */
 export const placeStories:Record<string,PlaceStory>={
+ '健忠楼':story('健忠楼位于北园西北部、赛珍珠故居北侧，入口朝向运动场。建筑建于1912年，地上两层，另有阁楼和地下室。','它曾供体育部使用，1999年在林健忠先生支持下修缮，并由季羡林先生题写楼名。灰砖、浅色柱廊与瓶形栏杆构成入口特征；被树木遮挡的屋顶及模型尺度为近似重建。','https://baike.baidu.com/item/健忠楼/59211080','百度百科 · 健忠楼（层数另核对南京大学2022年维修改造公告）'),
+ '西南楼（法学院）':story('西南楼由杨廷宝设计，建成于1954年，入口朝东。楼体为三层并设阁楼，中央与南北两翼组成工字形平面。','这座楼曾用于生物学、生命科学教学科研。2024年5月18日，南京大学法学院新院楼在这里启用。东侧长台阶通往二层门厅；模型按入口照片重建，未见立面与尺度仍为近似。','https://dawww.nju.edu.cn/info/1201/10581.htm','南京大学档案馆 · 筑言·鼓楼：西南楼'),
  '赛珍珠纪念馆':story('赛珍珠故居位于鼓楼校区北园西墙附近、西南楼西侧。灰砖住宅包含半地下室和阁楼，建筑面积约600平方米。','据南京大学档案馆记载，这座住宅建于1912年，2011年启动修复，2012年5月19日建成纪念馆。校园地图亦称“赛珍珠楼”；当前模型的平面配准和未见部分为近似重建。','https://dawww.nju.edu.cn/info/1201/10661.htm','南京大学档案馆 · 筑言·鼓楼：赛珍珠故居'),
  '软件学院':story('南京大学软件学院的鼓楼通讯地址是汉口路22号费彝民楼B座4—9层。学院与费彝民楼是院系和所在楼宇的关系。','用户提供的入口照片可见高玻璃棚、后退的两层玻璃门厅，以及左侧石柱上竖排的“南京大学软件学院”。模型按照片安排入口与院牌，尺寸和书法字形仍为近似；到访请结合B座楼层指引。','https://software.nju.edu.cn/lxwm/index.html','南京大学软件学院 · 联系我们'),
  '费彝民楼群':story('费彝民楼是鼓楼校区的教学、科研楼宇之一。软件学院官网将其鼓楼通讯地址列在这座楼的B座4—9层。','楼宇名称与入驻学院名称不同。寻找软件学院时，可结合B座和楼层信息辨认；学院通讯地址不代表整栋建筑都由学院使用。','https://software.nju.edu.cn/lxwm/index.html','南京大学软件学院 · 联系我们'),
@@ -54,6 +56,7 @@ export const placeStories:Record<string,PlaceStory>={
 };
 // Exact map, door and historical-name variants share one sourced account.
 const aliases:Record<string,string>={
+ '地球楼':'健忠楼','西南楼':'西南楼（法学院）','法学院':'西南楼（法学院）',
  '校史馆':'校史博物馆','教学楼丨郑钢楼':'教学楼／郑钢楼','郑钢楼':'教学楼／郑钢楼',
  '广州路门':'广州路校门','汉口路门':'汉口路校门','费彝民楼':'费彝民楼群',
  '小礼堂（钟亭）':'小礼堂','百年鼎':'百年大鼎','科技馆报告厅':'科学技术馆',
