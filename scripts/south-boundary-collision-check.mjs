@@ -24,6 +24,45 @@ try {
  const capsule=new RAPIER.Capsule(.57,.27),raycaster=new T.Raycaster();
  const cast=(a,b,shape=capsule,yaw=0)=>world.castShape(a,{x:0,y:Math.sin(yaw/2),z:0,w:Math.cos(yaw/2)},{x:b.x-a.x,y:b.y-a.y,z:b.z-a.z},shape,0,1,true);
  const runs=data.boundary.group.userData.southRuns;
+ // Inspect rendered instance matrices: metadata alone cannot catch crests
+ // still mounted on pickets or continuous rails hidden inside stone panels.
+ const instances=name=>{
+  const output=[];
+  data.boundary.group.traverse(mesh=>{
+   if(!mesh.isInstancedMesh||mesh.material.name!==name)return;
+   for(let i=0;i<mesh.count;i++){
+    const m=new T.Matrix4();mesh.getMatrixAt(i,m);m.premultiply(mesh.matrixWorld);
+    const position=new T.Vector3(),rotation=new T.Quaternion(),scale=new T.Vector3();m.decompose(position,rotation,scale);
+    output.push({position,rotation,scale});
+   }
+  });return output;
+ };
+ const walls=instances('campus-boundary-stone').filter(i=>i.scale.x>1&&i.scale.y>3);
+ const badges=instances('campus-boundary-emblem'),iron=instances('campus-boundary-iron');
+ assert.ok(walls.length>0,'rendered granite crest walls exist');
+ assert.equal(badges.length,walls.length*2,'two face crests per granite wall');
+ const matched=new Set();
+ for(const wall of walls){
+  const inverse=wall.rotation.clone().invert();
+  const local=i=>i.position.clone().sub(wall.position).applyQuaternion(inverse);
+  const faces=[];
+  badges.forEach((badge,i)=>{
+   const q=local(badge);
+   if(Math.abs(q.x)<.01&&Math.abs(Math.abs(q.z)-.222)<.01){
+    assert.ok(Math.abs(q.y-.49)<.01,'crest height on central slab');
+    assert.ok(Math.abs(badge.scale.x/badge.scale.y-52/79)<1e-5,'crest aspect ratio');
+    assert.ok(Math.abs(q.z)>wall.scale.z/2,'crest in front of stone');
+    faces.push(Math.sign(q.z));matched.add(i);
+   }
+  });assert.deepEqual(faces.sort(),[-1,1],'one crest on each stone face');
+  for(const bar of iron){
+   const q=local(bar),axis=new T.Vector3(1,0,0).applyQuaternion(bar.rotation).applyQuaternion(inverse);
+   if(Math.abs(q.z)<.05&&Math.abs(axis.x)>.999)
+    assert.ok(Math.abs(q.x)-bar.scale.x/2>=wall.scale.x/2-.02,'iron must stop before crest wall');
+  }
+ }
+ assert.equal(matched.size,badges.length,'no crest left on iron-only bays');
+ Object.assign(report,{crestWalls:walls.length,crestFaces:badges.length,ironInstances:iron.length});
  let fenceSamples=0,visualBaseSamples=0,jointSamples=0,shopSamples=0;
  for(const run of runs)for(let j=1;j<run.points.length;j++) {
   const a=run.points[j-1],b=run.points[j],length=Math.hypot(b[0]-a[0],b[1]-a[1]),nx=(b[1]-a[1])/length,nz=(a[0]-b[0])/length;

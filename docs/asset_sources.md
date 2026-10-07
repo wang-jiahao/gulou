@@ -1,6 +1,6 @@
 # 资产来源与使用范围
 
-当前本地版本 v0.93.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
+当前本地版本 v0.98.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
 
 | 资产 / 资料 | 来源与许可 | 使用方式 |
 | --- | --- | --- |
@@ -619,3 +619,10 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 
 - 篮球场沿用已核实的五场九篮架布局；新增程序生成篮球、蓄力抛物线、篮圈/篮板碰撞、2/3分与持球双臂姿态，没有新外部美术素材。正常UI及20次物理投篮检查通过，见docs/validation/v0.96。
 - 物理楼门左车辆依据本地references/phase36/physics-front-full.jpg（官方VR gl-2-15-f）；五辆电动车及一辆自行车的细节与间距近似，宽视角已实看，证据docs/validation/v0.95/after-vehicles-wide.jpg。
+
+
+### v0.98 费彝民楼、软件学院与校徽石墙
+
+实际查看用户新图 `references/phase96-user/software-entry.png`、`feiyimin-passage-title.png`、`crest-stone-panel.png`，结合官方VR侧面与[学院通讯地址](https://software.nju.edu.cn/lxwm/index.html)。银色软件学院竖牌在左石柱，金色繁体費彝民樓在双通道上方，中央红柱；校徽在间隔石墙上，铁栏不挂校徽。尺寸、字体、隐蔽面为近似。原图不分发。
+
+真实Player/Rapier传送10项、Fei14条路线/10屏障和相机/3坡面、校界连续碰撞与石墙断言通过。普通UI最终软件入口、费楼通道、校徽墙画面已实看，console无error。证据见docs/validation/v0.98；初次传送失败与修复后报告均保留。

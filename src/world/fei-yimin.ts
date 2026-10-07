@@ -2,7 +2,7 @@ import * as T from 'three';
 import {Builder} from './geometry.ts';
 import {insidePolygon,planShape,type MapFeature} from './campus-map.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
-import {addEntrance,entranceMaterials,type DoorRecord} from './building-entrances.ts';
+import {entranceMaterials,type DoorRecord} from './building-entrances.ts';
 import type {Materials} from './materials.ts';
 
 /** Official VR gl-3 / gl-4-02 and the 2024 plan show a west tower, a five-storey
@@ -14,7 +14,7 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  const point=(u:number,v:number)=>[origin[0]+u*co-v*si,origin[1]+u*si+v*co];
  const local=f.points.map(([x,z])=>[(x-origin[0])*co+(z-origin[1])*si,-(x-origin[0])*si+(z-origin[1])*co]);
  const paint=(name:string,color:number,stone=false)=>new T.MeshStandardMaterial({name:`fei-${name}`,color,roughness:.86,map:stone?mats.textures.get('stone-grain.webp'):null});
- const wall=paint('pale-stone',0xd0d2cb,true),trim=paint('window-piers',0xd4d5ce),plinth=paint('base',0x969b91,true),roof=paint('roof',0x626d69),red=paint('podium-ground-red',0x793b36),dark=paint('reveal',0x505957);
+ const wall=paint('pale-stone',0xd0d2cb,true),trim=paint('window-piers',0xd4d5ce),plinth=paint('base',0x969b91,true),roof=paint('roof',0x626d69),red=paint('podium-ground-red',0x793b36),dark=paint('reveal',0x505957),tan=paint('south-upper-tan-stone',0xb79a7f,true);
  roof.side=T.DoubleSide;
  // Keep the thin roof visible from either side, but use its back faces in
  // shadow passes to avoid self-shadow stripes without weakening campus shadows.
@@ -44,7 +44,11 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  // recesses and the tower/low-wing division, corroborated by south and west VR.
  const tower=[[0,0],[18.5,0],[18.5,6.7],[26.1,6.7],[26.1,0],[46,0],[46,37.04],[26,37.04],[26,30],[18.3,30],[18.3,37.04],[-1.53,37.02]];
  mass('tower-upper',tower,61.2,7.2);
- mass('tower-ground-east',clip(tower,0,6.2,1),7.2);
+ // Photo: the school entrance is recessed under the canopy, with lettering
+ // on its left stone column. Cut the mass as well as the facade windows.
+ mass('tower-ground-entry-left',clip(clip(tower,0,6.2,1),0,9,-1),7.2);
+ mass('tower-ground-entry-right',clip(tower,0,16.4,1),7.2);
+ mass('tower-ground-entry-back',clip(clip(clip(tower,0,9,1),0,16.4,-1),1,34.2,-1),7.2);
  mass('tower-ground-northwest',clip(clip(tower,0,6.2,-1),1,21,-1),7.2);
  const columns=[24,30,36];for(const v of columns)box(-.8,3.6,v,1.25,7.2,1.35,trim,true);
  // The inner south edge slopes slightly in the plan. Partition along that
@@ -65,6 +69,7 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  mass('south-alcove-back',clip(section(29,44),1,56.4,1),clearance);
  mass('south-ground-between-openings',section(44,49),clearance);
  mass('south-ground-east',clip(south,0,55,1),clearance);
+ box(52,clearance/2,70.9,1,clearance,1,red,true);
  function facade(points:number[][],height:number,style:'tower'|'podium',firstFloor=0){
   const polygon={points};
   for(let i=0;i<points.length;i++){
@@ -76,21 +81,21 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
     if(mat===glass)b.add(new T.PlaneGeometry(w,h),mat,x,y,z,new T.Euler(0,yaw,0));else b.box(w,h,d,x,y,z,mat,false,yaw);
    };
    const towerFace=style==='tower',floor=towerFace?3.6:3.8,levels=towerFace?19:5;
-   // The west end of the south wing has a broad stone strip for its vertical
-   // name. Reserve that wall before laying out windows, including their frames.
-   const letteringFace=!towerFace&&mx<9&&mv>52.8,reserve=letteringFace?5.4:0;
-   const bays=Math.max(1,Math.floor((len-reserve)/(towerFace?2.2:3.3))),pitch=(len-reserve)/bays;
+   const exteriorSouth=!towerFace&&Math.abs(mv-71.4)<.5;
+   const bays=Math.max(1,Math.floor(len/(towerFace?2.2:3.3))),pitch=len/bays;
    // Hidden seams where the low wings meet get no duplicate facade. The east
    // tower windows begin above the low roof; open column bays stay unglazed.
    if(!towerFace&&((mx>45.9&&mx<46.1)||(Math.abs(mv-37.04)<.05&&mx>58)||(Math.abs(mv-52.8)<.05&&mx>58)))continue;
    for(let level=firstFloor;level<levels;level++){
     const y=floor*(level+.55),h=towerFace?2.65:2.55;
+    const upperTan=exteriorSouth&&level>=3;
+    if(upperTan)put(0,floor*(level+.5),.04,len,floor,.08,tan);
     if(towerFace&&mx>45.9&&y<20)continue;
     const inRecess=towerFace&&((Math.abs(mv-30)<.05)||(Math.abs(mv-6.7)<.05));
     for(let bay=0;bay<bays;bay++){
-     const u=reserve+(bay+.5)*pitch-len/2,lu=mx+u*Math.cos(yaw+angle),lv=mv-u*Math.sin(yaw+angle);
+     const u=(bay+.5)*pitch-len/2,lu=mx+u*Math.cos(yaw+angle),lv=mv-u*Math.sin(yaw+angle);
      if(towerFace&&level<2&&lu<6.3&&lv>20.5)continue;
-     if(towerFace&&level===0&&Math.abs(mv-37.04)<.05&&lu+pitch/2>35&&lu-pitch/2<43)continue;
+     if(towerFace&&level<2&&Math.abs(mv-37.04)<.05&&lu+pitch/2+.2>9&&lu-pitch/2-.2<16.4)continue;
      if(!towerFace&&level===0&&mv>=52.6){
       // Skip entire bays whose windows, frames or red piers overlap an opening.
       const half=pitch/2+.2,front=Math.abs(mv-frontV(mx))<.05,back=mv>70;
@@ -98,6 +103,14 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
       if(front&&lu+half>29&&lu-half<44)continue;
      }
      if(!towerFace&&level===0&&Math.abs(mv-71.4)<.5){put(u,y,.11,pitch-.4,3.25,.12,glass);put(u-pitch/2+.12,1.9,.25,.36,3.8,.45,red);windows++;continue;}
+     if(upperTan){
+      // The photographed upper two storeys have grouped vertical lights,
+      // while the lower two retain broad grey-framed windows.
+      const w=pitch*.18;
+      for(const offset of[-.27,0,.27]){const q=u+pitch*offset;put(q,y,.095,w+.10,h+.12,.055,dark);put(q,y,.13,w,h,.02,glass);put(q,y-.36,.15,w,.05,.07,trim);windows++;}
+      put(u-pitch/2,y,.086,.018,floor,.018,plinth);
+      continue;
+     }
      const w=pitch-(towerFace?.64:.58);
      put(u,y,.025,w+.14,h+.12,.055,dark);put(u,y,.057,w,h,.02,glass);
      for(const side of[-1,1]){put(u+side*w/2,y,.075,.055,h+.12,.075,trim);put(u,y+side*h/2,.075,w+.14,.065,.075,trim);}
@@ -105,7 +118,7 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
      if(!towerFace)put(u,y,.085,.055,h,.08,trim);
      windows++;
     }
-    if(!inRecess&&level>=2)put(reserve/2,floor*level,.03,len-reserve,level%2===0?.42:.20,.10,trim);
+    if(!inRecess&&level>=2)put(0,floor*level,.10,len,upperTan?.04:level%2===0?.42:.20,.10,upperTan?plinth:trim);
    }
    put(0,height-.07,.08,len,.22,.26,trim);
   }
@@ -120,13 +133,48 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  }
  // Short glass canopy bridges the west-open courtyard without blocking its
  // ground route. Its dimensions are fitted to the VR, not survey measurements.
- box(12.7,4.55,44.92,11.8,.16,16.05,canopy,true);
- for(const u of[6.8,9.75,12.7,15.65,18.6])box(u,4.42,44.92,.10,.17,16.1,trim);
- for(const v of[37.0,40.2,43.4,46.6,49.8,52.95])box(12.7,4.42,v,12,.17,.10,trim);
- const entry=point(39,37.04),yaw=-angle;
- addEntrance(b,meshes,doors,doorMats,f.tags.name,entry[0],entry[1],yaw,5.4,0);
- // The school confirms B block, floors 4–9, but not an exterior plaque here.
- // Remove the user-rejected placement until a facade reference locates it.
+ box(12.7,7.6,44.92,11.8,.16,16.05,canopy,true);
+ for(const u of[6.8,9.75,12.7,15.65,18.6])box(u,7.47,44.92,.10,.17,16.1,trim);
+ for(const v of[37.0,40.2,43.4,46.6,49.8,52.95])box(12.7,7.47,v,12,.17,.10,trim);
+ const entry=point(12.7,34.32),yaw=-angle;
+ // Double-height glazing and a broad stone transom sit at the back of the
+ // real recess. The closed door/back mass prevents access to unbuilt rooms.
+ box(12.7,3.55,34.24,7.4,7.1,.045,glass);
+ for(const u of[9.05,10.9,12.7,14.5,16.35])box(u,3.55,34.29,.08,7.1,.08,doorMats.frame);
+ for(const y of[.05,2.8,4.3,7.1])box(12.7,y,34.29,7.4,.08,.08,doorMats.frame);
+ box(12.7,3.55,35.7,7.4,.64,2.68,wall);
+ for(const u of[12.55,12.85])box(u,1.3,34.37,.04,.6,.07,doorMats.steel);
+ doors.push({name:'软件学院',x:entry[0],y:0,z:entry[1],yaw,width:3.6});
+ box(8.4,3.6,36.9,1.2,7.2,.28,wall);
+ for(let y=.9;y<7.2;y+=.9)box(8.4,y,37.045,1.2,.018,.012,plinth);
+ // The photo shows a low left-hand access ramp and two stainless handrails.
+ // Its extent and rise are approximate; the central door approach stays open.
+ box(12.7,.09,36.8,7.4,.18,5.1,plinth,true);
+ const ramp=new T.BoxGeometry(8.4,.18,1.65),rp=ramp.getAttribute('position');
+ for(let i=0;i<rp.count;i++)rp.setY(i,rp.getY(i)>0?.015+(rp.getX(i)+4.2)/8.4*.165:0);
+ ramp.computeVertexNormals();
+ const rampPoint=point(4.8,38.525),rampRotation=new T.Euler(0,-angle,0);
+ // Builder transforms its input in place; keep the collider in local space.
+ b.add(ramp.clone(),plinth,rampPoint[0],0,rampPoint[1],rampRotation);
+ const rampProxy=new T.Mesh(ramp,new T.MeshBasicMaterial({side:T.DoubleSide}));
+ rampProxy.position.set(rampPoint[0],0,rampPoint[1]);rampProxy.rotation.copy(rampRotation);
+ meshes.push(collisionMesh(rampProxy));cameraSolids.push(rampProxy);
+ const railPoint=(u:number,y:number,v:number)=>{const[x,z]=point(u,v);return new T.Vector3(x,y,z);};
+ for(const u of[.8,2.7,4.6,6.5,8.4]){
+  const rise=.015+(u-.6)/8.4*.165;
+  b.cylinder(railPoint(u,rise,39.36),railPoint(u,rise+.98,39.36),.023,.023,doorMats.steel,8);
+ }
+ for(const h of[.66,.98])b.line([railPoint(.6,h+.015,39.36),railPoint(8.65,h+.173,39.36),railPoint(8.82,h+.15,39.36)],.026,doorMats.steel,8);
+ // A thin collision-only envelope keeps the player from crossing the rail.
+ const railProxy=new T.Mesh(new T.BoxGeometry(8.4,1.16,.06),new T.MeshBasicMaterial({side:T.DoubleSide}));
+ const railPosition=point(4.8,39.36);railProxy.position.set(railPosition[0],.58,railPosition[1]);railProxy.rotation.y=-angle;
+ meshes.push(collisionMesh(railProxy));cameraSolids.push(railProxy);
+ const schoolCanvas=document.createElement('canvas');schoolCanvas.width=180;schoolCanvas.height=1440;
+ const schoolCtx=schoolCanvas.getContext('2d')!;schoolCtx.textAlign='center';schoolCtx.textBaseline='middle';
+ [...'南京大学软件学院'].forEach((s,i)=>{schoolCtx.font=`${i<4?146:134}px ${i<4?'"Kaiti SC","STKaiti",serif':'"PingFang SC",sans-serif'}`;schoolCtx.fillStyle='#68665e';schoolCtx.fillText(s,94,95+i*176,160);schoolCtx.fillStyle='#dddcd2';schoolCtx.fillText(s,90,91+i*176,160);});
+ const schoolMat=signMaterial('fei-software-column-lettering',schoolCanvas);schoolMat.transparent=true;schoolMat.depthWrite=false;
+ const schoolPoint=point(8.4,37.07);
+ b.add(new T.PlaneGeometry(.64,5.12),schoolMat,schoolPoint[0],3.72,schoolPoint[1],new T.Euler(0,yaw,0));
  // The photographed courtyard slogan remains a static canvas sign.
  function signMaterial(name:string,canvas:HTMLCanvasElement){const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;return new T.MeshStandardMaterial({name,map,roughness:.85});}
  const sloganCanvas=document.createElement('canvas');sloganCanvas.width=1320;sloganCanvas.height=660;
@@ -159,15 +207,13 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  // Equipment follows the actual tower and the long south roof.
  box(31,69.2,13,7,1.6,8,roof,true);
  for(const u of[21,27,33,39,45,51]){box(u,19.5,63,3.8,1,2.2,plinth,true);for(const v of[62.3,63,63.7])box(u,20.05,v,3.8,.07,.10,trim);}
- // Correct west-end vertical placement. The available pixels do not justify
- // pretending that a system-font approximation is the original calligraphy.
- const canvas=document.createElement('canvas');canvas.width=160;canvas.height=768;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#b1923f';ctx.font='116px "Kaiti SC","STKaiti",serif';ctx.textAlign='center';ctx.textBaseline='middle';
- [...'费彝民楼'].forEach((s,i)=>ctx.fillText(s,80,96+i*183,145));
+ // User photo locates the traditional horizontal name over the exterior
+ // passage. Its calligraphy remains an approximation, not a traced original.
+ const canvas=document.createElement('canvas');canvas.width=800;canvas.height=160;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#b1923f';ctx.font='128px "Kaiti SC","STKaiti",serif';ctx.textAlign='center';ctx.textBaseline='middle';
+ [...'費彝民樓'].forEach((s,i)=>ctx.fillText(s,112+i*192,80,160));
  const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;
- const signMat=new T.MeshStandardMaterial({name:'fei-vertical-gold-lettering',map,transparent:true,roughness:.55,depthWrite:false});
- const westEdge=south.map((p,i)=>[p,south[(i+1)%south.length]]).sort((a,c)=>(a[0][0]+a[1][0])-(c[0][0]+c[1][0]))[0];
- const [wa,wc]=westEdge,signV=56.5,signU=wa[0]+(wc[0]-wa[0])*(signV-wa[1])/(wc[1]-wa[1]),slope=(wc[0]-wa[0])/(wc[1]-wa[1]);
- const signYaw=-Math.PI/2+Math.atan(slope)-angle,sign=point(signU,signV);
- b.add(new T.PlaneGeometry(1.15,5.52),signMat,sign[0]+Math.sin(signYaw)*.035,14.9,sign[1]+Math.cos(signYaw)*.035,new T.Euler(0,signYaw,0));
- return{id:f.id,name:f.tags.name,source:'NJU 2024 plan + official VR scene_gl-3 f / scene_gl-4-02 r + user south passage/slogan references + software.nju.edu.cn/lxwm/index.html',height:68.4,windows,roof:'west tower / five-storey south podium / open court',dormitory:false,frontage:[entry[0],entry[1],Math.sin(yaw),Math.cos(yaw)],parts,approximateHeights:true,approximateLettering:true,localFrame:{origin,angle},recess:{u:[-1.5,6.2],v:[21,37.04],clearance:7.2,throughBuilding:false},canopy:{u:[6.8,18.6],v:[36.9,52.95],clearance:4.34},passage:{u:[49,55],v:[52.8,71.4],clearance,approximate:true},sloganAlcove:{u:[29,44],v:[52.8,56.4],clearance,lines:sloganLines,approximateLocation:true},labels:[{text:'费彝民楼',orientation:'vertical',face:'south wing west end'}]};
+ const signMat=new T.MeshStandardMaterial({name:'fei-passage-gold-lettering',map,transparent:true,roughness:.55,depthWrite:false});
+ const sign=point(52,71.46);
+ b.add(new T.PlaneGeometry(3.5,.7),signMat,sign[0],4.2,sign[1],new T.Euler(0,-angle,0));
+ return{id:f.id,name:f.tags.name,source:'NJU 2024 plan + official VR scene_gl-3 f / scene_gl-4-02 r + user phase96 software-entry / feiyimin-passage-title / south slogan references + software.nju.edu.cn/lxwm/index.html',height:68.4,windows,roof:'west tower / five-storey south podium / open court',dormitory:false,frontage:[entry[0],entry[1],Math.sin(yaw),Math.cos(yaw)],parts,approximateHeights:true,approximateLettering:true,localFrame:{origin,angle},recess:{u:[-1.5,6.2],v:[21,37.04],clearance:7.2,throughBuilding:false},canopy:{u:[6.8,18.6],v:[36.9,52.95],clearance:7.385},passage:{u:[49,55],v:[52.8,71.4],clearance,approximate:true},sloganAlcove:{u:[29,44],v:[52.8,56.4],clearance,lines:sloganLines,approximateLocation:true},softwareEntry:{u:[9,16.4],v:[34.2,37.04],clearance:7.2,plaque:{u:8.4,v:37.07,face:'left entrance column'}},passagePier:{u:52,v:70.9,width:1,depth:1},labels:[{text:'費彝民樓',orientation:'horizontal',face:'above south through passage'},{text:'南京大学软件学院',orientation:'vertical',face:'left entrance column'}]};
 }

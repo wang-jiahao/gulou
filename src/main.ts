@@ -148,16 +148,16 @@ async function boot() {
   const search=document.createElement('input');search.type='search';search.placeholder='搜索建筑、宿舍或地点';search.setAttribute('aria-label','搜索校园地点');search.id='place-search';destinations.before(search);
   const fillDestinations=()=>{const previous=destinations.value;destinations.replaceChildren(new Option('选择地点',''));travelPlaces.forEach((place,i)=>{if(place.name.includes(search.value.trim()))destinations.add(new Option(place.name,String(i)));});if([...destinations.options].some(o=>o.value===previous))destinations.value=previous;};
   search.oninput=fillDestinations;fillDestinations();
-  const travel = (x: number, z: number, name: string, yaw = game.cameraRig.yaw, pitch?: number, firstPerson?: boolean, photoFov?: number) => {
+  const travel = (x: number, z: number, name: string, yaw = game.cameraRig.yaw, pitch?: number, firstPerson?: boolean, photoFov?: number, surface: 'highest' | 'ground' = 'highest') => {
     if (game.world.sectors < 3) { el('map-selection').textContent = '校园区域正在加载，请稍候再传送。'; return; }
-    const target = game.player.travelTo(x, z);
+    const target = game.player.travelTo(x, z, surface);
     if (!target) { el('map-selection').textContent = '这个位置暂时无法站立，请换一个位置。'; return; }
     game.basketball.cancel(); game.cameraRig.reset(); game.cameraRig.yaw = yaw; if (pitch !== undefined) game.cameraRig.pitch = pitch; if (firstPerson !== undefined) game.cameraRig.firstPerson = firstPerson; if (photoFov !== undefined) { game.photoFov = photoFov; el<HTMLInputElement>('photo-fov').value = String(photoFov); } resume();
-    toast(`已抵达${name}${target.y > 3 ? ' · 屋顶' : ''}${target.adjusted ? '附近的安全落点' : ''}`);
+    toast(`已抵达${name}${surface === 'highest' && target.y > 3 ? ' · 屋顶' : ''}${target.adjusted ? '附近的安全落点' : ''}`);
   };
   mapView.onSelect = (x, z, name) => { selectedMapPoint = { x, z, name }; el<HTMLButtonElement>('map-teleport').disabled = false; };
   el('map-teleport').onclick = () => { if (selectedMapPoint) travel(selectedMapPoint.x, selectedMapPoint.z, selectedMapPoint.name); };
-  el('travel-place-go').onclick = () => { const value = el<HTMLSelectElement>('travel-place').value; if (value === '') return; const p = travelPlaces[Number(value)]; if (p) travel(p.x, p.z, p.name, p.yaw, p.pitch, p.firstPerson, p.photoFov); };
+  el('travel-place-go').onclick = () => { const value = el<HTMLSelectElement>('travel-place').value; if (value === '') return; const p = travelPlaces[Number(value)]; if (p) travel(p.x, p.z, p.name, p.yaw, p.pitch, p.firstPerson, p.photoFov, 'ground'); };
   el('basketball-reset').onclick = () => { if (game.basketball.canPlay) game.basketball.resetBall(); };
   el('basketball-help').textContent = touchDevice ? '靠近球点拿起，再点投篮 · 金色区出手更准' : '靠近球按 E 拿起，再按 E 投篮 · 金色区出手更准 · R 取球';
   el('football-reset').onclick = () => game.football.resetBall();
@@ -184,7 +184,7 @@ async function boot() {
     if(bicycle&&!game.player.seated){if(game.player.mount(bicycle)){game.cameraRig.yaw=game.player.rideYaw;toast(touchDevice?'摇杆向前骑行，左右转向；点提示下车。':'W 骑行 · 鼠标/A/D 转向 · Shift 加速 · S 倒车/减速 · 空格刹车 · E 下车');}else toast('车旁空间不足，请从另一侧靠近。');return;}
     if(!game.player.seated&&game.world.dadaoping.nearby(game.player.position)){toast(game.world.dadaoping.toggle()?'国旗正在升起。':'国旗正在降下。');return;}
     if (game.football.inReach) { game.football.kick(game.cameraRig.yaw, game.player.keys.has('ShiftLeft') || game.player.keys.has('ShiftRight')); return; }
-    if (game.player.seated) { const exit=seatExit??{x:game.player.position.x,z:game.player.position.z-1};if(game.player.travelTo(exit.x,exit.z))seatExit=null;else toast('这里暂时无法起身，可以从地图选择附近位置。');return; }
+    if (game.player.seated) { const exit=seatExit??{x:game.player.position.x,z:game.player.position.z-1};if(game.player.travelTo(exit.x,exit.z,'ground'))seatExit=null;else toast('这里暂时无法起身，可以从地图选择附近位置。');return; }
     if(game.world.directory.nearby(game.player.position)){
       el('map-open').click();document.querySelector<HTMLButtonElement>('[data-map-region="south"]')!.click();return;
     }

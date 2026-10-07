@@ -108,16 +108,19 @@ export class Player {
     this.riding=null;this.rideSpeed=0;this.collider.setShape(new RAPIER.Capsule(.57,.27));this.collider.setRotationWrtParent({x:0,y:0,z:0,w:1});this.motor.enableAutostep(.3,.2,false);this.clearInput();this.physics.step();
   }
   groundHeightAt(x:number,z:number){const hit=this.physics.castRay(new RAPIER.Ray({x,y:160,z},{x:0,y:-1,z:0}),200,true,undefined,undefined,this.collider,this.body);return hit?160-hit.timeOfImpact:0;}
-  travelTo(x: number, z: number) {
+  travelTo(x: number, z: number, surface: 'highest' | 'ground' = 'highest') {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
     if(this.riding&&!this.dismount())return null;
     const cx = T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), cz = T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1);
     for (const radius of [0, .8, 1.6, 3, 5, 8, 13, 21, 34]) for (let i = 0; i < (radius ? 16 : 1); i++) {
       const px = cx + Math.cos(i * Math.PI / 8) * radius, pz = cz + Math.sin(i * Math.PI / 8) * radius;
       if (px < bounds.minX + 1 || px > bounds.maxX - 1 || pz < bounds.minZ + 1 || pz > bounds.maxZ - 1) continue;
-      const hit = this.physics.castRayAndGetNormal(new RAPIER.Ray({ x: px, y: 220, z: pz }, { x: 0, y: -1, z: 0 }), 230, true, undefined, undefined, this.collider, this.body);
+      // Named entrances may be beneath a canopy. Search from pedestrian height
+      // above the local terrace; free map points still allow rooftop arrivals.
+      const rayTop = surface === 'ground' ? terrainHeight(px, pz) + 2.5 : 220;
+      const hit = this.physics.castRayAndGetNormal(new RAPIER.Ray({ x: px, y: rayTop, z: pz }, { x: 0, y: -1, z: 0 }), surface === 'ground' ? 3 : 230, true, undefined, undefined, this.collider, this.body);
       if (!hit || hit.normal.y < .68) continue;
-      const y = 220 - hit.timeOfImpact + .06;
+      const y = rayTop - hit.timeOfImpact + .06;
       // A capsule must have support across its footprint, not balance on a letter or lamp.
       const supported = [[.28, 0], [-.28, 0], [0, .28], [0, -.28]].every(([dx, dz]) => {
         const support = this.physics.castRayAndGetNormal(new RAPIER.Ray({ x: px + dx, y: y + .25, z: pz + dz }, { x: 0, y: -1, z: 0 }), .6, true, undefined, undefined, this.collider, this.body);
@@ -127,7 +130,7 @@ export class Player {
       const obstacle = this.physics.intersectionWithShape({ x: px, y: y + .86, z: pz }, { x: 0, y: 0, z: 0, w: 1 }, this.collider.shape, undefined, undefined, this.collider, this.body);
       if (obstacle) continue;
       this.finishFlight(); this.seated = false; this.noclip = false; this.clearInput(); this.accumulated = 0;
-      this.teleport(px, y, pz); return { x: px, y, z: pz, adjusted: radius > 0 };
+      this.placeOnSupport(px, y, pz); return { x: px, y, z: pz, adjusted: radius > 0 };
     }
     return null;
   }
@@ -143,7 +146,7 @@ export class Player {
   teleport(x: number, y: number, z: number) {
     this.placeOnSupport(x,Math.max(.03,terrainHeight(x,z)+.035,y),z);
   }
-  // Mount/dismount already verify support and clearance. Preserve their actual
+  // Travel and mount/dismount already verify support and clearance. Preserve their actual
   // floor elevation, including lower landings, without changing teleport rules.
   private placeOnSupport(x:number,y:number,z:number){
     this.grounded=false;this.jumpRequest=0;
