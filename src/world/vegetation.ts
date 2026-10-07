@@ -152,7 +152,10 @@ export function createGroundPlants(mats: Materials, groundHeight: (x: number, z:
   const shrubs: T.Matrix4[] = [], grass: T.Matrix4[] = [];
   for (const side of [-1, 1]) {
     for (let z = 24; z < 70; z += 1.8) for (let i = 0; i < 15; i++) {
-      obj.position.set(side * (37.5 + r()), .28 + r() * .28, z + r()); obj.rotation.set(r() * 2, r() * 6, r()); obj.scale.setScalar(.65 + r() * .55); obj.updateMatrix(); shrubs.push(obj.matrix.clone());
+      obj.position.set(side * (37.5 + r()), .28 + r() * .28, z + r()); obj.rotation.set(r() * 2, r() * 6, r()); obj.scale.setScalar(.65 + r() * .55); obj.updateMatrix();
+      // Keep the Arts entrance approach clear; consume the same random values elsewhere.
+      if (side === 1 && Math.abs(obj.position.z - 48.1) < 3.1) continue;
+      shrubs.push(obj.matrix.clone());
     }
     for (let x = 6; x < 31; x += 1.1) for (let i = 0; i < 11; i++) { obj.position.set(side * (x + r()), .4 + r() * .9, 13.7 + r() * 1.1); obj.rotation.set(r(), r() * 6, r()); obj.scale.setScalar(.7 + r() * .5); obj.updateMatrix(); shrubs.push(obj.matrix.clone()); }
   }

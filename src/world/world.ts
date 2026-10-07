@@ -292,13 +292,16 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       asset.scene.traverse(o=>{if(!(o instanceof T.Mesh))return;const mat=o.material as T.MeshStandardMaterial;
         if(mat.name==='historic-brick')o.material=mats.brick;
         if(mat.name==='limestone'){mat.map=mats.textures.get('stone-grain.webp')!;mat.color.set(0xb7b5a6);}
+        if(mat.name==='arts-limestone')mat.map=mats.textures.get('stone-grain.webp')!;
         if(mat.name.startsWith('window-glass'))mat.envMapIntensity=1.7;
         o.castShadow=o.receiveShadow=true;cameraSolids.push(o);
       });root.add(asset.scene);asset.scene.updateMatrixWorld(true);asset.scene.traverse(o=>{if(o instanceof T.Mesh&&(o.material as T.Material).name==='roof')fixedMeshes.push(collisionMesh(o,true));});
     }
-    for(const place of [{name:'东大楼',x:40.92,y:2.1,z:45.4,a:-Math.PI/2,w:.65,h:.38},{name:'西大楼',x:-40.57,y:2.1,z:43.2,a:Math.PI/2,w:.65,h:.38},{name:'大礼堂',x:-33.76,y:7.46,z:98.9,a:Math.PI/2,w:1.8,h:.48}]){
-      const canvas=document.createElement('canvas');canvas.width=512;canvas.height=160;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#86784f';ctx.fillRect(0,0,512,160);ctx.strokeStyle='#b3a374';ctx.lineWidth=6;ctx.strokeRect(8,8,496,144);ctx.fillStyle='#2a2419';ctx.font='72px "Songti SC", "SimSun", serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(place.name,256,85);
-      const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const plaque=new T.Mesh(new T.PlaneGeometry(place.w,place.h),new T.MeshStandardMaterial({map:texture,roughness:.65,metalness:.22}));plaque.position.set(place.x,place.y+(place.name==='东大楼'?eastTerraceHeight:0),place.z);plaque.rotation.y=place.a;plaque.receiveShadow=true;root.add(plaque);
+    for(const place of [{name:'南京大学艺术学院',x:39.47,y:3.82+eastTerraceHeight,z:48.1,a:-Math.PI/2,w:3.35,h:.40,letters:true},{name:'西大楼',x:-40.57,y:2.1,z:43.2,a:Math.PI/2,w:.65,h:.38},{name:'大礼堂',x:-33.76,y:7.46,z:98.9,a:Math.PI/2,w:1.8,h:.48}]){
+      const canvas=document.createElement('canvas');canvas.width=place.letters?1536:512;canvas.height=160;const ctx=canvas.getContext('2d')!;
+      if(!place.letters){ctx.fillStyle='#86784f';ctx.fillRect(0,0,512,160);ctx.strokeStyle='#b3a374';ctx.lineWidth=6;ctx.strokeRect(8,8,496,144);}
+      ctx.fillStyle=place.letters?'#756044':'#2a2419';ctx.font=`${place.letters?126:72}px "Songti SC", "SimSun", serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(place.name,canvas.width/2,85);
+      const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const plaque=new T.Mesh(new T.PlaneGeometry(place.w,place.h),new T.MeshStandardMaterial({map:texture,transparent:!!place.letters,alphaTest: place.letters ? .15 : 0,roughness:.65,metalness:.22}));plaque.position.set(place.x,place.y,place.z);plaque.rotation.y=place.a;plaque.receiveShadow=true;root.add(plaque);
     }
     root.add(createWestWingIvy(mats,quality));
     afterSector();

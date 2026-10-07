@@ -7,6 +7,40 @@ function place(group:T.Group,solids:Solid[],x:number,z:number,angle:number){
   return solids.map(s=>({...s,x:x+s.x*Math.cos(angle)+s.z*Math.sin(angle),z:z-s.x*Math.sin(angle)+s.z*Math.cos(angle),angle:(s.angle??0)+angle}));
 }
 
+function artsPortal(b:Builder,p:ReturnType<typeof architecturalPalette>,front:number){
+  // User arts-entry photo: cream pilasters, bronze lettering on stone and a tiled cap.
+  // Proportions are photographic estimates; keep the unmodelled interior behind closed doors.
+  const stone=p.stone.clone();stone.name='arts-limestone';stone.color.set(0xd6d2bf);
+  // Recess the visible backing behind the door leaves and transom lattice.
+  b.box(4.7,3.6,.16,0,1.8,front+.80,p.recess);
+  b.solids.push({x:0,y:1.8,z:front+.65,w:4.7,h:3.6,d:1.35});
+  panelDoor(b,p,0,1.45,front+1.23,2.7,2.2);
+  for(const x of [-1.94,1.94]){
+    b.box(.78,3.45,1.28,x,1.725,front+.79,stone);
+    b.box(1.03,.35,1.46,x,.175,front+.85,stone);
+    for(const y of [.55,3.30])b.box(.97,.16,1.39,x,y,front+.83,stone);
+    b.box(.62,2.47,.075,x,1.93,front+1.46,stone);
+  }
+  b.box(3.15,.20,.23,0,2.57,front+1.27,p.redwood);
+  b.box(3.15,.17,.23,0,3.31,front+1.27,p.redwood);
+  for(const x of [-1.49,0,1.49])b.box(.12,.65,.23,x,2.94,front+1.27,p.redwood);
+  for(const center of [-.75,.75]){
+    b.box(1.36,.62,.08,center,2.94,front+1.13,p.glass);
+    for(const slope of [-1,1])for(let intercept=-.96;intercept<=.96;intercept+=.18){
+      const lo=Math.max(-.66,slope===1?-.29-intercept:intercept-.29);
+      const hi=Math.min(.66,slope===1?.29-intercept:intercept+.29);
+      if(hi<=lo)continue;
+      b.cylinder(new T.Vector3(center+lo,2.94+slope*lo+intercept,front+1.20),new T.Vector3(center+hi,2.94+slope*hi+intercept,front+1.20),.018,.018,p.redwood,5);
+    }
+  }
+  b.box(4.76,.55,1.48,0,3.82,front+.78,stone);
+  b.box(4.95,.15,1.62,0,4.14,front+.80,stone);
+  // Scale the roof's curled trim too, so its ornament suits this small canopy.
+  const canopy=new Builder();curvedRoof(canopy,0,0,10,3.5,0,.9,p.roof,p.ribs,true,3.3);
+  const roof=canopy.finish('arts entrance canopy');roof.scale.setScalar(.5);roof.position.set(0,4.10,front+.73);roof.updateMatrixWorld(true);
+  roof.traverse(o=>{if(o instanceof T.Mesh)b.add(o.geometry.clone().applyMatrix4(o.matrixWorld),o.material as T.Material);});
+}
+
 /** Separate model for each courtyard wing; raised central roofs follow public photographs. */
 export function buildWing(side:'east'|'west'){
   const b=new Builder(),p=architecturalPalette(),w=side==='east'?53.4:50.2,d=side==='east'?18.8:20.5;
@@ -33,17 +67,18 @@ export function buildWing(side:'east'|'west'){
   b.box(w+.75,.35,d+.9,0,9.5,0,p.wood);
   curvedRoof(b,0,0,w+2.7,d+2.6,9.7,4.5,p.roof,p.ribs,true);
   curvedRoof(b,0,0,14.5,d+2.8,9.76,7.3,p.roof,p.ribs,true,4.3);
-  // Central stone portal and tiled canopy, visible in the historical facade photos.
+  if(side==='east')artsPortal(b,p,d/2);
+  else{
   b.solids.push({x:0,y:1.65,z:d/2+.5,w:4.1,h:3.3,d:1.4});
   b.box(4.1,3.3,.1,0,1.65,d/2+.65,p.recess);
   panelDoor(b,p,0,1.7,d/2+1.23,2.8,3.1);
   for(const x of [-1.65,1.65])b.box(.3,3.5,.5,x,1.75,d/2+1.21,p.stone);
   b.box(4.3,.25,1.8,0,3.58,d/2+.75,p.stone);
-  // VR shows a flat, carved stone lintel at the wing entrance, not a miniature
-  // tiled roof over the door. Keep the broad upper roof as the main silhouette.
+  // Preserve the West Building's separately referenced flat stone lintel.
   b.box(4.65,.22,1.35,0,3.80,d/2+.78,p.stone);
   b.box(4.18,.14,1.12,0,4.0,d/2+.78,p.stone);
   for(const x of [-1.5,1.5])for(const y of [.28,3.45])b.box(.52,.18,.72,x,y,d/2+1.20,p.stone);
+  }
   for(let x=-w/2;x<w/2;x+=.34)for(const s of[-1,1])b.add(new T.CylinderGeometry(.07,.085,.11,7).rotateX(Math.PI/2),p.ribs,x,10.0+.5*Math.pow(Math.abs(x/(w/2)),8),s*(d/2+1.34));
   for(let step=0;step<3;step++)b.box(4.3,(3-step)*.14,.38,0,(3-step)*.07,d/2+1.62+step*.38,p.stone,true);
   if(side==='east'){
@@ -53,7 +88,7 @@ export function buildWing(side:'east'|'west'){
   for(const x of [-w/2+.3,w/2-.3])for(const s of [-1,1])b.cylinder(new T.Vector3(x,.25,s*(d/2+.2)),new T.Vector3(x,9.5,s*(d/2+.2)),.065,.065,p.pipe,7);
   const group=b.finish(side==='east'?'East Building':'West Building');
   const solids=place(group,b.solids,side==='east'?50.4:-50.9,side==='east'?48.1:45.9,side==='east'?-Math.PI/2:Math.PI/2);
-  group.userData={status:'approximate',reference:`Commons ${side} facade; OSM ${side==='east'?'88778615':'88778613'}`};
+  group.userData={status:'approximate',reference:`Commons ${side} facade; OSM ${side==='east'?'88778615; user arts-entry entrance photo':'88778613'}`};
   return {group,solids};
 }
 

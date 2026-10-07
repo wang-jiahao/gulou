@@ -1,6 +1,6 @@
 # 资产来源与使用范围
 
-当前本地版本 v0.98.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
+当前本地版本 v0.100.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
 
 | 资产 / 资料 | 来源与许可 | 使用方式 |
 | --- | --- | --- |
@@ -633,3 +633,7 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 实际查看用户 `references/phase96-user/teaching-zhenggang.png`、`south-teaching-color.png` 与官方 VR `references/phase18/scene_gl-1-13-f-full.jpg`。北园正面顶部银白标语、两侧校徽、右上白色竖排郑钢楼及金色教學樓按照片调整；标语文字参照 https://scit.nju.edu.cn/36/eb/c10985a210667/pagem.htm 。南园暖黄色墙面依据新图，题名以官方VR可读“南园教学楼”为准，不把记忆中的删字当作核实结果。两栋位置区分参考 https://jw.nju.edu.cn/33/b6/c24683a603062/page.htm 及 https://www.nju.edu.cn/info/3191/152251.htm 。字体、颜色与未见面近似，原图不分发。
 
 类型、src ESLint、构建及南园入口6路线/43阻挡/6角色行走通过；局部9mesh/5014tri，不代表全场性能测量。普通UI两处最终画面实看，console无error，证据docs/validation/v0.99。日志/tmp/gulou-v99-{types-final,lint-final,build-final,south-layout-final}.log；旧基线保留。
+
+## v0.100 东大楼艺术学院入口
+
+实际查看用户照片 `references/phase96-user/arts-entry.png`，对齐米色门套、铜色“南京大学艺术学院”、红门与菱形门楣、青瓦卷檐；照片只作本地参考。东大楼身份另参考[南京大学校史资料](https://www.nju.edu.cn/info/3191/152251.htm)，原金陵大学科学馆建于1912年；不据入口牌断言整栋楼唯一现用院系。尺寸、字体及隐蔽面为近似。最终实机图 `docs/validation/v0.100/arts-entry-final.png`；东大楼GLB 3,004,404字节，其余两座导出资产未改。
