@@ -30,6 +30,7 @@ import {buildYaoliangHall} from './yaoliang-hall.ts';
 import {buildNjuMemory} from './nju-memory.ts';
 import {buildNanyuanTeaching} from './nanyuan-teaching.ts';
 import {buildWestHeritage} from './west-heritage.ts';
+import {buildNanyuanEightEntrance} from './nanyuan-eight-entrance.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
 export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, roads:MapPolygon[] = []) {
@@ -70,6 +71,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   let yifuUpper:ReturnType<typeof buildYifuTower>|undefined;
   let tangEntrance:ReturnType<typeof buildTangEntrance>|undefined;
   let chemistryEntry:ReturnType<typeof buildChemistryEntrance>|undefined;
+  let nanyuanEightEntry:ReturnType<typeof buildNanyuanEightEntrance>|undefined;
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
@@ -103,21 +105,42 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
     }
     const random=rng(Number(f.tags.plan_id)*71+24);let windows=0;let frontView:number[]|undefined;let entrance:ReturnType<typeof buildHospitalEntrance>|undefined;
-    const edges:{len:number;x:number;z:number;angle:number;nx:number;nz:number}[]=[];
+    const faces:{ri:number;edge:number;len:number;x:number;z:number;angle:number;nx:number;nz:number}[]=[];
     for(const [ri,ring]of [points,...(f.holes??[])].entries())for(let edge=0;edge<ring.length;edge++){
       const [x0,z0]=ring[edge],[x1,z1]=ring[(edge+1)%ring.length],len=Math.hypot(x1-x0,z1-z0);if(len<.6)continue;
       let nx=-(z1-z0)/len,nz=(x1-x0)/len;
       const mx=(x0+x1)/2,mz=(z0+z1)/2;
-      const frame=defaultFrame;
       if(insidePolygon(mx+nx*.18,mz+nz*.18,f)){nx=-nx;nz=-nz;}
       const angle=Math.atan2(nx,nz);
+      faces.push({ri,edge,len,x:mx,z:mz,angle,nx,nz});
+    }
+    const edges=faces.filter(face=>face.ri===0);
+      // Choose a long exterior facade facing the nearest public route, rather
+      // than putting a doorway onto an inner hole or a two-metre return wall.
+      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=f.id==='plan-3'?edges.find(chemistryFrontage):f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):candidates.sort((a,c)=>{
+        const score=(e:typeof a)=>{
+          if(scores.has(e))return scores.get(e)!;
+          let best=10000;
+          for(const distance of [3,5,8,12,18]){
+            const x=e.x+e.nx*distance,z=e.z+e.nz*distance;
+            if(occupied(x,z))continue;
+            const clear=[.6,1.2,2.0,distance*.6].every(d=>!occupied(e.x+e.nx*d,e.z+e.nz*d));
+            if(!clear)continue;
+            best=Math.min(best,distance+(roads.some(r=>insidePolygon(x,z,r))?0:35)-Math.min(e.len,30)*.02);
+          }
+          scores.set(e,best);return best;
+        };
+        return score(a)-score(c);
+      })[0];
+    for(const face of faces){
+      const {ri,edge,len,x:mx,z:mz,angle,nx,nz}=face,frame=defaultFrame;
+      const eightFrontage=f.id==='plan-123'&&face===frontage;
       // Positive local Z is always outdoors, including courtyard hole rings.
       const put=(target:Builder,u:number,y:number,v:number,w:number,h:number,d:number,mat:T.Material)=>{
         const x=mx+u*Math.cos(angle)+v*nx,z=mz-u*Math.sin(angle)+v*nz;
         if(glass.some(g=>g===mat)||mat===gardenGlass)target.add(new T.PlaneGeometry(w,h),mat,x,y,z,new T.Euler(0,angle,0));
         else target.box(w,h,d,x,y,z,mat,false,angle);
       };
-      if(!ri)edges.push({len,x:mx,z:mz,angle,nx,nz});
       if(f.id==='plan-10')continue;
       if(f.id==='plan-3'&&!ri&&chemistry.accepts({len,x:mx,z:mz,angle,nx,nz})){
         windows+=chemistry.face(b,detail,{len,x:mx,z:mz,angle,nx,nz});continue;
@@ -152,6 +175,11 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         windows+=panes;
       }
       const bays=Math.floor((len-.8)/profile.bays);
+      if(profile.pilasterWidth)for(let j=0;j<=bays;j++){
+        const u=len*((j+.5)/(bays+1)-.5);
+        if(eightFrontage&&Math.abs(u)-profile.pilasterWidth/2<3.15)continue;
+        put(detail,u,height/2,.11,profile.pilasterWidth,height,.22,wall);
+      }
       if(profile.style==='glass')for(let j=0;j<=bays;j++){
         const u=len*((j+.5)/(bays+1)-.5);
         put(b,u,height/2,.07,.18,height,.24,stone);
@@ -160,6 +188,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         const u=len*((j+1)/(bays+1)-.5),y=floorHeight*(floor+.60),w=Math.min(profile.windowWidth,len/(bays+1)*.76),h=Math.min(profile.windowHeight,floorHeight*.72);
         const g=glass[Math.floor(random()*glass.length)];
         if(glazedGarden&&floor===0)continue;
+        if(eightFrontage&&Math.abs(u)-w/2<3.15)continue;
         // The photographed entry replaces only the central bays on the old
         // procedural frontage; consume the same RNG sample before skipping.
         if(f.id==='plan-80'&&!ri&&edge===0&&Math.abs(u)-w/2<6.5)continue;
@@ -189,10 +218,15 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
           const bars=Math.ceil(w/.22);
           for(let q=1;q<bars;q++)put(detail,u+w*(q/bars-.5),y,.32,.022,h,.03,windowGuard);
         }
-        if(profile.ac&&(j+floor)%3===0&&floor>0){
-          put(detail,u+w*.35,y-h*.73,.33,.70,.45,.45,utility);
-          put(detail,u+w*.35,y-h*.73,.57,.52,.31,.025,louvre);
-          for(const offset of[-.1,0,.1])put(detail,u+w*.35,y-h*.73+offset,.59,.52,.015,.02,utility);
+        if(profile.ac&&(j+floor)%3===0&&(floor>0||profile.acBesideWindows)){
+          // The Nanyuan 8 photo places AC beside the glazing, including at
+          // ground level. Project the casing clear of the shallow wall piers.
+          const acU=profile.acBesideWindows?u+w/2+.12+.35:u+w*.35;
+          const acY=profile.acBesideWindows?y-h/2+.24:y-h*.73;
+          const acV=profile.acBesideWindows?.56:.33;
+          put(detail,acU,acY,acV,.70,.45,.45,utility);
+          put(detail,acU,acY,acV+.24,.52,.31,.025,louvre);
+          for(const offset of[-.1,0,.1])put(detail,acU,acY+offset,acV+.26,.52,.015,.02,utility);
         }
         if(profile.balcony&&floor>0){
           put(detail,u,y-h/2-.14,.38,w+.5,.14,.8,stone);
@@ -253,23 +287,6 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(f.id==='plan-10')frontView=yifu!.frontage;
     if(f.id==='plan-22')frontView=tangEntrance!.frontage;
     if(!teaching&&f.id!=='plan-10'&&f.id!=='plan-22'){
-      // Choose a long exterior facade facing the nearest public route, rather
-      // than putting a doorway onto an inner hole or a two-metre return wall.
-      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=f.id==='plan-3'?edges.find(chemistryFrontage):f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):candidates.sort((a,c)=>{
-        const score=(e:typeof a)=>{
-          if(scores.has(e))return scores.get(e)!;
-          let best=10000;
-          for(const distance of [3,5,8,12,18]){
-            const x=e.x+e.nx*distance,z=e.z+e.nz*distance;
-            if(occupied(x,z))continue;
-            const clear=[.6,1.2,2.0,distance*.6].every(d=>!occupied(e.x+e.nx*d,e.z+e.nz*d));
-            if(!clear)continue;
-            best=Math.min(best,distance+(roads.some(r=>insidePolygon(x,z,r))?0:35)-Math.min(e.len,30)*.02);
-          }
-          scores.set(e,best);return best;
-        };
-        return score(a)-score(c);
-      })[0];
       if(frontage){
         frontView=[frontage.x,frontage.z,frontage.nx,frontage.nz];
         const e=frontage,w=Math.min(3.8,e.len*.38);
@@ -278,6 +295,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         if(f.id==='plan-17')frontView=tian.entrance(b,fixedMeshes,doors,e);
         else if(f.id==='plan-3')chemistryEntry=buildChemistryEntrance(b,fixedMeshes,cameraSolids,doors,e);
         else if(f.id==='plan-80')entrance=buildHospitalEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e.x,e.z,e.angle);
+        else if(f.id==='plan-123'){nanyuanEightEntry=buildNanyuanEightEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e,f.tags.name,wall,defaultFrame);windows+=nanyuanEightEntry.panes.length;}
         else{
           addEntrance(b,fixedMeshes,doors,doorMaterials,f.tags.name,e.x,e.z,e.angle,w,0);
           const depth=profile.portal==='glass'?1.1:.7;put(0,3.17,depth*.4,w+1.05,.15,depth,stone);
@@ -291,11 +309,11 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
           const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
           const sign=new T.Mesh(new T.PlaneGeometry(5,.62),new T.MeshStandardMaterial({map:texture,roughness:.6,transparent:true,depthWrite:false}));const projection=.52;sign.position.set(e.x+e.nx*projection,3.65,e.z+e.nz*projection);sign.rotation.y=e.angle;plaques.add(sign);
         }
-        if(profile.style==='dormitory'){
+        if(profile.style==='dormitory'&&f.id!=='plan-123'){
           const numbers=['零','一','二','三','四','五','六','七','八','九','十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','二十一'];
           const name=f.tags.name.replace(/\d+/g,n=>numbers[Number(n)]??n);
           const c=document.createElement('canvas');c.width=768;c.height=192;const ctx=c.getContext('2d')!;
-          ctx.fillStyle=f.id==='plan-123'?'#614137':'#294657';ctx.fillRect(0,0,c.width,c.height);ctx.strokeStyle='#c5c4ae';ctx.lineWidth=5;ctx.strokeRect(8,8,752,176);
+          ctx.fillStyle='#294657';ctx.fillRect(0,0,c.width,c.height);ctx.strokeStyle='#c5c4ae';ctx.lineWidth=5;ctx.strokeRect(8,8,752,176);
           ctx.fillStyle='#f3efdc';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 72px "Songti SC",serif';ctx.fillText(name,384,100);
           const texture=new T.CanvasTexture(c);texture.colorSpace=T.SRGBColorSpace;
           const plaque=new T.Mesh(new T.PlaneGeometry(3.4,.68),new T.MeshStandardMaterial({map:texture,roughness:.85}));plaque.name=name;
@@ -312,7 +330,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   // Every triangle remains present. Independent bounds let the renderer cull
   // buildings outside the camera or shadow frustum instead of drawing campus-wide batches.
   const group=b.finish('plan-based campus buildings with VR facade profiles',120);
-  group.add(...courtyardClimbers);
+  if(courtyardClimbers.length)group.add(...courtyardClimbers);
   group.add(plaques);
   for(const mesh of group.children)if(mesh instanceof T.Mesh&&(glass.includes(mesh.material as T.MeshStandardMaterial)||mesh.material===gardenGlass)){mesh.receiveShadow=false;mesh.castShadow=false;}
   group.userData.buildings=records;
@@ -321,6 +339,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.tangFacade=tang.metadata;
   group.userData.tangEntrance=tangEntrance;
   group.userData.chemistryEntrance=chemistryEntry;
+  group.userData.nanyuanEightEntrance=nanyuanEightEntry;
   group.userData.chemistryFacade=chemistry.metadata;
   if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;group.userData.yifuTower=yifuUpper;}
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}

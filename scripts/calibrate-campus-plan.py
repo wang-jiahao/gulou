@@ -38,6 +38,7 @@ hero={26:'88778620',30:'88778613',31:'88778615',37:'88778619',40:'teaching-prior
 features=[]
 for f in source['features']:
     kind=f['kind'];name=names.get(f['id'],f"{'南园' if f['center'][1]>2580 else '北园'}建筑 {f['id']:03}")
+    if f['id']==123:kind='dormitory'  # Nanyuan 8: six-storey flat-roof dorm, confirmed by user photo.
     tags={'name':name,'source':'user supplied NJU campus plan','confidence':'map-traced; geographic scale approximate','garden':'south' if f['center'][1]>2580 else 'north','plan_id':str(f['id'])}
     if f['id'] in reviewed_names:tags['labelConfidence']='read from supplied campus plan'
     if kind=='athletics':tags['leisure']='track'

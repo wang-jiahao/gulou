@@ -8,6 +8,8 @@ export type FacadeProfile = {
   ac?: boolean; bands?: boolean; balcony?: boolean; dome?: boolean;
   groundWall?: number;
   groundWindowGuards?: boolean;
+  pilasterWidth?: number;
+  acBesideWindows?: boolean;
   gardenGlazing?: boolean;
   arched?: boolean;
   portal?: 'stone' | 'glass' | 'columns';
@@ -96,7 +98,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-119': profile(dorm,'gl-1-07 / gl-1-24','pale residential row, utility units on facade'),
   'plan-120': profile(modern,'gl-1-23','foreign-teacher apartments, broad blue glazing, deep canopy and pale frame',{levels:6,style:'glass',ac:true,windowWidth:2.6}),
   'plan-122': profile(dorm,'gl-1-14 / gl-1-24','pale dormitory beside southern grounds'),
-  'plan-123': profile(dorm,'gl-1-05 / gl-1-12','six-storey cream dormitory, grey plinth; NOT a traditional tiled building',{levels:6,wall:0xcfc9b4,roof:'flat'}),
+  'plan-123': profile(dorm,'user nanyuan-8.png / gl-1-05 / gl-1-12','six-storey cream dormitory, brown frames, grey ground floor, projecting piers and window-side AC; footprint/frontage approximate',{levels:6,wall:0xd8d4b6,frame:0x695748,roof:'flat',groundWall:0x969f9c,groundWindowGuards:true,pilasterWidth:.24,acBesideWindows:true}),
   'plan-124': profile(dorm,'gl-1-14 / gl-1-24','south-east residential block, regular pale grid'),
   'plan-125': profile(villa,'gl-1-08','memorial compound ancillary building, grey masonry and pitched roof',{wall:0xa39b86}),
   'plan-126': profile(historic,'gl-1-01','Nanyuan hotel: grey masonry, traditional tiled eaves, low entry canopy',{levels:3,roof:'heritage',wall:0x9c9988,windowWidth:1.6}),
