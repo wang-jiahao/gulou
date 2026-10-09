@@ -6,15 +6,6 @@
 
 ![鼓楼校区实机画面](docs/images/gulou.png)
 
-## 支持这个项目
-
-把鼓楼从地图做成可以漫步的校园，投入了大量时间，也消耗了大量 AI token。如果你喜欢这个项目，欢迎自愿赞赏，帮作者补贴一点开发开销。所有游玩功能均无需付费；指出问题、提供照片和资料同样很有帮助。
-
-<a href="public/assets/support/wechat-appreciation.png"><img src="public/assets/support/wechat-appreciation.png" width="280" alt="Zackaria 的微信赞赏码"></a>
-
-微信扫码，或保存图片后在微信中识别。[作者主页](https://wang-jiahao.github.io/) · [项目仓库](https://github.com/wang-jiahao/gulou)（当前为私有仓库，访问需要权限）。工作量与 token 统计见下文，统计不等同于实际账单。
-
-
 这是我与 **GPT-6 Astra** 共同完成的南京大学校园网页游戏。从鼓楼校区开始，希望把熟悉的建筑、道路和校园记忆，变成打开网页就能自由探索的空间。
 
 做这个项目的初衷，是让大家零门槛云游鼓楼，也通过一个能亲手玩的作品，感受 AI 发展的速度。学校 Minecraft 社团的校园复刻做得很不错；对一些想逛逛校园的人来说，购买正版游戏、下载客户端、连接服务器等准备步骤仍有些麻烦。这个项目希望把准备过程简化到“打开网页就能逛”，让同学、校友和对南大感兴趣的人都能轻松走进来。
@@ -478,3 +469,11 @@ npm run preview
 地图依据官方 VR、校园图与开放数据人工校准；建筑采用重点手工建模与普通建筑程序化生成相结合的方式。
 
 原创代码使用 [MIT License](LICENSE)，第三方数据与素材保留各自许可，详见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+
+## 支持这个项目
+
+把鼓楼从地图做成可以漫步的校园，投入了大量时间，也消耗了大量 AI token。如果你喜欢这个项目，欢迎自愿赞赏，帮作者补贴一点开发开销。所有游玩功能均无需付费；指出问题、提供照片和资料同样很有帮助。
+
+<a href="public/assets/support/wechat-appreciation.png"><img src="public/assets/support/wechat-appreciation.png" width="280" alt="Zackaria 的微信赞赏码"></a>
+
+微信扫码，或保存图片后在微信中识别。[作者主页](https://wang-jiahao.github.io/) · [项目仓库](https://github.com/wang-jiahao/gulou)（当前为私有仓库，访问需要权限）。工作量与 token 统计见上文，统计不等同于实际账单。
