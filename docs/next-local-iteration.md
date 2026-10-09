@@ -1,35 +1,26 @@
-# 当前断点 2026-10-10：v113整合验收，重要TODO后再录第二版
+# 最新短交接：v0.115 西北门修复，人物最终候选待合入
 
-工作树/提交以git status和git log -1为准。当前准备v0.114六故事/屋顶验收提交。main已提交ed7d9e6，package0.113.0，git push origin main成功（f212af3..ed7d9e6），已同步现有私有仓库；禁止公开/部署/Pages。SSH fetch已过，origin/main f212af3是祖先。About无网页/API凭证，文案在docs/repository-about.md，尚未更新GitHub元数据。
-
-已过：南园17普通门厅专项（255支撑/17门厅/南3往返）、吉祥物前植岛移除与屏幕16海报专项；主游戏南3、吉祥物、电子屏实看console[]，图/tmp/gulou-{nanyuan3-entrance,mascots,screen}113.png。59篇故事，化学楼/南大记忆/一卡通三新增已主UI正文和来源核对，/tmp/gulou-stories113.png。正式男女GLB参考第五轮、袖内衬尖角修复，真实avatar-reference 28扩展动作通过；美术仍未达用户标准。篮球mass0恢复缺陷已修且持球60帧回归过。HTML直接引用CSS修复首帧无样式条件，正常启动页已看，未证实外部URL跳转。局内⛶和返回页已有UI检查。type/lint/build/assets57过（/tmp/gulou-v113-*.log）；仅pnpm-lock，README安装命令已改pnpm frozen lock。
-
-性能：30m树子合批已A/B/B/A后完整撤回，src/world/model-trees.ts无改动、新候选模块已删除。基线140帧/10s，候选145/137，回退163，p95皆83.4ms；不能采用。分类已完成，完整/tmp/gulou-v113-categories.json：原136帧GPU59.7/CPU72.7ms；单遍140/GPU59.7/CPU70.8；恢复原136/GPU59.6/CPU72.8，p95均83.4。禁影与删叶只作诊断，不上线。实际GPU为Apple M4 ANGLE Metal，非软件渲染。屋顶实操已完整通过25检查，报告/tmp/gulou-roof113-result.json；18m屋顶降落安全、走下17.805m只重生1次并恢复镜头/输入/HUD。museum两秒AB实录已通过：opening-frame helper before图集2次切换→stable0，跳变像素MAE35.57→最高4.90；同相机/风/LOD/窗饰/cover和fade无下降，实看起镜完整树冠保留。完整成片/60帧json/PNG在.local-media/promotion/v113-cut2/stability-opening；midpoint旧版本仅对照，不能拿来替代opening。正式录制器尚未接此helper。当前tab46在/docs/validation/shadow-batch-v113/index.html：同姿态主RGB与两shadow packed图A/B/A全部逐像素0差异；A/B/B/A已完：A150frames CPU66.08/GPU59.44，B139 CPU71.06/GPU60.21，B158 CPU62.67/GPU57.53，A134 CPU73.67/GPU59.63，p95皆83.4。无稳定收益，未采用；/tmp/gulou-shadow-batch113.json。activity_dining正准备不透明物体绘制排序候选，仍只/tmp，不降画质。候选714Mesh→38proxy，shadowdraw预估919→581，但tri+9%，必须看GPU再采纳；仅/tmp/gulou-v113-shadow-batch，正式源未改。tab47原生全屏对照表明request resolved且进入true，50ms后宿主自动exit；完全无Game亦复现，日志/tmp/gulou-fullscreen-native113.txt，tab47已关。勿重复当游戏bug。单遍候选/tmp/gulou-v113-tree-audit/canopy-single-pass.patch未应用，画面/GPU待验；不降低体验。
-
-重要未完：人物整体美术、全场流畅度/连续步骑飞、屋顶项已完成；life_facilities已补6篇官方故事到65（只改place-stories.ts）；实际Game六门厅→原生了解/正文来源6/6过，报告/tmp/gulou-six-stories114.json、console[]。signs_stories正在/tmp/gulou-v114-art做整体头脸候选，不动正式public；其余缺资料低优先按remaining-todo可暂缓。第二版未录：1–2秒建筑快剪、北大楼仅I❤️NJU、避免人物/删篮球足球、飞先骑后，新128BPM音轨已生成未试听。30机位候选在.local-media/promotion/v113-cut2，录制稳定候选/tmp/gulou-v113-stability/recorder-stability.patch未应用/未A/B。首版60秒已交但要求返工；docs/media/gulou-preview.mp4仍首版20MB派生片，第二版后替换。
-
-4173 PID5451复用，验证只能CUA浏览器，旧shell Playwright录制器不运行。四旧local scripts保持未跟踪：astronomy-check、dormitory-family-check、promotion-capture、promotion-shots；两新nanyuan-{dormitory-entrance,reference-refresh}-check亦仅本地，依赖外部Canvas与before，恢复命令见/tmp/gulou-v113-private-sync-audit.md。原照片/视频/个人音乐/Codex缓存和before基线均不提交。Node：/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node。恢复先git status、list_agents、浏览器listTabs，勿重复已过项。240000阈值不保证根治413/连接错误。
-
---- 以下为上次稳定版历史断点 ---
-
-# 最新断点：v0.112功能整合，参考图人物候选未正式替换
-
-主树 /Users/zackaria/Desktop/gulou campus，main，正式版本0.112.0，提交以git log -1为准。仅本地，不推送/发布；目标10月10日下午发布尚有关键欠账。主4173 PID5451复用，验证tab36—39均已关闭、viewport reset。四旧本地scripts仍未跟踪。
+工作树 `/Users/zackaria/Desktop/gulou campus`，main；package0.115.0；Git以`git status`/`git log -1`为准。用户已允许同步**现有私有仓库**源码/必要资产，仍禁止公开/部署/Pages。Git作者 wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。4173/PID5451复用，未重启。
 
 ## 已过，不重复
+- v114六篇官方新故事（总65）及物理楼完整飞上→落屋顶→走下→坠落重生25实操已过，见progress；v113南园宿舍、吉祥物前植被、屏幕海报已过。
+- 北大楼→汉口门→南园北门→喷泉→宿舍→广州门：27点206.5游戏秒，203样本high/1610×1524完整Game正常步行，无额外传送/飞行/重生。`/tmp/gulou-continuous-v114-passed.json`。两条早期路线失误before保留，未改建筑隐藏碰撞。
+- 原生main UI五类35检查：自行车上下/移动/刹车，篮球持球60帧与出手抛物线，足球轻踢/加力/重置，晴雨昼夜，开始页原位继续。`/tmp/gulou-a03-main-ui114.json`。不含篮球命中得分，touch为needs-touch-device。
+- 西北门地图符号是公共街道口，7处设备静态碰撞曾占道；`access-controls.ts`仅该入口设备/碰撞/感应器向东退7m，地图标记与其他八入口不变。已看官方平面图与VR航拍；7m是模型净空适配，非实测。源图/修复证据 `/tmp/gulou-northwest-gate/`。
+- 实际Game800×600 high：金银街西北门双向连接5点12.684s、街道转入门禁再出9点12.501s过；`/tmp/gulou-jinyin-connector-v115.json`、`/tmp/gulou-northwest-gate-walk-v115.json`。离线真实工厂660通行+490行为0失败/0重叠（含公共街道净空/不误开回归）`/tmp/gulou-access-v115-regression.json`。
+- v115 types/lint/build/资源检查已跑（以/tmp/gulou-v115-*.log与退出码为准）；build既有大chunk提示。环境无npm，可直接node调用node_modules/typescript/bin/tsc、eslint/bin/eslint.js、vite/bin/vite.js。
 
-- README缩至约216行，70条逐版文字移development-history，参考图/视频独立reference-guide；66链接、赞赏原文/绝对末尾检查过，Star后有赞赏锚点、操作提前。首页/弹窗“请我喝杯下午茶”与指定两段文案正常UI已验。
-- 返回开始页→继续，汉口(-91,365)原地保留；桌面/短窗/手机图标间距24/20/24px，均无溢出。全屏API标准/WebKit/拒绝/不支持11组过；内置浏览器未稳定保持全屏，不能说普通浏览器已验。UI图docs/validation/v0.112/ui。
-- 北门19格每块一人左像右传，七官方传记/六许可图，戴肖像待补；排列/数量近似不当实测。主场景两面墙、物业连墙和“欢迎2026级新生”屏昼夜实看，console[]。28 Canvas、19面朝向/7材质/碰撞一致/失败回退、原32/12/14与新528/21/44/16检查过。海报文字仍待清晰图。
-- 坠落10m：controller11组+game/main清持球/镜头/触屏事件6组过；主校园屋顶飞行落地后走下实操尚未做。
-- 汉口固定1280×720 medium晴14点(-91,365)：原稳定125帧GPU p50/95 64.7/65.8、CPU78.4；候选136/138帧GPU p50 59.4/59.5、CPU72.5/70.5；回退127帧GPU64.1/65、CPU77.5。帧p95都约83.6ms，不能称解决卡顿。最终已重新采用零强度灯不可见+0/当前夜灯数双compileAsync预热，5失败/18恢复/环境24模拟日/帧6/类型lint过，正常主加载与夜间已验。精确报告 /tmp/gulou-campus-112/hankou-stages-*.txt，before不覆盖。canopy-single-pass候选尚未测/未采用。
+## 正在接续
+- 公共街道页 `/docs/validation/public-streets-v114/index.html` 完整金银街10点78.699秒已过（`/tmp/gulou-jinyin-whole-v115.json`）；正在补南秀村可见贯通，不重复启动；DOM `#route-status` / `#route-result`，完成即保存JSON。报告也缓存`gulou-public-street-last`。三旧南段/南秀村/小粉桥报告都画布0×0，只作物理路径证据，不能充当画质/性能验收；稳定副本`/tmp/gulou-{jinyin-south,nanxiu,xiaofenqiao}-v114.json`。
+- signs_stories：D男女PBR已看，连续发体明显优于旧帽壳/条带。男D保留；女最后E仅修齐切前发线与铁丝状刘海。A/B/D仍独立，正式public未改；正准备干净可复现整合patch/资产清单和中采样数据。D预览`/docs/validation/v0.114-art-d/preview.html`，交接`/tmp/gulou-v114-art-d/HANDOFF.md`。不能把技术通过当最终美术完成。
+- life_facilities正在/tmp准备A03尚未覆盖导航/坐下/换装UI最小harness；两需求表已按现有证据更新。activity_dining正在找可复用的原画质多地点raw-frame实测页。
+- 缓存排序像素主RGB/双shadow0差，但固定ABBA性能随宿主时间漂移，GPU14.92→15.46→16.27→17.47ms；无稳定收益，**不采用**。`/tmp/gulou-opaque-cache-fixed-v115.json`。原safe每帧CPU9.6ms退化、直接center1008像素变化、旧shadow/子批次候选均不采用，不反复测试。
+- 相同源码工具重连前后曾14→60FPS，不能当代码优化。记录focus/visibility/renderSize；画布0×0与后台调度须和游戏瓶颈区分。用户锁屏，IAB可用；原生应用/独立浏览器不可用，A05暂待解锁。IAB极简fullscreen也约50ms退出，未冒充独立浏览器通过。
 
-## 下一步：人物与发布前关键欠账
+## 宣传片
+第二版未录。用户最新要求重要TODO结束/明确暂缓后再录。`/docs/validation/promotion-20261010/index.html`：默认26×2s=52s，先生成接触表逐镜实看；北大楼仅I❤️NJU一次、飞先骑后、无人物/球类/球场。起镜稳定树冠保持风/CSM/原fade；museum2s切换2→0、图差35.57→4.90已验。新128BPM原创配乐`.local-media/promotion/v113-cut2/soundtrack.wav`未试听。旧docs/media/gulou-preview.mp4仍旧版。
 
-- 最新用户图要求两人：男蓬松中分/深蓝敞开翻领夹克/白T/灰工装/黑包；女薄刘海长卷发/鼠尾草V领/白内搭/浅蓝直筒/米白包。已按图生成独立第四轮候选，正式public GLB仍v111，src/player/avatar.ts正式配色也仍v111，不要误报正式接入。
-- 未提交候选源码：scripts/build-student.mjs、character-{skin,eyes,hair,hair-texture}.mjs、新character-reference-outfit.mjs。node scripts/build-student.mjs --preview [--female]写docs/validation/v0.112/reference；默认会写public，验收前勿跑默认。baseline保存v111生成器/GLB，round2-hair也保护。
-- 预览 /docs/validation/v0.112/reference/preview.html（独立avatar-reference.ts配色已对图）。第三轮28扩展姿态通过，第四轮隐藏领口露肤并缩短/减细女刘海，已实看女正面、双人持球/背面行走，console[]。背面女左袖有尖褶观感仍需近景确认，整体美术不能只靠技术通过。最终候选六姿态日志/tmp/gulou-reference-poses4.log；生成/tmp/gulou-reference-{male,female}4.log。
-- 原104中27项历史未闭合，新增请见remaining-todo-2026-10-09.md；缺图：南三原图被清理，南八备份/官方gl106四面不能代替；请用户补含楼号/完整台阶门厅近景。官方后勤确认鼓楼民族食堂存在，但四楼未证实；20/21活动中心宽度/南青格庐入口仍缺图，来源结论在life-facilities/dining-source-audit。
-- signs_stories正补3条官方地点介绍，若尚在运行勿重复启动，先list_agents；其他本批子任务已交付。全校卡顿/持续步骑飞/导航天气与最新人物美术未达标，不录宣传片。录好后才把README顶部图换视频，原媒体不提交。
+## 恢复与保护
+先git status/list_agents。CUA当前IAB id1，tab46；browser/inspectTab/directTab复用。临时viewport800×600，完工reset。只通过CUA操纵浏览器，不能shell Playwright/CDP。保存报告直接读取**当前页面实际存在**的DOM；下载按钮若仅新增链接，勿等不存在的download。Vite可因改模块触发reload，跑路线冻结服务模块；若中断如实记录。长日志落盘、图每批1–2张约800px。全部before基线/原图视频/个人音乐不提交。
 
-Node /Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node。开始先git status与list_agents。240000压缩阈值不能保证消除413或连接中断；接口错误准确记断点。
+Node `/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node`。六个本地scripts保持未跟踪：astronomy-check、dormitory-family-check、nanyuan-dormitory-entrance-check、nanyuan-reference-refresh-check、promotion-capture、promotion-shots.json。README赞赏绝对末尾；每版刷新metrics并本地提交/私有同步。240000阈值不能保证根治413或连接中断。

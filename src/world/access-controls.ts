@@ -5,7 +5,7 @@ import { Builder, type Solid } from './geometry.ts';
 import { southEastGate } from './south-boundary-layout.ts';
 import type { Materials } from './materials.ts';
 
-export type CampusEntrance={id:string;name:string;x:number;z:number;angle:number;pedestrians:number[];source:string};
+export type CampusEntrance={id:string;name:string;x:number;z:number;angle:number;pedestrians:number[];source:string;equipmentOffset?:{x:number;z:number}};
 /** Positions follow gate symbols on the registered plan, with the south east gate
  * corrected to the Xiaofenqiao gate symbol. Equipment layouts are gameplay approximations. */
 export const campusEntrances:CampusEntrance[]=[
@@ -14,7 +14,10 @@ export const campusEntrances:CampusEntrance[]=[
  {id:'south-north',name:'南园北门',x:-88.39,z:383.62,angle:0,pedestrians:[-4.7,4.7],source:'campus plan gate symbol [2216,2646]'},
  {id:'beijing-west',name:'北京西路门',x:-346.9,z:-234.17,angle:Math.PI,pedestrians:[-4.8,4.8],source:'campus plan [967,547]; OSM 1984468961'},
  {id:'beijing-east',name:'北京西路东侧出入口',x:-170.29,z:-208.14,angle:Math.PI,pedestrians:[-4.8,4.8],source:'campus plan [1610,583]; OSM 1684918728; descriptive name'},
- {id:'northwest',name:'西北校门',x:-368.66,z:-146.88,angle:Math.PI/2,pedestrians:[-4.8,4.8],source:'campus plan [935,878]; official VR gl-4-02 aerial overview (not a ground-level gate view)'},
+ // The plan marker denotes the public-street junction, not the equipment footprint.
+ // Recess devices 7m east into the campus branch to keep Jinyin Street clear;
+ // this is model clearance, not a measured real-world installation offset.
+ {id:'northwest',name:'西北校门',x:-368.66,z:-146.88,angle:Math.PI/2,pedestrians:[-4.8,4.8],equipmentOffset:{x:7,z:0},source:'campus plan [935,878]; official VR gl-4-02 aerial overview (not a ground-level gate view)'},
  {id:'west',name:'西校门',x:-275.74,z:97.06,angle:Math.PI/2,pedestrians:[-4.8,4.8],source:'campus plan [1391,1732]; OSM 1030348723'},
  {id:'tianjin',name:'天津路门',x:76.29,z:-50.86,angle:-Math.PI/2,pedestrians:[-4.8,4.8],source:'campus plan [2570,1063]; OSM 1615452151'},
  {id:'south-east',name:'小粉桥校门',x:southEastGate[0],z:southEastGate[1],angle:-Math.PI/2,pedestrians:[-4.8],source:'campus plan gate symbol [3037,3212]; equipment approximate'},
@@ -58,8 +61,10 @@ export function createAccessControls(mats:Materials){
  const readers:{entrance:string;x:number;z:number;flaps:T.Group[];screens:T.Mesh[];authorized:boolean;progress:number;indicator:T.MeshBasicMaterial;sensor:AccessSensor}[]=[];
  const booms:{entrance:string;x:number;z:number;pivot:T.Group;progress:number;sensor:AccessSensor}[]=[];
  for(const e of campusEntrances){
-  const base=new Builder(),local=new T.Group(),lenses:T.Mesh[]=[];local.name=e.name;local.position.set(e.x,0,e.z);local.rotation.y=e.angle;
-  const world=(x:number,z:number)=>({x:e.x+x*Math.cos(e.angle)+z*Math.sin(e.angle),z:e.z-x*Math.sin(e.angle)+z*Math.cos(e.angle)});
+  const equipment={x:e.x+(e.equipmentOffset?.x??0),z:e.z+(e.equipmentOffset?.z??0)};
+  const base=new Builder(),local=new T.Group(),lenses:T.Mesh[]=[];local.name=e.name;local.position.set(equipment.x,0,equipment.z);local.rotation.y=e.angle;
+  local.userData={entranceId:e.id,marker:{x:e.x,z:e.z},equipment};
+  const world=(x:number,z:number)=>({x:equipment.x+x*Math.cos(e.angle)+z*Math.sin(e.angle),z:equipment.z-x*Math.sin(e.angle)+z*Math.cos(e.angle)});
   for(const x of e.pedestrians){
    const flaps:T.Group[]=[],screens:T.Mesh[]=[],lights:T.Mesh[]=[],indicator=new T.MeshBasicMaterial({color:0x7bc8af,toneMapped:false});
    for(const side of[-1,1]){

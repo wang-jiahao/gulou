@@ -147,6 +147,30 @@ for(const t of targets.filter(t=>t.kind==='boom')){
  }
 }
 
+// Registered Jinyin public-road centreline at the northwest junction. Its
+// conservative 7m corridor must remain clear independently of the gate marker.
+const jinyin=[[-365.738,-161],[-368.624,-149.037],[-371.659,-134]];
+const northwest=targets.find(t=>t.kind==='boom'&&t.entrance==='northwest');
+for(const reverse of [false,true]){
+ reset();let gap=Infinity,maxOpen=0;const path=reverse?[...jinyin].reverse():jinyin;
+ for(let i=1;i<path.length;i++){
+  const [ax,az]=path[i-1],[bx,bz]=path[i],steps=Math.ceil(Math.hypot(bx-ax,bz-az)/.05);
+  for(let n=0;n<=steps;n++){
+   const x=ax+(bx-ax)*n/steps,z=az+(bz-az)*n/steps;
+   for(const box of access.solids){
+    const c=Math.cos(box.angle??0),s=Math.sin(box.angle??0),dx=x-box.x,dz=z-box.z;
+    gap=Math.min(gap,Math.hypot(Math.max(0,Math.abs(dx*c-dz*s)-box.w/2),Math.max(0,Math.abs(dx*s+dz*c)-box.d/2)));
+   }
+   access.update(1/60,new T.Vector3(x,.035,z),true);
+   const current=access.snapshot();
+   for(const lane of [...current.readers,...current.booms].filter(r=>r.entrance==='northwest'))maxOpen=Math.max(maxOpen,lane.open);
+  }
+ }
+ // Reserve half a sampling step so a gap between samples cannot mask contact.
+ check('jinyin-public-corridor-clear',northwest,gap-.025>3.5,true,{reverse,minimumSampledGap:round(gap)});
+ check('jinyin-public-walk-keeps-gate-closed',northwest,maxOpen<.0001,true,{reverse,maxOpen:round(maxOpen)});
+}
+
 const changed=[];for(const p of sourceFiles)if(await digest(p)!==sources[p])changed.push(p);
 report.sourcesChangedDuringRun=changed;
 if(changed.length)note('source-edited-during-audit',{files:changed});
