@@ -8,10 +8,20 @@ export function sampleStudentSkin(x,y,z,gender) {
   const female=gender==='female',front=T.MathUtils.smoothstep(z,.045,.10);
   const gaussian=(v,c,s)=>Math.exp(-(((v-c)/s)**2));
   const color=new T.Color(female?0xd6aa97:0xc49a83);
-  const mouthY=female?1.561:1.556,halfWidth=female?.029:.031;
-  const curve=mouthY+.003*(Math.abs(x)/halfWidth)**2;
-  const lip=Math.max(gaussian(y,curve-.007,.0048),gaussian(y,curve+.007,.0044)*.85)*Math.exp(-((x/halfWidth)**6))*front;
-  color.lerp(new T.Color(female?0x985953:0x925b52),lip*.82);
+  const mouthY=female?1.5605:1.5555,halfWidth=female?.029:.031;
+  const across=Math.abs(x)/halfWidth,tip=T.MathUtils.smoothstep(across,.68,1.04);
+  const seam=mouthY+.003*across*across;
+  const cupid=.0018*gaussian(Math.abs(x),.008,.005)-.0010*gaussian(x,0,.004);
+  const upperExtent=T.MathUtils.lerp(female?.014:.0115,.002,tip)+cupid;
+  const lowerExtent=T.MathUtils.lerp(female?.012:.011,.002,tip);
+  const insideWidth=1-T.MathUtils.smoothstep(across,.82,1.07);
+  const upper=T.MathUtils.smoothstep(y,seam-.001,seam+.001)*(1-T.MathUtils.smoothstep(y,seam+upperExtent-.004,seam+upperExtent));
+  const lower=(1-T.MathUtils.smoothstep(y,seam-.001,seam+.001))*T.MathUtils.smoothstep(y,seam-lowerExtent,seam-lowerExtent+.004);
+  const lip=(upper*.92+lower*.82)*insideWidth*front;
+  color.lerp(new T.Color(female?0xa66060:0x995e57),lip*.85);
+  // The source has an actual mouth opening. Its recessed mucosa is not skin.
+  const cavity=gaussian(y,seam,.004)*insideWidth*T.MathUtils.smoothstep(z,.025,.065)*(1-T.MathUtils.smoothstep(z,.115,.14));
+  color.lerp(new T.Color(0x472a2b),cavity);
   const cheeks=gaussian(Math.abs(x),.048,.026)*gaussian(y,1.600,.018)*front;
   color.lerp(new T.Color(female?0xc67f78:0xb87f6c),cheeks*.28);
   const nose=gaussian(x,0,.020)*gaussian(y,1.598,.018)*front;
@@ -23,7 +33,7 @@ export function sampleStudentSkin(x,y,z,gender) {
   const tzone=Math.max(nose,gaussian(x,0,.036)*gaussian(y,1.67,.025)*front);
   const pigment=Math.sin(x*195+y*137+z*181)*Math.sin(y*221-x*119)*.010+Math.sin(x*843+y*617)*Math.sin(z*721+y*543)*.004;
   color.multiplyScalar(1+pigment);
-  const roughness=T.MathUtils.clamp(.64-.16*lip-.11*tzone+.02*Math.sin(x*420+y*650+z*370),.35,.72);
+  const roughness=T.MathUtils.clamp(.72-.04*lip-.07*tzone+.02*Math.sin(x*420+y*650+z*370),.5,.78);
   return {color:color.convertLinearToSRGB().toArray(),roughness};
 }
 

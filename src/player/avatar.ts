@@ -17,7 +17,7 @@ export async function createAvatar(kind: CharacterKind = 'male') {
   model.traverse(node => {
     if (node instanceof T.Bone) bones[node.name.replace(/^mixamorig:?/, '')] = node;
     if (node instanceof T.SkinnedMesh) skeletons.add(node.skeleton);
-    if (node instanceof T.Mesh) { geometries.add(node.geometry); for (const mat of Array.isArray(node.material) ? node.material : [node.material]) materials.add(mat); node.castShadow = node.receiveShadow = true; node.frustumCulled = false;const m=node.material as T.MeshStandardMaterial;if(['student-cotton','student-denim','student-backpack','student-shoes'].includes(m.name)){m.bumpMap=cloth;m.bumpScale=.0016;m.roughness=.94;} }
+    if (node instanceof T.Mesh) { geometries.add(node.geometry); for (const mat of Array.isArray(node.material) ? node.material : [node.material]) materials.add(mat); node.castShadow = node.receiveShadow = true; node.frustumCulled = false;const m=node.material as T.MeshStandardMaterial;if(['student-cotton','student-denim','student-backpack','student-shoes','student-shoe-canvas','student-cotton-contrast'].includes(m.name)){m.bumpMap=cloth;m.bumpScale=.0016;m.roughness=.94;} }
   });
   // Bring T-pose arms down using the skeleton's actual world-space directions.
   for (const side of ['Left', 'Right']) {
@@ -91,7 +91,7 @@ export async function createAvatar(kind: CharacterKind = 'male') {
   return {
     root, head: bones.Head, kind, height, materials,
     setOutfit(style: OutfitStyle) {
-      const palette = style === 'forest' ? [0x627b69, 0xd9d4c6, 0x525f65, 0x887456] : style === 'warm' ? [0xa5856b, 0xe0d7c7, 0x626d77, 0x595e54] : kind === 'female' ? [0xc4b9a2, 0x879b8e, 0x63788a, 0x9b7b58] : [0x354c61, 0xd5d2c5, 0x536371, 0x555d54];
+      const palette = style === 'forest' ? [0x627b69, 0xd9d4c6, 0x525f65, 0x887456] : style === 'warm' ? [0xa5856b, 0xe0d7c7, 0x626d77, 0x595e54] : kind === 'female' ? [0x81978a, 0x879b8e, 0x63788a, 0x9b7b58] : [0x293f53, 0xd5d2c5, 0x536371, 0x555d54];
       for (const material of materials) {
         if (!(material instanceof T.MeshStandardMaterial)) continue;
         const index = ['student-cotton', 'student-tee', 'student-denim', 'student-backpack'].indexOf(material.name);
@@ -99,7 +99,7 @@ export async function createAvatar(kind: CharacterKind = 'male') {
         if (material.name === 'jacket-trim') material.color.setHex(palette[0]).multiplyScalar(.82);
       }
     },
-    dispose() { mixer.stopAllAction(); mixer.uncacheRoot(model); geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); skeletons.forEach(s => s.dispose()); cloth.dispose(); },
+    dispose() { mixer.stopAllAction(); mixer.uncacheRoot(model); geometries.forEach(g => g.dispose()); const textures=new Set<T.Texture>([cloth]);for(const material of materials)for(const value of Object.values(material))if(value instanceof T.Texture)textures.add(value);materials.forEach(m => m.dispose());textures.forEach(t=>t.dispose()); skeletons.forEach(s => s.dispose()); },
     kick() { kickTime = .32; },
     poseBasketball(held: boolean, followThrough: number) {
       root.updateMatrixWorld(true);
@@ -143,7 +143,7 @@ export async function createAvatar(kind: CharacterKind = 'male') {
       model.rotation.x=0;
       if(bones.Spine)bones.Spine.quaternion.copy(rest.get(bones.Spine)!);
       bones.Hips.position.copy(hipsRest);
-      for(const [name,bone]of Object.entries(bones))if(name.includes('Finger'))bone.quaternion.copy(rest.get(bone)!);
+      for(const [name,bone]of Object.entries(bones))if(name.includes('Finger')||name.endsWith('Hand'))bone.quaternion.copy(rest.get(bone)!);
       if(cyclingPhase!==undefined){
         kickTime=0;
         for(const side of['Left','Right'])for(const part of['UpLeg','Leg','Arm','ForeArm']){const bone=bones[side+part];bone.quaternion.copy(rest.get(bone)!);}

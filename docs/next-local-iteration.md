@@ -1,19 +1,19 @@
-# 最新断点：介绍已整合；人物19生成/待视觉及层间复核
+# 最新断点：v0.111人物整体重做与时尚服装已整合
 
-主树`/Users/zackaria/Desktop/gulou campus` main，v0.110.0；HEAD10cfe36（故事7778ff4、最近门10cfe36）。主4173继续复用，不重启；子服务4181—4183已关。UI验证页均已关至tab26。子agent activity_dining等待19检查；life_facilities/signs_stories已交付，list_agents确认再派工。
+主树`/Users/zackaria/Desktop/gulou campus` main，v0.111.0；本轮提交见git log -1。主4173 PID5451继续复用，不重启。子agent均已交付，所有验证页关闭至tab33。四旧astronomy/dormitory/promotion脚本保持未跟踪，raw媒体未提交。
 
-## 已完，不重做
+## 本轮已过，不重做
 
-v110南园87/93删除、北门视频两侧墙、方向感应闸、超市/快递/邮政/碑/东南楼/11舍已验。新三故事增加到56篇，主UI正文/链接均验。I/E改共用最近入口，工管不再I串平台化楼；大纛坪特殊介绍保留。15组纯函数、主types/lint/build通过，日志/tmp/gulou-nearby-*；图docs/validation/v0.110-stories-ui，tab23/25已关。无全校/GPU通过声明。
+正式男女GLB已替换（不再是旧158a40e）：独立形体、肤发/眼眉、连续权重和衣物、包、鞋、真实截面袖口及内衬。最新学院夹克/绿白卫衣材质分区，奶油区独立不受整体染色，3套穿搭正常；正式GLB逐字节等于已验候选，male alias一致。手腕复位、纹理去重dispose修正。最终六动作20934采样、男女两转换4/4和五唯一纹理事件通过；types/lint/build通过（原大chunk提示）。日志/tmp/gulou-final111-*，正式parity在v0.111/fashion/formal-parity-*。
 
-## 人物最新原型（全在忽略docs/validation/v0.110）
+CUA已实看男女/两人全身、女暖棕骑车/男绿衣持球、实际正式双人暖棕行走，主校园男女切换、移动、换装已验；无console error。主页/设置三个入口纯图标，44px热区、title/aria-label、赞赏弹窗通过。图v0.111/ui；README工作量已刷新，赞赏绝对末尾。
 
-正式脚本/GLB仍158a40e，不能说人物已完成。18生成成功，head/skin/hair/衣领全新原型有改进；真实六动作男女12/12、853万变形采样无严重拉伸/新增退化，报告prototype-poses-1791546712333.json。此前17腋下最大40.7倍拉伸已由student-weights连续权重解决；失败prototype-poses-1791546167708.json保留。
+## 性能口径与未完
 
-18正常UI前侧背/全身坐骑实看发现上衣下摆与裤顶穿插（10.6/35.3mm），最终测量hem-overlap-1791547053103.json。19已改生成顺序，student-outfit.fitLowerGarment按裤腰128×25采样包络+9mm拟合上衣，含罗纹下32mm；背包肩带改贴合服装双边的实体织带；hair19后发际/女发尾内扣。build-student-prototype.mjs输出仍只忽略路径。当前19生成日志/tmp/gulou-build-{male,female}19.log，先查进程/日志再运行，勿同时写GLB。18全套生成器/GLB/相关helper另存*-eighteen，所有before保护，不跑--before。
+旧正式与20b重做（服装材质分区前）同场景1280×720/medium/男/第三人称/14:00晴天，各3×10s：p50均16.7ms，p95约33.3ms，max均35.4ms以下，无>50ms帧；CPU均值旧5.9—6.0、新6.3—6.4ms，没有提速声明。服装分区另+508/504tri、少量材质，不在这组对照内。最终整场流畅度/连续骑行/持球/公共路完整验收仍待完成；人物54保持部分完成，原104仍28项未闭合，不能录正式片。缺参考项见reference-gaps，清单已发用户，不重问。
 
-下一步：确定19生成完成，通知activity_dining跑真实六动作/层间；正常CUA预览前后、肩带、坐骑、手/持球。preview.html新增照明诊断和可见“姿态就绪”用于截屏，不要截切换后未渲染帧。入口http://127.0.0.1:4173/docs/validation/v0.110/preview.html；browser2。所有当前造型仍未美术验收，不能因CPU通过就正式替换。参考/细节见character-redesign。
+下一步先按request-audit未闭合项推进全校园操作和性能实测；余下建筑/生活设施需真实资料，不能猜造。所有待办与质量达标才直接录约一分钟本地片，无需再确认。
 
-原104项仍28未闭合；建筑缺资料清单reference-gaps已发用户，不再重问同图。全场流畅度、动作与公共道路验收后才录约一分钟本地宣传片，已授权无需重问。仅本地，不推送/发布/Pages；README赞赏绝对末尾。Git作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。四旧本地脚本保持未跟踪。原媒体保持忽略。
+## 恢复与保护
 
-恢复Node：/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node；git status --short先检查；长日志落盘，每批1—2张800px图，240000压缩不能保证消除413/网络错误。
+先git status --short、list_agents确认没有已有任务；Node /Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node。正式生成node scripts/build-student.mjs [--female]；仅候选加--preview，旧--fashion已拒绝。最终preview为/docs/validation/v0.111/formal-preview.html。全套before保护，旧正式v0.111/formal-old及20b fashion/baseline-*不可覆盖。仅本地不推送/发布；作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。长日志落盘，240000压缩不能保证消除413/连接错误。
