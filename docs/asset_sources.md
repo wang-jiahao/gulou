@@ -698,3 +698,13 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 ## v0.109 喷泉吉祥物朝向澄清
 
 用户明确“面向汉口路校门”指喷泉四个吉祥物，并非南大记忆商店。再次实看既有用户图phase96-user/fountain-mascots.png（约800px检查副本）；参考左至右为马、海豚与独立星、鹿角角色、虎，带银座、紫框和青春奋进。整个装置绕既有行列中心转180度，保留正面顺序和UV，朝北汉口门。碰撞与装饰同步；喷泉铺装绿化不变。传送移至北开口外。正常UI北侧正面与步行检查通过，原图不提交。v108商店核对不能作为此项完成证据。
+
+
+## 人物重做准备：CC0成年形体与UV数据流程（未替换正式模型）
+
+MakeHuman图形资产许可沿用docs/sources/makehuman-license.md。通过Git读取官方仓库a8bc2d54ff0ac92e78ff71431b1023eda42bf482的makehuman/data/targets/macrodetails/asian-male-young.target及asian-female-young.target，均仅作本机造型数据；未引入应用代码、未提交原始参考图片。
+- 来源：https://github.com/makehumancommunity/makehuman/tree/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails
+- 男形变SHA256：ed2e8c191cb6b87b4a2d97c80486acb2604fa549316c7aa2a738a5d5a14334dc。
+- 女形变SHA256：095fe79694fa19e1fe98d93009ec116199bd524e081c640351a10eccf2cca1eb。
+
+新原创读取/细分工具保持原始UV岛和接缝平滑法线，从同一变形后数据重建关节标记；单元及真实源数据检查通过。只接到独立原型，未替换public角色。原型外观仍未达标，不能算人物需求完成；未测全场性能。
