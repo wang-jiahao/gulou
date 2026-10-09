@@ -1,6 +1,6 @@
 # 资产来源与使用范围
 
-当前本地版本 v0.103.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
+当前本地版本 v0.105.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
 
 | 资产 / 资料 | 来源与许可 | 使用方式 |
 | --- | --- | --- |
@@ -667,3 +667,10 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 实际查看用户照片 `references/phase96-user/fountain-mascots.png`，按从左到右的棕色牛、蓝色海豚及独立金星、白色鹿与紫色角/地球、浅黄色虎制作薄轮廓立牌，补银色截锥底座、中间紫框、白边“青春奋进”箭头和徽记。与既有官方 VR 喷泉布局整合，原照片仅供本地参考，不提交分发；轮廓、徽记、字体、遮挡部分和绝对尺度为近似。
 
 原铺装/绿化7组几何摘要与57处原碰撞体保持；有限几何、12项行走、14项相机检查通过。类型、src ESLint、构建通过，保留既有大chunk与Rapier初始化提示。最终正常UI前往南园喷泉并实看 `docs/validation/v0.104/fountain-mascots-final.png`，四立牌、独立金星、紫框、底座和道路开口可见，console无error；验证标签页已关闭。局部fixture不代表全场路线或GPU性能，原 `fountain-before.json` 基线保留。
+
+
+## v0.105 陶园三舍西入口
+
+实际查看用户照片 `references/phase96-user/taoyuan-3-entry.png`、`taoyuan-3-context.png`，校园图对应plan118；与独立陶南plan116区分。按可见面补灰色深缝与留白墙、金色“3陶园”、右侧实体阳台红栏、左平雨棚圆柱、关闭玻璃门、三级台阶及侧坡道。照片不足以证明整栋层数，保留原轮廓和估计六层；尺度、隐藏立面及字体近似。原图仅本地参考，不提交分发。
+
+原楼体与116/119/123对照楼保持，有限几何、18项行走、19项相机检查通过；types、src ESLint、build通过。最终正常UI入口及立面画面 `docs/validation/v0.105/taoyuan-{entrance,facade}-final.png` 已实看，console无error，验证标签页已关闭。局部fixture不含全场道具/异步树木，不代表GPU性能；保护 `taoyuan-before.json`。

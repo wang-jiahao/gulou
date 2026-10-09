@@ -94,7 +94,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-114': profile(modern,'gl-1-10 f/l','Yaoliang services hall: dedicated low flat portico, tall glass and stone sign; hidden mass and height approximate, adjacent tall dormitories remain separate',{levels:3,wall:0xd0d5cf}),
   'plan-115': profile(dorm,'gl-1-24','six-storey residence within south-campus row'),
   'plan-116': profile(historic,'gl-1-07','two-storey grey masonry, red windows and central pale portal',{levels:2,roof:'heritage',frame:0x76433d}),
-  'plan-118': profile(dorm,'gl-1-24','south-campus residential block with regular grid'),
+  'plan-118': profile(dorm,'user taoyuan-3-entry/context photographs / campus plan 118','blank pale-grey front panel, dark seams, right solid balcony boxes with red rails, left flat canopy on round columns; six-storey estimate and hidden faces remain approximate',{wall:0x858c8e,frame:0x824940,bands:false}),
   'plan-119': profile(dorm,'gl-1-07 / gl-1-24','pale residential row, utility units on facade'),
   'plan-120': profile(modern,'user international-apartments.png / gl-1-23','four-storey grey-brick apartments south of Nanfangyuan, lower west wing, screened stair glazing and shallow vestibule; dedicated model, hidden faces and heights approximate',{levels:4,wall:0x7a7c78,style:'modern',ac:false,roof:'flat'}),
   'plan-122': profile(dorm,'gl-1-14 / gl-1-24','pale dormitory beside southern grounds'),

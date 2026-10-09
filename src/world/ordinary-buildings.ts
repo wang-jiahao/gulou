@@ -31,6 +31,7 @@ import {buildNjuMemory} from './nju-memory.ts';
 import {buildNanyuanTeaching} from './nanyuan-teaching.ts';
 import {buildWestHeritage} from './west-heritage.ts';
 import {buildNanyuanEightEntrance} from './nanyuan-eight-entrance.ts';
+import {buildTaoyuanThreeEntrance} from './taoyuan-three-entrance.ts';
 import {buildInternationalApartments} from './international-apartments.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
@@ -72,6 +73,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   let yifuUpper:ReturnType<typeof buildYifuTower>|undefined;
   let tangEntrance:ReturnType<typeof buildTangEntrance>|undefined;
   let chemistryEntry:ReturnType<typeof buildChemistryEntrance>|undefined;
+  let taoyuanThreeEntry:ReturnType<typeof buildTaoyuanThreeEntrance>|undefined;
   let nanyuanEightEntry:ReturnType<typeof buildNanyuanEightEntrance>|undefined;
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
   for (const f of features) {
@@ -136,6 +138,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       })[0];
     for(const face of faces){
       const {ri,edge,len,x:mx,z:mz,angle,nx,nz}=face,frame=defaultFrame;
+      const threeFrontage=f.id==='plan-118'&&face===frontage;
       const eightFrontage=f.id==='plan-123'&&face===frontage;
       // Positive local Z is always outdoors, including courtyard hole rings.
       const put=(target:Builder,u:number,y:number,v:number,w:number,h:number,d:number,mat:T.Material)=>{
@@ -189,6 +192,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       for(let j=0;j<bays;j++)for(let floor=0;floor<profile.levels;floor++){
         const u=len*((j+1)/(bays+1)-.5),y=floorHeight*(floor+.60),w=Math.min(profile.windowWidth,len/(bays+1)*.76),h=Math.min(profile.windowHeight,floorHeight*.72);
         const g=glass[Math.floor(random()*glass.length)];
+        if(threeFrontage)continue;
         if(glazedGarden&&floor===0)continue;
         if(eightFrontage&&Math.abs(u)-w/2<3.15)continue;
         // The photographed entry replaces only the central bays on the old
@@ -297,6 +301,10 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         if(f.id==='plan-17')frontView=tian.entrance(b,fixedMeshes,doors,e);
         else if(f.id==='plan-3')chemistryEntry=buildChemistryEntrance(b,fixedMeshes,cameraSolids,doors,e);
         else if(f.id==='plan-80')entrance=buildHospitalEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e.x,e.z,e.angle);
+        else if(f.id==='plan-118'){
+          taoyuanThreeEntry=buildTaoyuanThreeEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e,f.tags.name);windows+=taoyuanThreeEntry.panes.length;
+          frontView=[e.x+taoyuanThreeEntry.entryU*Math.cos(e.angle),e.z-taoyuanThreeEntry.entryU*Math.sin(e.angle),e.nx,e.nz];
+        }
         else if(f.id==='plan-123'){nanyuanEightEntry=buildNanyuanEightEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e,f.tags.name,wall,defaultFrame);windows+=nanyuanEightEntry.panes.length;}
         else{
           addEntrance(b,fixedMeshes,doors,doorMaterials,f.tags.name,e.x,e.z,e.angle,w,0);
@@ -311,7 +319,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
           const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
           const sign=new T.Mesh(new T.PlaneGeometry(5,.62),new T.MeshStandardMaterial({map:texture,roughness:.6,transparent:true,depthWrite:false}));const projection=.52;sign.position.set(e.x+e.nx*projection,3.65,e.z+e.nz*projection);sign.rotation.y=e.angle;plaques.add(sign);
         }
-        if(profile.style==='dormitory'&&f.id!=='plan-123'){
+        if(profile.style==='dormitory'&&f.id!=='plan-123'&&f.id!=='plan-118'){
           const numbers=['零','一','二','三','四','五','六','七','八','九','十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','二十一'];
           const name=f.tags.name.replace(/\d+/g,n=>numbers[Number(n)]??n);
           const c=document.createElement('canvas');c.width=768;c.height=192;const ctx=c.getContext('2d')!;
@@ -341,6 +349,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.tangFacade=tang.metadata;
   group.userData.tangEntrance=tangEntrance;
   group.userData.chemistryEntrance=chemistryEntry;
+  group.userData.taoyuanThreeEntrance=taoyuanThreeEntry;
   group.userData.nanyuanEightEntrance=nanyuanEightEntry;
   group.userData.chemistryFacade=chemistry.metadata;
   if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;group.userData.yifuTower=yifuUpper;}
