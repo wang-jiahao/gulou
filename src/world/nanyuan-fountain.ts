@@ -1,12 +1,13 @@
 import * as T from 'three';
 import {Builder, rng} from './geometry.ts';
 import type {Materials} from './materials.ts';
+import {createFountainMascots} from './fountain-mascots.ts';
 
 // Centre fitted to the three surrounding map lawn arcs; dimensions are estimates.
 export const nanyuanFountain = {x:-85.233,z:456.743,pavingRadius:14.3,outerRadius:16.2,openingWidth:3.3};
 
 /** Dry plaza visible in official VR gl-1-24 down and gl-1-02 front.
- * The temporary anniversary board and unobserved water effects are not inferred. */
+ * The user's later photograph supplies the anniversary display; water is unobserved. */
 export function createNanyuanFountain(mats:Materials){
   const b=new Builder(),{x,z,pavingRadius,outerRadius,openingWidth}=nanyuanFountain,random=rng(6501);
   const stone=mats.textures.get('stone-grain.webp');
@@ -76,7 +77,9 @@ export function createNanyuanFountain(mats:Materials){
     b.add(leaf,i%4===0?tips:hedge,x-5.3+random()*10.6,1.01,z-7.5+random()*2.2);
   }
   const group=b.finish('Nanyuan dry fountain plaza');
-  group.userData={layout:nanyuanFountain,source:'Official VR gl-1-24 down / gl-1-02 front; map-fitted approximate dimensions',nozzles:3,openings:4,waterObserved:false};
+  group.userData={layout:nanyuanFountain,source:'Official VR gl-1-24 down / gl-1-02 front and user fountain-mascots photo; approximate dimensions',nozzles:3,openings:4,waterObserved:false,mascots:4};
   for(const mesh of group.children)if(mesh instanceof T.Mesh&&[paving,band,joint,nozzle].includes(mesh.material as T.MeshStandardMaterial))mesh.castShadow=false;
-  return{group,solids:b.solids};
+  const mascots=createFountainMascots(mats,x,z),cameraSolids=[...group.children,...mascots.cameraSolids];
+  group.add(...[...mascots.group.children]);b.solids.push(...mascots.solids);
+  return{group,solids:b.solids,cameraSolids};
 }

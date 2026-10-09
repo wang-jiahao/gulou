@@ -85,7 +85,7 @@ export const travelPlaces: TravelPlace[] = [
   { name: '汉口路校门', x: -91, z: 365, yaw: 0 },
   { name: '苏浙运动场', x: -193, z: -2, yaw: 0 },
   { name: '南园北门', x: -89, z: 392, yaw: Math.PI },
-  { name: '南园喷泉', x: -65.8, z: 456.743, yaw: Math.PI / 2 },
+  { name: '南园喷泉', x: -85.233, z: 476.2, yaw: 0 },
   { name: '南园宿舍区', x: -41, z: 526, yaw: 0 },
   { name: '广州路校门', x: -35, z: 715, yaw: 0 },
   photoSpot,
@@ -208,7 +208,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const garden = createSonglinGarden(mats); root.add(garden.group); solids.push(...garden.solids); fixedMeshes.push(...garden.fixedMeshes);cameraSolids.push(...garden.group.children);
   const dadaoping=createDadaoping(mats);root.add(dadaoping.group);solids.push(...dadaoping.solids);cameraSolids.push(...dadaoping.group.children);
   const directory = createCampusDirectory(map, mats); root.add(directory.group); solids.push(...directory.solids); cameraSolids.push(...directory.group.children);
-  const fountain=createNanyuanFountain(mats);root.add(fountain.group);solids.push(...fountain.solids);cameraSolids.push(...fountain.group.children);
+  const fountain=createNanyuanFountain(mats);root.add(fountain.group);solids.push(...fountain.solids);cameraSolids.push(...fountain.cameraSolids);
   const gateFont = await new FontLoader().loadAsync(`${import.meta.env.BASE_URL}assets/fonts/gate-lettering.typeface.json`);
   const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);
   const guangzhou=createGuangzhouGate(mats);root.add(guangzhou.group);solids.push(...guangzhou.solids);cameraSolids.push(...guangzhou.group.children);

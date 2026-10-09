@@ -660,3 +660,10 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 实际查看用户照片 `references/phase96-user/international-apartments.png`、校园图与官方 VR `references/official-vr/phase10/scene_gl-1-23-f.jpg`，结合23/24号周围视角定位 plan-120：南芳园南侧、南苑宾馆北侧，东西向、北入口。按可见立面重建四层灰砖主楼、较低西翼、三排上层窗、蓝玻璃与深色竖屏、金色“外教公寓”、双屋檐图案、英文门楣及浅玻璃雨棚/门斗。校准层数从6改4；原轮廓、街道与相邻楼保持。照片不分发，隐蔽立面、绝对尺度与字体为近似。
 
 独立 Rapier 检查通过15项行走与8项相机射线，并覆盖有限几何、主楼/西翼面积、北入口及相邻117/121/123对照楼。类型、src ESLint、构建通过；最终正常UI画面 `docs/validation/v0.103/international-apartments-final.png` 已实看，console无error。局部fixture不含全场道具或异步树木，不代表GPU性能；before与原失败记录保留。
+
+
+## v0.104 南园喷泉四吉祥物
+
+实际查看用户照片 `references/phase96-user/fountain-mascots.png`，按从左到右的棕色牛、蓝色海豚及独立金星、白色鹿与紫色角/地球、浅黄色虎制作薄轮廓立牌，补银色截锥底座、中间紫框、白边“青春奋进”箭头和徽记。与既有官方 VR 喷泉布局整合，原照片仅供本地参考，不提交分发；轮廓、徽记、字体、遮挡部分和绝对尺度为近似。
+
+原铺装/绿化7组几何摘要与57处原碰撞体保持；有限几何、12项行走、14项相机检查通过。类型、src ESLint、构建通过，保留既有大chunk与Rapier初始化提示。最终正常UI前往南园喷泉并实看 `docs/validation/v0.104/fountain-mascots-final.png`，四立牌、独立金星、紫框、底座和道路开口可见，console无error；验证标签页已关闭。局部fixture不代表全场路线或GPU性能，原 `fountain-before.json` 基线保留。
