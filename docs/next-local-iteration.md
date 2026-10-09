@@ -1,6 +1,6 @@
 # 最新短交接：v0.117 导航与入口地名修正；持续操作、性能与分镜接续
 
-主树 `/Users/zackaria/Desktop/gulou campus`，main；版本0.117.0，HEAD以Git为准（上版a4b7e24）。用户睡眠中，要求重要TODO收尾后再录；缺资料/确实次要可明确暂缓。现有**私有仓库同步已获授权**，仍不公开/部署/Pages；作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。4173/PID5451复用。仅CUA浏览器；不要shell Playwright/CDP。
+主树 `/Users/zackaria/Desktop/gulou campus`，main；版本0.117.0，v117代码HEAD `0ab6b41` 已同步origin/main，文档快照可能随后提交，以Git为准。用户睡眠中，要求重要TODO收尾后再录；缺资料/确实次要可明确暂缓。现有**私有仓库同步已获授权**，仍不公开/部署/Pages；作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。4173/PID5451复用。仅CUA浏览器；不要shell Playwright/CDP。
 
 ## 当前改动与已过
 - 西南楼目录落点从上层台阶移到楼梯脚外（frontage15.2），未改楼体/台阶/碰撞。主Game原生到达→W上阶→闭门停住→S返回9项及抵达7项通过。
@@ -19,9 +19,11 @@
 - 独立浏览器全屏与真实触控仍受锁屏/设备限制；IAB极简页也退出全屏，不能当游戏失败或通过。
 
 ## 分镜/音乐
-第二版**仍未录制**。当前CUA browser id1/tab46、inspectTab/directTab复用，URL`http://localhost:4173/docs/validation/promotion-20261010/index.html`。已生成首版接触表并保存在`/tmp/gulou-cut2-review/`，餐厅原镜头被近枝遮挡，已改低机位[-40,3.3,592]看[-62,5,580]待当前60帧实看。新增批量动态预览按钮只复用逐镜60帧、不自动approve/record；逐镜实筛再做最终录制；26×2s=52s，北大楼仅I❤️NJU一次，飞先骑后，无人物/球类/球场展示。原树冠稳定助手仅用于录制，保留风/CSM/距离fade。质量前置未关闭，不冒称成片。
+第二版**仍未录制**。26镜×60帧的960×540完整预览已跑完，console[]；两段第一人称飞/骑均隐藏人物，真实控制重放相机误差0。根已查看全部78张首/中/末320×180关键帧和餐厅1920×1080首帧；关键帧无明显遮挡/硬跳，不等于看完全部60帧或全分辨率最终影片。餐厅旧镜头被近枝大面积遮挡，已改低机位[-40,3.3,592]看[-62,5,580]、FOV78，台阶/外廊清楚；建筑/树未改。
+全部图及报告在`/tmp/gulou-cut2-review/`：frames/00..77.png、motion-0..6.jpg、batch-preview-complete.json、batch-review-complete.json；保留旧storyboard-before-review.*和shotlist-before-dining.json。页面`/docs/validation/promotion-20261010/index.html`已具批量动态预览按钮，严格复用renderShot，无自动approve/record。目前26镜review仍pending，下一步只做必要的全动态/高分辨率检查与人工采用，不必重做旧机位初筛；先完成重要质量前置再正式录制。26×2s=52s，北大楼仅I❤️NJU一次、飞先骑后、无人物/球类/球场展示，旧MP4保持首版。
+CUA导出dataURL图片用downloadMedia曾60s超时并重置工具，会话已恢复且网页数据未丢；随后通过只读DOM src逐张保存了78图。这不是游戏故障。重连后的IAB id2，验证tab46已关闭、viewport已reset，浏览器无开页；下次在现有IAB开所需验证页，不启动新服务。
 52s原创128BPM结尾候选`/tmp/gulou-cut2-music-endings/gulou-cut2-52s-ending.wav`：50.625秒最终D，51–52淡出。完整解码/零削波/真峰/响度过；原音轨未变。脚本`/tmp/gulou-cut2-music-ending.py`支持48–56s默认plan-only。**模型无音频输入，未试听**，不能声称音乐听感已确认。旧`docs/media/gulou-preview.mp4`保持首版。
 
 ## 恢复与保护
-先git status/list_agents，不重复正在运行的页面。验证时冻结被服务模块防Vite重载；JSON只输出必要字段，图每批1–2张约800px。临时viewport800×600，完毕reset/关闭验证页。源图视频/个人音乐/全部before不提交；六本地scripts继续未跟踪（astronomy、dormitory-family、nanyuan-dormitory-entrance、nanyuan-reference-refresh、promotion-capture、promotion-shots）。README赞赏绝对末尾；v117文档/metrics已整合；待最后git提交/私有同步，不能擅加原始媒体。
+先git status/list_agents，不重复正在运行的页面。验证时冻结被服务模块防Vite重载；JSON只输出必要字段，图每批1–2张约800px。上次临时viewport800×600已reset，验证页已关闭。源图视频/个人音乐/全部before不提交；六本地scripts继续未跟踪（astronomy、dormitory-family、nanyuan-dormitory-entrance、nanyuan-reference-refresh、promotion-capture、promotion-shots）。README赞赏绝对末尾；v117文档/metrics已整合并随0ab6b41私有同步，不能擅加原始媒体。
 Node `/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node`；直接调用node_modules/{typescript/bin/tsc,eslint/bin/eslint.js,vite/bin/vite.js}，环境无npm。ffmpeg `/tmp/gulou-media-tools/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1`。240000压缩阈值不能保证消除413/接口中断。
