@@ -1,3 +1,17 @@
+# 当前断点 2026-10-10：v113整合验收，重要TODO后再录第二版
+
+工作树/提交以git status和git log -1为准。main从7351d5f接续，package已0.113.0，本轮代码准备本地提交并获准同步现有私有仓库；禁止公开/部署/Pages。SSH fetch已过，origin/main f212af3是祖先。About无网页/API凭证，文案在docs/repository-about.md，尚未更新GitHub元数据。
+
+已过：南园17普通门厅专项（255支撑/17门厅/南3往返）、吉祥物前植岛移除与屏幕16海报专项；主游戏南3、吉祥物、电子屏实看console[]，图/tmp/gulou-{nanyuan3-entrance,mascots,screen}113.png。59篇故事，化学楼/南大记忆/一卡通三新增已主UI正文和来源核对，/tmp/gulou-stories113.png。正式男女GLB参考第五轮、袖内衬尖角修复，真实avatar-reference 28扩展动作通过；美术仍未达用户标准。篮球mass0恢复缺陷已修且持球60帧回归过。HTML直接引用CSS修复首帧无样式条件，正常启动页已看，未证实外部URL跳转。局内⛶和返回页已有UI检查。type/lint/build/assets57过（/tmp/gulou-v113-*.log）；仅pnpm-lock，README安装命令已改pnpm frozen lock。
+
+性能：30m树子合批已A/B/B/A后完整撤回，src/world/model-trees.ts无改动、新候选模块已删除。基线140帧/10s，候选145/137，回退163，p95皆83.4ms；不能采用。分类已完成，完整/tmp/gulou-v113-categories.json：原136帧GPU59.7/CPU72.7ms；单遍140/GPU59.7/CPU70.8；恢复原136/GPU59.6/CPU72.8，p95均83.4。禁影与删叶只作诊断，不上线。实际GPU为Apple M4 ANGLE Metal，非软件渲染。当前tab46改到/docs/validation/v113-roof-fall.html跑真实屋顶实操。单遍候选/tmp/gulou-v113-tree-audit/canopy-single-pass.patch未应用，画面/GPU待验；不降低体验。
+
+重要未完：人物整体美术、全场流畅度/连续步骑飞、主校园屋顶落地走下重生（life_facilities正在准备真实Game按钮页）；其余缺资料低优先按remaining-todo可暂缓。第二版未录：1–2秒建筑快剪、北大楼仅I❤️NJU、避免人物/删篮球足球、飞先骑后，新128BPM音轨已生成未试听。30机位候选在.local-media/promotion/v113-cut2，录制稳定候选/tmp/gulou-v113-stability/recorder-stability.patch未应用/未A/B。首版60秒已交但要求返工；docs/media/gulou-preview.mp4仍首版20MB派生片，第二版后替换。
+
+4173 PID5451复用，验证只能CUA浏览器，旧shell Playwright录制器不运行。四旧local scripts保持未跟踪：astronomy-check、dormitory-family-check、promotion-capture、promotion-shots；两新nanyuan-{dormitory-entrance,reference-refresh}-check亦仅本地，依赖外部Canvas与before，恢复命令见/tmp/gulou-v113-private-sync-audit.md。原照片/视频/个人音乐/Codex缓存和before基线均不提交。Node：/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node。恢复先git status、list_agents、浏览器listTabs，勿重复已过项。240000阈值不保证根治413/连接错误。
+
+--- 以下为上次稳定版历史断点 ---
+
 # 最新断点：v0.112功能整合，参考图人物候选未正式替换
 
 主树 /Users/zackaria/Desktop/gulou campus，main，正式版本0.112.0，提交以git log -1为准。仅本地，不推送/发布；目标10月10日下午发布尚有关键欠账。主4173 PID5451复用，验证tab36—39均已关闭、viewport reset。四旧本地scripts仍未跟踪。

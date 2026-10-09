@@ -65,13 +65,13 @@ const [code, tooling, generated, assets, build] = await Promise.all([size(source
 const n = x => x.toLocaleString('en-US');
 const mb = x => `${(x / 1048576).toFixed(2)} MiB`;
 const rows = [
-  ['当前本地版本', `v${version}；Git 已提交 ${n(Number(git('rev-list', '--count', 'HEAD')))} 次（截至 ${git('rev-parse', '--short', 'HEAD')}）；历史及当前工作树共 ${versions.size} 个不同版本号`],
+  ['当前版本', `v${version}；Git 已提交 ${n(Number(git('rev-list', '--count', 'HEAD')))} 次（截至 ${git('rev-parse', '--short', 'HEAD')}）；历史及当前工作树共 ${versions.size} 个不同版本号`],
   ['游戏源代码', `${n(code.lines)} 行 / ${code.files} 个 TS、CSS、HTML 文件 / ${mb(code.bytes)}（含空行与注释，不含 JSON、素材、依赖与测试）`],
-  ['工具与验证脚本', `${n(tooling.lines)} 行 / ${tooling.files} 个文件 / ${mb(tooling.bytes)}（单列，不计入游戏代码；未完成宣传片脚本不计）`],
+  ['工具与验证脚本', `${n(tooling.lines)} 行 / ${tooling.files} 个文件 / ${mb(tooling.bytes)}（单列，不计入游戏代码；本地录制工具不计）`],
   ['场景与轮廓数据', `${generated.files} 个源 JSON / ${mb(generated.bytes)}（程序生成数据单列）`],
   ['游戏静态资源', `${assets.files} 个文件 / ${mb(assets.bytes)}；当前构建目录 ${mb(build.bytes)}（未压缩磁盘字节，不代表网络传输量）`],
   ['已收集本地参考图像', `${n(images.length)} 个文件（含全景各面、裁切、重复图和视频帧，未去重；不是独立照片数或逐张阅览数）`],
-  ['本地参考视频', `${videos.length} 个文件；其中用户提供的两段漫游作为主要参考，另有补充视频（不随游戏分发）`],
+  ['本地参考视频', `${videos.length} 个文件；包含两段校园漫游及局部补充视频（不随游戏分发）`],
   ['来源记录', `${urls.size} 个不同 URL，见资料来源文档（不代表全部已用于建模；同站不同页面分别计）`],
 ];
 if (usage) rows.push(

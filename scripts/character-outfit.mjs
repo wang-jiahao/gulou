@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {clipGarmentHeight,garmentBoundaryBand} from './character-tailoring.mjs';
+import {splitStudentClothing} from './character-clothing.mjs';
 
 // Remove the anatomical helper's little muscle hollows from the fabric shell.
 // Position sharing is independent of UV splits; paired Taubin passes limit
@@ -83,7 +84,12 @@ export function finishSleeve(geometry,wrist,axis){
  const cuff=garmentBoundaryBand(result,cut,.035,.001,.003);
  // The front-only outer shell must not reveal the background through an open
  // wrist. An inward-facing cloth lining meets the cuff's actual inner edge.
- const lining=clipGarmentHeight(local,-.180,cut),lp=lining.getAttribute('position'),ln=lining.getAttribute('normal');
+ // The oblique forearm slab also intersects the lower torso. Keep only the
+ // sleeve tube before binding this lining rigidly to its own forearm.
+ const band=clipGarmentHeight(local,-.180,cut);
+ const {primary:lining,contrast:discarded}=splitStudentClothing(band,([x,,z])=>Math.hypot(x,z)-.12);
+ band.dispose();discarded.dispose();
+ const lp=lining.getAttribute('position'),ln=lining.getAttribute('normal');
  for(let i=0;i<lp.count;i++){
   const n=new T.Vector3().fromBufferAttribute(ln,i),p=new T.Vector3().fromBufferAttribute(lp,i).addScaledVector(n,-.002);
   lp.setXYZ(i,...p.toArray());ln.setXYZ(i,-n.x,-n.y,-n.z);

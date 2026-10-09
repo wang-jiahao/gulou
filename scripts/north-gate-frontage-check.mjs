@@ -17,7 +17,7 @@ const map=JSON.parse(await readFile('public/data/campus-layout.json','utf8')),ma
 const data=fixture(map,mats),{directory,frontage}=data,screen=frontage.screen;
 directory.group.updateMatrixWorld(true);
 assert.ok(directory.group.children.every(m=>m.isMesh),'camera targets remain direct mesh children');
-assert.equal(screen.screenText,'欢迎2026级新生');
+assert.equal(screen.screenText,'欢迎南京大学2026级新生');
 assert.equal(screen.referenceYear,2023,'historical geometry reference stays separately documented');
 assert.equal(screen.referenceScreenText,'热烈欢迎南京大学2023级新生');
 assert.deepEqual(directory.group.userData.frontage.screen,screen,'actual directory includes the placed display');

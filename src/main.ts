@@ -1,4 +1,3 @@
-import './style.css';
 import type { Game, Quality } from './game/game.ts';
 import type { OutfitStyle } from './player/avatar.ts';
 import {getPlaceStory} from './world/place-stories.ts';
@@ -71,11 +70,13 @@ function supportsFullscreen() {
 function syncFullscreen(message='') {
   const active=Boolean(currentFullscreen()),supported=supportsFullscreen();
   const note=message||(fullscreenPending?'正在切换屏幕显示…':active?(touchDevice?'已进入全屏，可用按钮退出。':'已进入全屏，可按 Esc 或用按钮退出。'):supported?'可将校园和操作界面一起切换到全屏。':touchDevice?'此浏览器不支持网页全屏（部分手机 Safari 有此限制），可继续在当前窗口游玩。':'当前浏览器或页面不支持网页全屏，可继续在当前窗口游玩。');
-  for(const id of['fullscreen-toggle','welcome-fullscreen']){
-    const button=el<HTMLButtonElement>(id);button.textContent=fullscreenPending?'切换中…':active?'退出全屏':supported?'全屏显示':'全屏不可用';
-    button.disabled=fullscreenPending||(!active&&!supported);button.setAttribute('aria-pressed',String(active));
+  const label=fullscreenPending?'切换中…':active?'退出全屏':supported?'全屏显示':'全屏不可用';
+  const button=el<HTMLButtonElement>('fullscreen-toggle');button.textContent=label;
+  for(const id of['fullscreen-toggle','fullscreen-hud']){
+    const control=el<HTMLButtonElement>(id);control.disabled=fullscreenPending||(!active&&!supported);control.setAttribute('aria-pressed',String(active));control.title=label;
   }
-  for(const id of['fullscreen-status','welcome-fullscreen-status'])el(id).textContent=note;
+  el('fullscreen-hud').setAttribute('aria-label',label);el('fullscreen-hud-label').textContent=active?'退出全屏':'全屏';
+  el('fullscreen-status').textContent=note;
 }
 async function toggleFullscreen() {
   if(fullscreenPending)return;
@@ -107,7 +108,7 @@ function fullscreenChanged() {
 }
 for(const event of['fullscreenchange','webkitfullscreenchange'])document.addEventListener(event,fullscreenChanged);
 for(const event of['fullscreenerror','webkitfullscreenerror'])document.addEventListener(event,()=>{fullscreenPending=false;syncFullscreen('未能切换全屏。请重试，或继续在当前窗口游玩。');});
-for(const id of['fullscreen-toggle','welcome-fullscreen'])el(id).onclick=()=>void toggleFullscreen();
+for(const id of['fullscreen-toggle','fullscreen-hud'])el(id).onclick=()=>void toggleFullscreen();
 syncFullscreen();
 function openSettings() { if (!entered) return; game.mode = 'paused'; game.player.clearInput(); document.exitPointerLock?.(); el('photo-panel').hidden = true; el('hud').hidden = uiHidden; settings.showModal(); el('view-toggle').textContent = game.cameraRig.firstPerson ? '第一人称 ⇄' : '第三人称 ⇄'; }
 function togglePhoto() {

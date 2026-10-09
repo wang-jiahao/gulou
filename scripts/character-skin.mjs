@@ -7,18 +7,18 @@ import sharp from 'sharp';
 export function sampleStudentSkin(x,y,z,gender) {
   const female=gender==='female',front=T.MathUtils.smoothstep(z,.045,.10);
   const gaussian=(v,c,s)=>Math.exp(-(((v-c)/s)**2));
-  const color=new T.Color(female?0xd6aa97:0xc49a83);
-  const mouthY=female?1.5605:1.5555,halfWidth=female?.029:.031;
+  const color=new T.Color(female?0xe0b6a1:0xd1ab92);
+  const mouthY=female?1.5605:1.5555,halfWidth=female?.0265:.028;
   const across=Math.abs(x)/halfWidth,tip=T.MathUtils.smoothstep(across,.68,1.04);
   const seam=mouthY+.003*across*across;
   const cupid=.0018*gaussian(Math.abs(x),.008,.005)-.0010*gaussian(x,0,.004);
-  const upperExtent=T.MathUtils.lerp(female?.014:.0115,.002,tip)+cupid;
-  const lowerExtent=T.MathUtils.lerp(female?.012:.011,.002,tip);
+  const upperExtent=T.MathUtils.lerp(female?.010:.0085,.002,tip)+cupid;
+  const lowerExtent=T.MathUtils.lerp(female?.009:.008,.002,tip);
   const insideWidth=1-T.MathUtils.smoothstep(across,.82,1.07);
   const upper=T.MathUtils.smoothstep(y,seam-.001,seam+.001)*(1-T.MathUtils.smoothstep(y,seam+upperExtent-.004,seam+upperExtent));
   const lower=(1-T.MathUtils.smoothstep(y,seam-.001,seam+.001))*T.MathUtils.smoothstep(y,seam-lowerExtent,seam-lowerExtent+.004);
   const lip=(upper*.92+lower*.82)*insideWidth*front;
-  color.lerp(new T.Color(female?0xa66060:0x995e57),lip*.85);
+  color.lerp(new T.Color(female?0xb57c77:0xa47767),lip*.68);
   // The source has an actual mouth opening. Its recessed mucosa is not skin.
   const cavity=gaussian(y,seam,.004)*insideWidth*T.MathUtils.smoothstep(z,.025,.065)*(1-T.MathUtils.smoothstep(z,.115,.14));
   color.lerp(new T.Color(0x472a2b),cavity);

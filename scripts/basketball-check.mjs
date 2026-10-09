@@ -20,6 +20,8 @@ function launch(hoop,distance,power){
  const direction=hoop.start.clone().sub(hoop.center).setY(0).normalize();
  const from=hoop.center.clone().addScaledVector(direction,distance).setY(1.81);
  ball.reset(from);assert.ok(ball.hold());ball.follow(from);assert.ok(!ball.collider.isEnabled());
+ // Real input holds the ball across physics frames while charging a shot.
+ step(60);assert.ok(ball.position.distanceTo(from)<1e-5,'charge keeps the held ball fixed');
  assert.ok(ball.shoot(hoop,power));assert.ok(ball.collider.isEnabled());
  return from;
 }

@@ -51,7 +51,11 @@ export class BasketballPhysics{
     this.previous.copy(start);
   }
   get position(){const p=this.body.translation();return new T.Vector3(p.x,p.y,p.z);}
-  private bodyMode(){this.body.setBodyType(this.active&&!this.held?RAPIER.RigidBodyType.Dynamic:RAPIER.RigidBodyType.KinematicPositionBased,true);this.body.setNextKinematicTranslation(this.body.translation());this.body.setNextKinematicRotation(this.body.rotation());}
+  private bodyMode(){this.body.setBodyType(this.active&&!this.held?RAPIER.RigidBodyType.Dynamic:RAPIER.RigidBodyType.KinematicPositionBased,true);this.body.setNextKinematicTranslation(this.body.translation());this.body.setNextKinematicRotation(this.body.rotation());
+    // A disabled held-ball collider loses its mass after a physics step.
+    // Re-enabling it does not restore the dynamic body mass automatically.
+    if(this.active&&!this.held)this.body.recomputeMassPropertiesFromColliders();
+  }
   prepare(active:boolean){
     if(active===this.active)return;
     if(!active){const v=this.body.linvel(),s=this.body.angvel();this.velocity.set(v.x,v.y,v.z);this.spin.set(s.x,s.y,s.z);}

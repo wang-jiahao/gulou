@@ -3,7 +3,7 @@ import * as T from 'three';
 // The original helper sphere is larger than the old fixed 11.8mm eye. Keep its
 // centre aligned to the source socket and lay iris/pupil on the same surface.
 export function buildStudentEyes({female,centre,side,makeSkinned}){
- const radius=female?.0160:.01669,irisRadius=female?.0061:.0060;
+ const radius=female?.0160:.01669,irisRadius=female?.0070:.0068;
  const material=(name,color,roughness)=>new T.MeshStandardMaterial({name,color,roughness});
  makeSkinned(new T.SphereGeometry(radius,32,24).translate(...centre.toArray()),material('eye-sclera',0xd7d1c7,.30),side+' sclera','Head');
  function patch(r,offset,mat,name,colored=false){
@@ -18,7 +18,7 @@ export function buildStudentEyes({female,centre,side,makeSkinned}){
   makeSkinned(g,mat,side+' '+name,'Head');
  }
  patch(irisRadius,.00012,material('eye-iris',0xffffff,.38),'curved iris',true);
- patch(.0023,.00020,material('eye-pupil',0x131516,.22),'curved pupil');
+ patch(.0028,.00020,material('eye-pupil',0x131516,.22),'curved pupil');
  const glint=new T.SphereGeometry(.00070,10,8);glint.translate(centre.x-.0018,centre.y+.0024,centre.z+radius+.00018);makeSkinned(glint,material('eye-catchlight',0xe7ded0,.08),side+' catchlight','Head');
  return {radius,irisRadius};
 }

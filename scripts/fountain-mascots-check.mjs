@@ -45,13 +45,16 @@ if(process.argv.includes('--before')){
 }else{
  const before=JSON.parse(await readFile(`${dir}/fountain-before.json`,'utf8'));
  assert.deepEqual(layout,before.layout,'unchanged plaza layout');
- assert.deepEqual(data.solids.slice(0,before.solids.length),before.solids,'unchanged old colliders');
- for(const [material,digest]of Object.entries(before.render))assert.equal(render[material],digest,`preserved ${material}`);
+ const originalRing=before.solids.filter(s=>!(s.w===12&&s.d===3.6));
+ assert.deepEqual(data.solids.slice(0,originalRing.length),originalRing,'ring colliders retained; north island removed per 2026-10-10 photo');
+ for(const [material,digest]of Object.entries(before.render))if(!['fountain-sandstone-edge','fountain-clipped-hedge','fountain-leaf-tips'].includes(material))assert.equal(render[material],digest,`preserved ${material}`);
+ // nanyuan-reference-refresh-check verifies the exact removed triangles and
+ // every retained ring/mascot triangle against the complete pre-edit bundle.
  assert.equal(data.group.userData.mascots,4,'four mascot cutouts');
  const physics=await checkPhysics();
  const output='docs/validation/v0.109';await mkdir(output,{recursive:true});
  await writeFile(`${output}/fountain-after-${Date.now()}.json`,JSON.stringify({render,triangles,facing:facing.toArray(),physics,scope:'Fountain fixture only. Full-scene visual QA and GPU performance are separate.'},null,2)+'\n',{flag:'wx'});
- console.log(`PASS: original paving/planting/57 colliders preserved; finite geometry; ${physics.walks.length} walks / ${physics.rays.length} camera rays; ${triangles} triangles. Separate visual QA required.`);
+ console.log(`PASS: original paving/ring colliders preserved, foreground island removed; finite geometry; ${physics.walks.length} walks / ${physics.rays.length} camera rays; ${triangles} triangles. Separate visual QA required.`);
 }
 
 async function checkPhysics(){

@@ -12,7 +12,10 @@ globalThis.document={createElement:()=>({getContext:()=>ctx})};
 const bundle=await build({stdin:{contents:`import * as T from 'three';export {T};export {createNanyuanElectronicDisplay} from './nanyuan-electronic-display.ts';`,resolveDir:resolve('src/world'),loader:'ts'},bundle:true,write:false,platform:'node',format:'esm'});
 const {T,createNanyuanElectronicDisplay}=await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
 const result=createNanyuanElectronicDisplay();result.group.updateMatrixWorld(true);
-assert.deepEqual(labels,['欢迎2026级新生'],'user-requested welcome; no fabricated poster event copy');
+assert.ok(labels.includes('欢迎南京大学2026级新生'),'photo wording with user-requested 2026 year');
+assert.ok(!labels.some(text=>text.includes('2023')));
+assert.equal(result.group.userData.posterThemes.length,16,'user-requested generic campus activity themes');
+assert.ok(!labels.some(text=>text.includes('示意')||text.includes('热烈')),'product artwork excludes development notes and corrected wording');
 assert.equal(result.group.userData.placement,'unverified; not in the campus world');
 let triangles=0;
 result.group.traverse(o=>{

@@ -9,7 +9,7 @@ import {buildStudentEyes} from './character-eyes.mjs';
 import {createStudentWeights} from './character-weights.mjs';
 import {buildStudentShoes} from './character-shoes.mjs';
 import {relaxGarment,fitNeckOpening,fitLowerGarment,finishSleeve} from './character-outfit.mjs';
-import {createStudentClothing,splitStudentClothing,attachStudentClothing} from './character-clothing.mjs';
+import {buildReferenceOutfit,addReferenceTrouserDetails,attachReferenceFabric} from './character-reference-outfit.mjs';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {readFile,writeFile,copyFile,mkdir} from 'node:fs/promises';
@@ -24,7 +24,7 @@ const supportedArgs=new Set(['--female','--preview']);
 for(const arg of process.argv.slice(2))if(!supportedArgs.has(arg))throw new Error(`Unknown character build option: ${arg}`);
 const gender=process.argv.includes('--female')?'female':'male';
 const female=gender==='female';
-// Both outputs use the accepted campus clothing; preview changes only the path.
+// Both outputs use the reference outfit; preview changes only the path.
 const preview=process.argv.includes('--preview');
 const data=await loadCharacterSource(gender);
 // CC0 facial target adds a restrained relaxed expression to the independent
@@ -39,6 +39,21 @@ for(const line of (await readFile('assets/source-models/character/mouth-corner-p
 const sourceHip=data.joints.pelvis[1],sourceNeck=data.joints.neck[1];
 const morph=p=>new T.Vector3(...p);
 const v=data.vertices.map(morph);
+// Reference portrait: relaxed almond eyes, narrower nose/lips and tapered jaw.
+// Localized facial edits leave source eye centres and all animation joints fixed.
+const faceGaussian=(value,centre,width)=>Math.exp(-(((value-centre)/width)**2));
+for(const p of v){
+ if(p.y<1.48||p.z<.02)continue;
+ const front=T.MathUtils.smoothstep(p.z,.02,.085);
+ const nose=faceGaussian(p.y,1.594,.022)*faceGaussian(p.x,0,.026)*front;
+ p.x*=1-(female?.12:.16)*nose;
+ const mouthY=female?1.5605:1.5555,mouth=faceGaussian(p.y,mouthY,.021)*faceGaussian(p.x,0,.036)*front;
+ p.x*=1-.10*mouth;p.y=T.MathUtils.lerp(p.y,mouthY+(p.y-mouthY)*.76,mouth*.75);
+ const jaw=faceGaussian(p.y,1.529,.023)*T.MathUtils.smoothstep(Math.abs(p.x),.02,.055)*front;
+ p.x*=1-(female?.08:.06)*jaw;
+ // Lower the upper lid a little at the centre without moving the tear ducts.
+ for(const side of ['l','r']){const eye=data.joints[side+'-eye'];const upper=faceGaussian(p.x,eye[0],.013)*faceGaussian(p.y,eye[1]+.009,.005)*T.MathUtils.smoothstep(p.z,eye[2]+.005,eye[2]+.013);p.y-=.0013*upper;}
+}
 const joint=name=>morph(data.joints[name]);
 const root=new T.Group();root.name='GulouStudent-'+gender;
 const definitions=[
@@ -53,8 +68,7 @@ const mat=(name,color,roughness=.86)=>new T.MeshStandardMaterial({name,color,rou
 const skin=mat('student-skin',0xffffff,.59),shirt=mat('student-cotton',female?0xcfc5ae:0x354c61,.9),pants=mat('student-denim',female?0x63788a:0x536371,.93),hair=mat('student-hair',female?0x30231f:0x242322,.86),shoe=mat('student-shoes',0xd4d6d0),sole=mat('student-sole',0xc6c9c2),bag=mat('student-backpack',female?0x9b7b58:0x555d54);
 
 const hipY=positions.Hips.y,neckY=positions.Neck.y;
-const clothing=createStudentClothing({female,neckY});
-shirt.color.copy(clothing.primary);
+pants.color.set(female?0x8b9fac:0x545557);bag.color.set(female?0xd6d1c3:0x292c2b);
 const segments=definitions.filter(d=>d[2]).map(([name,,parent])=>({name:parent,tip:name,a:positions[parent],b:positions[name]}));
 const segmentDistance=(point,segment)=>{const d=segment.b.clone().sub(segment.a);const t=T.MathUtils.clamp(point.clone().sub(segment.a).dot(d)/d.lengthSq(),0,1);return point.distanceTo(segment.a.clone().addScaledVector(d,t));};
 const weights=createStudentWeights({positions,indices,definitions,hipY,neckY});
@@ -83,7 +97,9 @@ for(let i=0;i<skinPos.count;i++){
  const q=T.MathUtils.smoothstep(neckY+.025-p.y,0,.040),angle=Math.atan2(p.z-.014,p.x);
  const r=Math.hypot(p.x,p.z-.014),limit=1/Math.hypot(Math.cos(angle)/.067,Math.sin(angle)/.073);
  const nr=T.MathUtils.lerp(r,Math.min(r,limit),q);
- skinPos.setXYZ(i,Math.cos(angle)*nr,p.y,.014+Math.sin(angle)*nr);
+ // Hidden lower neck tapers inside the independent white inner layer.
+ const under=T.MathUtils.smoothstep(neckY-.018-p.y,0,.030);
+ skinPos.setXYZ(i,Math.cos(angle)*nr*(1-.32*under),p.y,.014+Math.sin(angle)*nr*(1-.45*under));
 }
 recomputeCharacterNormals(skinGeometry);
 for(let i=0;i<skinPos.count;i++){
@@ -100,10 +116,11 @@ const trouserGeometry=smoothBody(data.groups['helper-tights'],p=>p.y<hipY+.035&&
 for(let i=0;i<trouserPositions.count;i++){
  const y=trouserPositions.getY(i);if(y>hipY-.10)continue;const side=trouserPositions.getX(i)>0?'Left':'Right',hip=positions[side+'UpLeg'],knee=positions[side+'Leg'],ankle=positions[side+'Foot'];
  const a=y>knee.y?hip:knee,c=y>knee.y?knee:ankle,t=T.MathUtils.clamp((a.y-y)/(a.y-c.y),0,1),center=a.clone().lerp(c,t),angle=Math.atan2(trouserPositions.getZ(i)-center.z,trouserPositions.getX(i)-center.x);
- const taper=T.MathUtils.clamp((hipY-.13-y)/(hipY-.24),0,1),rx=.085*(1-taper)+.058*taper,rz=.089*(1-taper)+.062*taper,fold=1+Math.sin(y*54+angle*2)*.012;
+ const taper=T.MathUtils.clamp((hipY-.13-y)/(hipY-.24),0,1),rx=(female?.087:.090)*(1-taper)+(female?.072:.074)*taper,rz=.089*(1-taper)+.073*taper,fold=1+Math.sin(y*54+angle*2)*.012;
  const blend=T.MathUtils.smoothstep(hipY-y,.10,.30);trouserPositions.setXYZ(i,T.MathUtils.lerp(trouserPositions.getX(i),center.x+Math.cos(angle)*rx*fold,blend),y,T.MathUtils.lerp(trouserPositions.getZ(i),center.z+Math.sin(angle)*rz*fold,blend));
 }
-recomputeCharacterNormals(trouserGeometry);makeSkinned(trouserGeometry,pants,'tailored trousers','trousers');
+recomputeCharacterNormals(trouserGeometry);makeSkinned(trouserGeometry,pants,'straight leg trousers','trousers');
+addReferenceTrouserDetails({female,geometry:trouserGeometry,hipY,positions,makeSkinned,pants});
 
 // A continuous tailored jacket shell from the anatomical garment topology.
 // Shoulder, sleeve and torso vertices share the same surface and skinning.
@@ -118,12 +135,12 @@ for(let i=0;i<jp.count;i++){
  if(Math.abs(p.x)>.19*fit&&dist<.105){
   const seg=armSegments.reduce((a,b)=>segmentDistance(p,a)<segmentDistance(p,b)?a:b),d=seg.b.clone().sub(seg.a);
   const c=seg.a.clone().addScaledVector(d,T.MathUtils.clamp(p.clone().sub(seg.a).dot(d)/d.lengthSq(),0,1));
-  const radial=p.clone().sub(c),amount=T.MathUtils.lerp(.013,.009,T.MathUtils.smoothstep(Math.abs(p.x),.2,.46));
+  const radial=p.clone().sub(c),amount=T.MathUtils.lerp(.022,.011,T.MathUtils.smoothstep(Math.abs(p.x),.2,.46));
   p.addScaledVector(radial.normalize(),amount);
  }else{
   const t=T.MathUtils.clamp((p.y-hipY)/(.42),0,1),angle=Math.atan2(p.z-.016,p.x);
   const waist=Math.exp(-(((t-.32)/.22)**2)),chest=T.MathUtils.smoothstep(t,.35,.75);
-  const rx=female?.178+.006*chest-.014*waist:.191+.012*chest-.014*waist;
+  const rx=female?.183+.006*chest-.004*waist:.191+.012*chest-.014*waist;
   const rz=female?.124+.011*chest-.010*waist:.134+.008*chest-.010*waist;
   const target=new T.Vector3(Math.cos(angle)*rx,p.y,.016+Math.sin(angle)*rz);
   const blend=1-T.MathUtils.smoothstep(p.y,neckY-.15,neckY-.005);
@@ -146,34 +163,25 @@ for(const side of ['Left','Right']){
  jacketGeometry=result.geometry;cuffs[side]=result.cuff;sleeveLinings[side]=result.lining;
 }
 recomputeCharacterNormals(jacketGeometry);
-const panels=splitStudentClothing(jacketGeometry,clothing.field);
-makeSkinned(panels.primary,shirt,'tailored primary cloth','jacket');
-makeSkinned(panels.contrast,clothing.contrastMaterial,'cream contrast cloth','jacket');
-clothing.report=panels.report;
-const rib=clothing.ribMaterial;
-makeSkinned(garmentBoundaryBand(jacketGeometry,hemY,-.032,.002,.002,p=>Math.abs(p.x)<.28),rib,'continuous ribbed hem','torso');
-makeSkinned(garmentBoundaryBand(jacketGeometry,collarY,female?.012:.020,.001),rib,'continuous ribbed collar');
+const clothing=buildReferenceOutfit({female,geometry:jacketGeometry,hipY,neckY,hemY,collarY,makeSkinned,shirt,tee,trim});
+const rib=clothing.rib;
 const jacketSurface=new T.Mesh(jacketGeometry,new T.MeshBasicMaterial({side:T.DoubleSide})),jacketRay=new T.Raycaster();
 function onJacket(points){return points.map(p=>{jacketRay.set(new T.Vector3(p.x,p.y,.5),new T.Vector3(0,0,-1));const h=jacketRay.intersectObject(jacketSurface,false)[0];if(h)p.z=h.point.z+.002;return p;});}
 const tube=(points,radius,material,name,force)=>makeSkinned(new T.TubeGeometry(new T.CatmullRomCurve3(onJacket(points)),24,radius,8,false),material,name,force);
 // Round collar and raised seam details sit on the actual shirt, with no triangular cut-outs.
 for(const side of ['Left','Right']){
  const sign=side==='Left'?1:-1;
- if(!female)tube([new T.Vector3(sign*.107,hipY+.13,.151),new T.Vector3(sign*.148,hipY+.205,.120)],.0025,clothing.contrastMaterial,side+' welt pocket','torso');
+ if(!female)tube([new T.Vector3(sign*.107,hipY+.13,.151),new T.Vector3(sign*.148,hipY+.205,.120)],.0025,trim,side+' welt pocket','torso');
  makeSkinned(cuffs[side],rib,side+' fitted ribbed cuff',side+'ForeArm');
  makeSkinned(sleeveLinings[side],shirt,side+' inner sleeve lining',side+'ForeArm');
 }
-const zipper=[new T.Vector3(0,hipY-.032,.174),new T.Vector3(0,hipY+.13,.164),new T.Vector3(0,hipY+.27,.154),new T.Vector3(0,neckY-.11,.12),new T.Vector3(0,neckY-.013,.074)];
-if(!female)tube(zipper,.0016,trim,'centre jacket seam','torso');
-const button=mat('shirt-button',0xaaa497,.45);
-if(!female)makeSkinned(new T.BoxGeometry(.006,.016,.003).translate(.002,neckY-.051,.096),button,'zipper pull','Spine2');
 const {surface,surfaceRay}=buildStudentHair({female,skinGeometry,makeSkinned,hair});
 for(const side of ['Left','Right']){
   const s=side==='Left'?'l':'r',eye=joint(s+'-eye');
   buildStudentEyes({female,centre:eye,side,makeSkinned});
   const browPosition=[],browIndex=[],sign=side==='Left'?1:-1;
   for(let i=0;i<=24;i++){
-    const t=i/24,x=sign*(Math.abs(eye.x)-.012+t*.030),y=eye.y+.009+.004*Math.sin(Math.PI*t)-.002*t;
+    const t=i/24,x=sign*(Math.abs(eye.x)-.012+t*.030),y=eye.y+.007+(female?.0030:.0023)*Math.sin(Math.PI*t)-.0015*t;
     const width=(female?.0015:.0019)*Math.sin(Math.PI*t)**.45*(1-.45*t);
     for(const edge of [-1,1]){
       const yy=y+width*edge;surfaceRay.set(new T.Vector3(x,yy,.5),new T.Vector3(0,0,-1));
@@ -215,12 +223,12 @@ for(const sign of [-1,1]){
 const batches=new Map();for(const child of [...root.children])if(child instanceof T.SkinnedMesh){const list=batches.get(child.material)??[];list.push(child);batches.set(child.material,list);}
 for(const [material,meshes] of batches){if(meshes.length<2)continue;const geometry=mergeGeometries(meshes.map(mesh=>mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone()));if(!geometry)throw new Error('Unable to merge character material');meshes.forEach(mesh=>root.remove(mesh));const mesh=new T.SkinnedMesh(geometry,material);mesh.name=material.name;root.add(mesh);mesh.bind(skeleton);}
 root.updateMatrixWorld(true);
-root.userData={gender,design:'v110 original young-adult campus redesign',source:'MakeHuman base mesh and helpers; CC0 1.0. Clothing, rigging and backpack by this project.',proportion:'1.75 m authoring height'};
-root.userData.fashion={design:female?'sage and cream campus crewneck':'navy and cream varsity jacket',...clothing.report};
+root.userData={gender,design:'user-reference young-adult campus pair, October 2026',source:'MakeHuman base mesh and helpers; CC0 1.0. Clothing, rigging and backpack by this project.',proportion:'1.75 m authoring height'};
+root.userData.fashion={design:female?'sage V neck knit':'navy open collar jacket',...clothing.report};
 globalThis.FileReader=class{async readAsArrayBuffer(blob){this.result=await blob.arrayBuffer();this.onloadend?.();}async readAsDataURL(blob){this.result=`data:${blob.type};base64,${Buffer.from(await blob.arrayBuffer()).toString('base64')}`;this.onloadend?.();}};
-const output=preview?`docs/validation/v0.111/fashion/student-${gender}.glb`:`public/assets/characters/student-${gender}.glb`;
+const output=preview?`docs/validation/v0.112/reference/student-${gender}.glb`:`public/assets/characters/student-${gender}.glb`;
 if(preview){
- await mkdir('docs/validation/v0.111/fashion',{recursive:true});
+ await mkdir('docs/validation/v0.112/reference',{recursive:true});
  try{await copyFile(output,output.replace('.glb',`-previous-${Date.now()}.glb`),constants.COPYFILE_EXCL);}catch(error){if(error.code!=='ENOENT')throw error;}
 }
 const binary=await new GLTFExporter().parseAsync(root,{binary:true});
@@ -231,7 +239,7 @@ const skinMaterial=doc.getRoot().listMaterials().find(m=>m.getName()==='student-
 skinMaterial.setBaseColorTexture(doc.createTexture('original skin pigment').setImage(skinAtlas.albedo).setMimeType('image/png'));
 skinMaterial.setMetallicRoughnessTexture(doc.createTexture('original skin roughness').setImage(skinAtlas.roughness).setMimeType('image/png'));
 await attachStudentHairFlow(doc);
-await attachStudentClothing(doc,{female});
+await attachReferenceFabric(doc,{female});
 await doc.transform(dedup(),weld(),prune({keepAttributes:true}),meshopt({encoder:MeshoptEncoder,level:'medium'}));await io.write(output,doc);
 
 if(!female&&!preview)await copyFile(output,'public/assets/characters/student-natural.glb');

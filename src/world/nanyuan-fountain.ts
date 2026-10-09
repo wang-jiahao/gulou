@@ -68,16 +68,10 @@ export function createNanyuanFountain(mats:Materials){
     const angle=quadrant*Math.PI/2;
     b.box(outerRadius-pavingRadius+.15,.012,openingWidth,x+Math.cos(angle)*(mid-.035),.044,z+Math.sin(angle)*(mid-.035),paving,false,-angle);
   }
-  // A rectangular planted island sits north of the nozzle circle in the down view.
-  b.box(12,.22,3.6,x,.135,z-6.4,curb);
-  b.box(11.8,.75,3.4,x,.62,z-6.4,hedge);
-  b.solids.push({x,y:.51,z:z-6.4,w:12,h:1.02,d:3.6});
-  for(let i=0;i<44;i++){
-    const leaf=new T.SphereGeometry(1,8,5).scale(.65+random()*.35,.4+random()*.9,.5+random()*.3);
-    b.add(leaf,i%4===0?tips:hedge,x-5.3+random()*10.6,1.01,z-7.5+random()*2.2);
-  }
+  // The user's 2026-10-10 front view shows unobstructed paving at the
+  // mascot bases. Remove the former north island and its collision together.
   const group=b.finish('Nanyuan dry fountain plaza');
-  group.userData={layout:nanyuanFountain,source:'Official VR gl-1-24 down / gl-1-02 front and user fountain-mascots photo; approximate dimensions',nozzles:3,openings:4,waterObserved:false,mascots:4};
+  group.userData={layout:nanyuanFountain,source:'Official VR gl-1-24 down / gl-1-02 front and user fountain-mascots and 2026-10-10 unobstructed-front photos; approximate dimensions',nozzles:3,openings:4,waterObserved:false,mascots:4,mascotForecourt:'open paving; former north planting island removed'};
   for(const mesh of group.children)if(mesh instanceof T.Mesh&&[paving,band,joint,nozzle].includes(mesh.material as T.MeshStandardMaterial))mesh.castShadow=false;
   const mascots=createFountainMascots(mats,x,z),cameraSolids=[...group.children,...mascots.cameraSolids];
   group.add(...[...mascots.group.children]);b.solids.push(...mascots.solids);

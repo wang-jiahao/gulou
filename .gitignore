@@ -34,3 +34,9 @@ AGENTS.md
 /*.mov
 /*.mkv
 /*.webm
+
+# Local agent settings are not game assets.
+/.codex/
+/codex/
+# Curated game-derived promotional video; original media remain excluded.
+!docs/media/

@@ -1,16 +1,30 @@
-# 当前发布状态：暂停对外发布
+# 构建与部署
 
-2026-10-02：用户要求仓库私有、撤下个人网站游戏子页，先在本地开发成熟后再决定开源。不得自动推送源码或恢复网站。以下步骤仅保留为未来获得明确发布授权后的参考。
+Gulou是静态网页项目，构建输出为 `dist/`。源码同步与网站部署是两个独立操作，推送本仓库不会自动发布网站。
 
-# Publishing Gulou
+## 构建
 
-- Source repository: https://github.com/wang-jiahao/gulou
-- Public game: https://wang-jiahao.github.io/gulou/
-- Source branch: `main`
-- Website repository: `wang-jiahao/wang-jiahao.github.io`, `master` branch, `gulou/` subdirectory.
+```bash
+npm ci
+npm run typecheck
+npm run lint
+npm run check:assets
+npm run build
+npm run preview
+```
 
-Build with `npm run build:pages`. This sets Vite's base to `/gulou/`, including asset, data, texture and model URLs. Copy the contents of `dist/` into the website repository’s `gulou/` directory, commit only this subdirectory (and an optional navigation link), then push its publishing branch. Do not copy local files or the source tree. The project repository and the existing academic homepage retain separate source histories.
+`npm run build`适合域名根路径；部署到 `/gulou/` 这样的子路径时使用 `npm run build:pages`，它将Vite资源基路径设为 `/gulou/`。其他路径可运行 `npx vite build --base=/你的路径/`。这些命令只生成文件。
 
-The public music manifest intentionally contains no packaged commercial soundtrack. Players can import local audio in settings; the playlist is shuffled once per round and never immediately repeats a track when multiple tracks exist. Imported audio is never uploaded. Personal development playback is provided by an optional Vite middleware on loopback requests only.
+## 部署内容
 
-Before release: typecheck, lint, asset integrity, the audio ordering test, and a browser check of the `/gulou/` build. Test the live URL after GitHub's Pages deployment completes. Original code is MIT; third-party resources retain their individual licenses.
+仅将 `dist/` 内容交给静态托管服务。不要上传整个工作目录、参考照片和长视频、个人音频、验证报告、工具缓存或本地开发配置。原始参考资料保存在忽略目录中，不是游戏运行依赖。
+
+游戏资源位于 `public/`，由Vite复制到构建目录；GLB、纹理、字体、地图与许可信息需要完整保留。源码仓库中的宣传片是游戏画面的派生作品，不包含参考视频片段。
+
+个人音乐通过浏览器本地导入播放，不上传；开发机可选的本地音乐接口只对回环请求提供文件，线上构建不依赖它。
+
+## 发布验证
+
+确认构建路径、模型与贴图请求成功，测试欢迎页、地图、移动、设置和手机触控，再检查在线站点。修改域名或子路径后重新构建。源码仓库与作者主页仓库各自维护，部署时只更新对应网站目录。
+
+代码与素材许可见[THIRD_PARTY.md](../THIRD_PARTY.md)和[LICENSE](../LICENSE)。

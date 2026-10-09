@@ -1,8 +1,10 @@
 # 参考资料导览
 
-主要参考南京大学官方 VR、鼓楼校区平面图、校园漫游视频，以及用户补充的建筑与设施照片。本页挑选有代表性的资料，方便理解模型依据；完整资产来源与许可见 [资产说明](asset_sources.md) 和 [第三方资源说明](../THIRD_PARTY.md)，逐版使用记录见 [开发历史](development-history.md)。
+主要参考南京大学官方 VR、鼓楼校区平面图、校园漫游视频，以及用户补充的建筑与设施照片。以下原始页面与视频链接说明模型依据；完整资产来源与许可见 [资产说明](asset_sources.md) 和 [第三方资源说明](../THIRD_PARTY.md)，逐版使用记录见 [开发历史](development-history.md)。
 
-**下列本地图片和视频仅在这台电脑保留原文件时可预览。** 它们位于被 Git 忽略的 `references/` 或项目根目录，原媒体不复制进文档目录、不提交、不打包、不上传。外部读者请使用各项的官方页面或原视频链接；用户提供但未附公开链接的素材，保留本地说明。可观看或可下载不代表获得再分发许可。
+## 参考使用范围的核对
+
+按已记录的建模任务去重，官方VR明确支持77个版本；指定YouTube步行漫游明确支持至少5个版本，另有未标明平台的漫游记录不强行归类。早期VR审计记录92个视点/368个方向、79栋含具体VR视点的建筑；YouTube抽帧元数据记录53个不同时间点。这些是可复核的记录口径，不是完整浏览历史，也不能把下载文件数当成实际观看次数。因此本文将官方VR列为主要建筑参考，两段漫游视频作为重要补充。
 
 ## 官方 VR 与空间布局
 
@@ -14,49 +16,31 @@
 
 ### 北大楼与前庭：官方 VR 代表视点
 
-<img src="../references/official-vr/phase9/scene_gl-3-05-f-full.jpg" width="680" alt="南京大学官方VR gl-3-05视点的北大楼、前庭道路、草坪与树木">
-
-本地文件：[`scene_gl-3-05-f-full.jpg`](../references/official-vr/phase9/scene_gl-3-05-f-full.jpg)。来源为官方 VR `gl-3-05` 前方全景面，用于核对北大楼立面、前庭道路和绿地关系。它是一张参考照片，不是游戏画面；树种、株位和模型高差仍需多视点确认。
+[南京大学官方 VR](https://vr.nju.edu.cn/newUI/#/) 的 `gl-3-05` 前方全景面用于核对北大楼立面、前庭道路与绿地关系。树种、株位与高差需要结合相邻视点判断，单张全景不能提供精确尺寸。
 
 ### 鼓楼校区 2024 年平面图
 
-<img src="../references/phase19/gulou-plan-2024.png" width="460" alt="南京大学鼓楼校区2024年平面图的本地渲染图">
-
-本地 [地图图像](../references/phase19/gulou-plan-2024.png) / [地图 PDF](../references/phase19/gulou-plan-2024.pdf)。来源为上表资产管理处地图。用于区分新教学楼、南教学楼、南园教学楼，以及南北园建筑与道路；图像中的符号和配准结果不直接等于现实道路宽度或地面高程。
+[资产管理处地图页面](https://zcc.nju.edu.cn/dzdt/glxqdt/index.html)与[2024 年地图 PDF](https://zcc.nju.edu.cn/DFS//file/2024/09/20/20240920103404667kkasuw.pdf)用于区分新教学楼、南教学楼、南园教学楼，以及南北园建筑与道路。图像中的符号和配准结果不直接等于现实道路宽度或地面高程。
 
 ## 两段主要校园漫游视频
 
 ### 鼓楼校园步行漫游
 
-[原视频：YouTube](https://www.youtube.com/watch?v=aGgqEV3syjw) · [本地视频](<../【Remastered 4K】Once China’s Central University_ Nanjing University Gulou Campus Walk _ 漫步南京大学鼓楼校区_480p.mp4>)
+[YouTube：《Once China’s Central University — Nanjing University Gulou Campus Walk》](https://www.youtube.com/watch?v=aGgqEV3syjw)
 
-<video controls preload="none" width="720" poster="../references/video-walk/1722.jpg" src="../【Remastered 4K】Once China’s Central University_ Nanjing University Gulou Campus Walk _ 漫步南京大学鼓楼校区_480p.mp4"></video>
-
-本机文件长约 43 分 06 秒、854×480；标题包含“4K”，不表示本地下载文件具有 4K 分辨率。资料用于核对连续步行中的道路衔接、建筑入口、台阶和校园设施。上方封面来自本地 28:42 帧，画面为林荫道路；具体细节还需回看相邻片段和官方 VR，单帧无法证明完整空间关系。
+用于核对连续步行中的道路衔接、建筑入口、台阶和校园设施。例如 28:42 附近的林荫道路可辅助观察道路与树木关系；具体细节仍需回看相邻片段并与官方 VR 交叉核对，单帧无法证明完整空间关系。
 
 ### 南京大学徒步参观
 
-[原视频：Bilibili BV1iL411h7G2](https://www.bilibili.com/video/BV1iL411h7G2/) · [本地视频](../references/phase18/bili-walk.mp4)
+[Bilibili：《南京大学/徒步参观/中国最古老和最著名的大学之一》](https://www.bilibili.com/video/BV1iL411h7G2/)
 
-<video controls preload="none" width="720" src="../references/phase18/bili-walk.mp4"></video>
-
-原页面标题为《南京大学/徒步参观/中国最古老和最著名的大学之一》，本地元数据记载时长 53 分 45 秒。结合第一段漫游和官方 VR 补充校园道路、楼体与入口观察。视频是不同时间的记录，临时围挡、停放车辆和偶发设施不会直接当作永久校园布局。
-
-若 Markdown 阅读器不支持内嵌视频，请使用每项的“本地视频”链接；没有本地文件时使用原视频链接。
+结合第一段漫游和官方 VR 补充校园道路、楼体与入口观察。视频是不同时间的记录，临时围挡、停放车辆和偶发设施不会直接当作永久校园布局。
 
 ## 局部补充视频与用户照片
 
-| 资料 | 本地文件 / 外部来源 | 用途与边界 |
-| --- | --- | --- |
-| 广州路门口实拍，67 秒 | [本地视频](../references/phase18/guangzhou-gate-walk.mp4) · [Bilibili BV1HT4y1U7TE](https://www.bilibili.com/video/BV1HT4y1U7TE/) | 00:00–00:03 与 00:23 附近用于核对牌墙、金色中英文题字、石墩和门上交通牌；拍摄于 2022 年，门区尺寸与未见侧仍为近似 |
-| 北门周边补充视频 | [本地视频](../references/phase110-user/north-gate-user.mp4) · [10 秒帧](../references/phase110-user/north-gate-10s.jpg) | 用户提供的带原平台界面视频，用于结合行走过程检查门内道路和周边设施；未记录独立公开链接，不能仅凭局部画面推定整段围墙的面板数量或顺序 |
-| 陶园三舍入口照片 | [本地照片](../references/phase96-user/taoyuan-3-entry.png) | 用户提供，原发布者信息保留在水印中；核对灰墙、浅色墙面、“3 陶园”牌、右侧阳台与左侧入口，照片不足以独立证明整栋层数或遮挡立面 |
+[Bilibili：广州路门口实拍 BV1HT4y1U7TE](https://www.bilibili.com/video/BV1HT4y1U7TE/) 的 00:00–00:03 与 00:23 附近用于核对牌墙、金色中英文题字、石墩和门上交通牌。视频拍摄于 2022 年，门区尺寸与未见侧仍为近似。
 
-<img src="../references/phase96-user/taoyuan-3-entry.png" width="380" alt="用户提供的陶园三舍入口照片，保留原平台水印">
-
-<img src="../references/phase110-user/north-gate-10s.jpg" width="290" alt="用户提供的北门周边视频10秒帧，门内道路与绿化局部">
-
-照片和视频保留原有水印与出处，不作为游戏建筑贴图直接使用。部分用户截图来自其他平台，原作者的权利和再分发许可没有因为转交参考而改变。
+用户补充的照片与视频用于校对北门周边道路、陶园三舍入口，以及南园三舍的内凹门厅、雨棚、宽台阶和两侧坡道。照片可支持可见形式的重建，不能独立确定整栋层数、被遮挡立面或实测尺寸。
 
 ## 官方建筑资料与分发资产
 

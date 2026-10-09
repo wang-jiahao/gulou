@@ -34,6 +34,7 @@ import {buildNanyuanParcel} from './nanyuan-parcel.ts';
 import {buildNanyuanTeaching} from './nanyuan-teaching.ts';
 import {buildWestHeritage} from './west-heritage.ts';
 import {buildNanyuanEightEntrance} from './nanyuan-eight-entrance.ts';
+import {planNanyuanDormitoryEntrance,nanyuanDormitoryShell,buildNanyuanDormitoryEntrance} from './nanyuan-dormitory-entrance.ts';
 import {buildTaoyuanThreeEntrance} from './taoyuan-three-entrance.ts';
 import {buildInternationalApartments} from './international-apartments.ts';
 import {addDormitorySidePlaque} from './dormitory-plaques.ts';
@@ -73,6 +74,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group}>();
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
   const dormitorySidePlaques=[];
+  const nanyuanEntrances:ReturnType<typeof buildNanyuanDormitoryEntrance>[]=[];
   const sufute=createSufuteFacade(),tian=createTianFacade(),tang=createTangFacade(),chemistry=createChemistryFacade();
   const courtyardClimbers:T.Group[]=[];
   let yifu:ReturnType<typeof buildYifuEntrance>|undefined;
@@ -108,15 +110,6 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     const key=`${Math.floor(cx/100)}:${Math.floor(cz/100)}`;
     if(!detailCells.has(key))detailCells.set(key,{b:new Builder(),center:new T.Vector3((Math.floor(cx/100)+.5)*100,0,(Math.floor(cz/100)+.5)*100)});
     const detail=detailCells.get(key)!.b;
-    if(f.id==='plan-10')yifu=buildYifuEntrance(f,b,fixedMeshes,cameraSolids,doors,height,wall,roof);
-    else if(f.id==='plan-22')tangEntrance=buildTangEntrance(f,b,detail,fixedMeshes,cameraSolids,doors,height,wall,roof,tang.materials);
-    else{
-    const geometry = new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false,steps:1}).rotateX(-Math.PI/2);
-    const uv=geometry.getAttribute('uv');for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/2.4,uv.getY(i)/2.4);
-    const proxy=new T.Mesh(geometry.clone(),cameraMaterial);cameraSolids.push(proxy);fixedMeshes.push(collisionMesh(proxy));
-    const surfaces=splitBuildingRoof(geometry);
-    b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
-    }
     const random=rng(Number(f.tags.plan_id)*71+24);let windows=0;let frontView:number[]|undefined;let entrance:ReturnType<typeof buildHospitalEntrance>|undefined;
     const faces:{ri:number;edge:number;len:number;x:number;z:number;angle:number;nx:number;nz:number}[]=[];
     for(const [ri,ring]of [points,...(f.holes??[])].entries())for(let edge=0;edge<ring.length;edge++){
@@ -145,13 +138,34 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         };
         return score(a)-score(c);
       })[0];
+    const nanyuanEntry=profile.dormitoryFacade==='nanyuan'&&frontage?planNanyuanDormitoryEntrance(f,frontage,roads,features):undefined;
+    if(f.id==='plan-10')yifu=buildYifuEntrance(f,b,fixedMeshes,cameraSolids,doors,height,wall,roof);
+    else if(f.id==='plan-22')tangEntrance=buildTangEntrance(f,b,detail,fixedMeshes,cameraSolids,doors,height,wall,roof,tang.materials);
+    else{
+    const geometry = nanyuanEntry?nanyuanDormitoryShell(f,height,nanyuanEntry):new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false,steps:1}).rotateX(-Math.PI/2);
+    const uv=geometry.getAttribute('uv');for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/2.4,uv.getY(i)/2.4);
+    const proxy=new T.Mesh(geometry.clone(),cameraMaterial);cameraSolids.push(proxy);fixedMeshes.push(collisionMesh(proxy));
+    const surfaces=splitBuildingRoof(geometry);
+    b.add(surfaces.walls,wall);b.add(surfaces.roof,roof);geometry.dispose();
+    }
     for(const face of faces){
       const {ri,edge,len,x:mx,z:mz,angle,nx,nz}=face,frame=defaultFrame;
       const threeFrontage=f.id==='plan-118'&&face===frontage;
       const eightFrontage=f.id==='plan-123'&&face===frontage;
+      const nanyuanFrontage=nanyuanEntry&&face===frontage;
       const taoyuanFrontage=profile.dormitoryFacade==='taoyuan'&&face===frontage;
       // Positive local Z is always outdoors, including courtyard hole rings.
       const put=(target:Builder,u:number,y:number,v:number,w:number,h:number,d:number,mat:T.Material)=>{
+        // Ground-storey finishes must respect the physical porch opening.
+        // Splitting only these flat strips preserves all upper facade details.
+        if(nanyuanFrontage&&y+h/2<=nanyuanEntry.ceiling&&v<.3){
+          const half=nanyuanEntry.width/2+.10,left=u-w/2,right=u+w/2;
+          if(left<half-1e-6&&right>-half+1e-6){
+            if(left<-half)put(target,(left-half)/2,y,v,-half-left,h,d,mat);
+            if(right>half)put(target,(right+half)/2,y,v,right-half,h,d,mat);
+            return;
+          }
+        }
         const x=mx+u*Math.cos(angle)+v*nx,z=mz-u*Math.sin(angle)+v*nz;
         if(glass.some(g=>g===mat)||mat===gardenGlass)target.add(new T.PlaneGeometry(w,h),mat,x,y,z,new T.Euler(0,angle,0));
         else target.box(w,h,d,x,y,z,mat,false,angle);
@@ -214,7 +228,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         if(taoyuanFrontage&&Math.abs(u)-w/2<len*.23)continue;
         if(glazedGarden&&floor===0)continue;
         if(eightFrontage&&Math.abs(u)-w/2<3.15)continue;
-        if(profile.dormitoryFacade==='nanyuan'&&face===frontage&&floor===0&&Math.abs(u)-w/2<Math.min(3.8,len*.38)/2+.15)continue;
+        if(nanyuanFrontage&&floor===0&&Math.abs(u)-w/2<nanyuanEntry.width/2+.15)continue;
         // The photographed entry replaces only the central bays on the old
         // procedural frontage; consume the same RNG sample before skipping.
         if(f.id==='plan-80'&&!ri&&edge===0&&Math.abs(u)-w/2<6.5)continue;
@@ -348,6 +362,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
           frontView=[e.x+taoyuanThreeEntry.entryU*Math.cos(e.angle),e.z-taoyuanThreeEntry.entryU*Math.sin(e.angle),e.nx,e.nz];
         }
         else if(f.id==='plan-123'){nanyuanEightEntry=buildNanyuanEightEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e,f.tags.name,wall,defaultFrame);windows+=nanyuanEightEntry.panes.length;}
+        else if(nanyuanEntry)nanyuanEntrances.push(buildNanyuanDormitoryEntrance(b,fixedMeshes,cameraSolids,plaques,doors,nanyuanEntry,dormitoryNames[f.id].number));
         else{
           addEntrance(b,fixedMeshes,doors,doorMaterials,f.tags.name,e.x,e.z,e.angle,w,0);
           const depth=profile.portal==='glass'?1.1:.7;put(0,3.17,depth*.4,w+1.05,.15,depth,stone);
@@ -361,7 +376,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
           const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
           const sign=new T.Mesh(new T.PlaneGeometry(5,.62),new T.MeshStandardMaterial({map:texture,roughness:.6,transparent:true,depthWrite:false}));const projection=.52;sign.position.set(e.x+e.nx*projection,3.65,e.z+e.nz*projection);sign.rotation.y=e.angle;plaques.add(sign);
         }
-        if(profile.style==='dormitory'&&f.id!=='plan-123'&&f.id!=='plan-118'){
+        if(profile.style==='dormitory'&&f.id!=='plan-123'&&f.id!=='plan-118'&&!nanyuanEntry){
           const family=profile.dormitoryFacade,nanyuan=family==='nanyuan';
           const numbers=['零','一','二','三','四','五','六','七','八','九','十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','二十一'];
           const name=family?`${nanyuan?'南园':'陶园'} ${dormitoryNames[f.id].number}舍`:f.tags.name.replace(/\d+/g,n=>numbers[Number(n)]??n);
@@ -398,6 +413,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.chemistryEntrance=chemistryEntry;
   group.userData.taoyuanThreeEntrance=taoyuanThreeEntry;
   group.userData.nanyuanEightEntrance=nanyuanEightEntry;
+  group.userData.nanyuanDormitoryEntrances=nanyuanEntrances;
   group.userData.southeastEntrance=southeastEntry;
   group.userData.chemistryFacade=chemistry.metadata;
   if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;group.userData.yifuTower=yifuUpper;}

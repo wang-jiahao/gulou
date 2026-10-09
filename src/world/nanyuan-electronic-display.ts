@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {Builder} from './geometry.ts';
+import {createNanyuanDisplayArtwork,nanyuanWelcomeText,nanyuanPosterThemes} from './nanyuan-display-artwork.ts';
 
 /** Geometry from the user's south-electronic-display-user.png, 2023 welcome
  * screen; displayed wording updated at the user's request for the 2026 intake.
@@ -18,62 +19,8 @@ export const electronicDisplayStudy = {
   posterY: .78,
   posterHeight: 1.02,
   location: 'unverified',
-  welcomeText: '欢迎2026级新生',
+  welcomeText: nanyuanWelcomeText,
 } as const;
-
-// Observed portrait sheets alternate light, red, cyan, dark and blue layouts.
-// These colours/layouts are approximations, NOT invented event advertisements.
-// No event names, dates, organisations, contact details or QR codes are generated.
-const posterPalette = [
-  ['#dd8293','#f3e6dd'],['#f0e5d4','#c64149'],['#d35762','#f1ded9'],
-  ['#319fc4','#edeeee'],['#eee1b8','#64758c'],['#ecdab4','#7c6056'],
-  ['#31a3bf','#e8dbad'],['#48a976','#dfd588'],['#a63032','#eed6b4'],
-  ['#244138','#dcbb63'],['#eadfca','#527a90'],['#386d8c','#e6e6d7'],
-  ['#e9e4df','#888898'],['#ebced4','#4b8eb7'],['#ded7b7','#ac5f44'],
-  ['#af3f48','#e8e0d5'],
-] as const;
-
-function artwork(kind:'screen'|'posters') {
-  const canvas=document.createElement('canvas');
-  canvas.width=4096;canvas.height=kind==='screen'?512:384;
-  const ctx=canvas.getContext('2d')!;
-  if(kind==='screen'){
-    const gradient=ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-    gradient.addColorStop(0,'#efdeef');gradient.addColorStop(.48,'#f3f6f2');gradient.addColorStop(1,'#e0eaf6');
-    ctx.fillStyle=gradient;ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle='#18759d';ctx.font='bold 218px "PingFang SC","Microsoft YaHei",sans-serif';
-    ctx.textBaseline='middle';ctx.textAlign='center';
-    ctx.fillText(electronicDisplayStudy.welcomeText,canvas.width/2,canvas.height*.52,canvas.width*.91);
-  }else{
-    ctx.fillStyle='#bcbab3';ctx.fillRect(0,0,canvas.width,canvas.height);
-    const slot=canvas.width/posterPalette.length;
-    posterPalette.forEach(([paper,ink],index)=>{
-      const x=index*slot+8,w=slot-16;
-      ctx.fillStyle=paper;ctx.fillRect(x,7,w,370);
-      ctx.fillStyle=ink;
-      // Large non-text graphic fields retain the mixed portrait compositions.
-      // Small low-contrast blocks indicate unreadable print, never fake glyphs.
-      if(index%4===0){
-        ctx.beginPath();ctx.moveTo(x+w,15);ctx.lineTo(x+w,236);ctx.lineTo(x+w*.12,315);ctx.lineTo(x+w*.42,190);ctx.closePath();ctx.fill();
-      }else if(index%4===1){
-        ctx.fillRect(x+w*.15,60,w*.68,32);ctx.fillRect(x+w*.27,124,w*.46,176);
-      }else if(index%4===2){
-        ctx.fillRect(x+w*.12,30,w*.76,67);ctx.beginPath();ctx.arc(x+w*.5,230,w*.34,0,Math.PI*2);ctx.fill();
-      }else{
-        ctx.fillRect(x+w*.12,116,w*.76,203);ctx.clearRect(x+w*.25,164,w*.5,82);
-        ctx.fillStyle=paper;ctx.fillRect(x+w*.25,164,w*.5,82);
-      }
-      ctx.globalAlpha=.38;
-      ctx.fillStyle=ink;ctx.fillRect(x+w*.14,335,w*.58,6);ctx.fillRect(x+w*.14,349,w*.72,5);
-      ctx.globalAlpha=1;
-    });
-  }
-  const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
-  texture.anisotropy=4;
-  return kind==='screen'
-    ?new T.MeshBasicMaterial({name:'electronic-display-welcome-2026',map:texture,toneMapped:false})
-    :new T.MeshStandardMaterial({name:'electronic-display-poster-colour-study',map:texture,roughness:.92});
-}
 
 export type ElectronicDisplayPlacement={x:number;z:number;angle:number};
 
@@ -92,8 +39,8 @@ export function createNanyuanElectronicDisplay(placement?:ElectronicDisplayPlace
   for(const side of[-1,1])b.box(.12,2.93,.10,side*(p.width/2-.06),1.535,.28,metal);
   b.box(p.width,.095,.10,0,1.30,.28,metal);
   b.box(p.width,.06,.09,0,.22,.28,trim);
-  b.add(new T.PlaneGeometry(p.screenWidth,p.screenHeight),artwork('screen'),0,p.screenY,.296);
-  b.add(new T.PlaneGeometry(p.screenWidth,p.posterHeight),artwork('posters'),0,p.posterY,.297);
+  b.add(new T.PlaneGeometry(p.screenWidth,p.screenHeight),createNanyuanDisplayArtwork('screen'),0,p.screenY,.296);
+  b.add(new T.PlaneGeometry(p.screenWidth,p.posterHeight),createNanyuanDisplayArtwork('posters'),0,p.posterY,.297);
   const group=b.finish(placement?'Nanyuan property frontage electronic display':'Nanyuan electronic display — unplaced reference study');
   // Bake world placement into each direct mesh child: world.ts uses a
   // nonrecursive camera raycast, and physics consumes world-space solids.
@@ -104,13 +51,13 @@ export function createNanyuanElectronicDisplay(placement?:ElectronicDisplayPlace
     for(const solid of b.solids){const localX=solid.x,localZ=solid.z;solid.x=x+localX*cos+localZ*sin;solid.z=z-localX*sin+localZ*cos;solid.angle=(solid.angle??0)+angle;}
   }
   group.userData={
-    source:'User south-electronic-display-user.png; image kept local',
+    source:'User south-electronic-display-user.png and screen-posters.png 2026-10-10; original images kept local',
     placement:placement?'property centre south frontage; fitted from user north-gate screenshot':'unverified; not in the campus world',
     ...(placement?{transform:placement}:{}),dimensions:'approximate',
-    posterCount:posterPalette.length,posterContent:'colour/layout study; unreadable text omitted',
+    posterCount:nanyuanPosterThemes.length,posterContent:'Original readable campus activity themes, not a transcription or current event notices; no QR codes',posterThemes:nanyuanPosterThemes.map(p=>p.title),
     screenText:electronicDisplayStudy.welcomeText,referenceYear:2023,
     referenceScreenText:'热烈欢迎南京大学2023级新生',
-    screenContent:'2026 welcome wording supplied by the user; reference photo geometry retained',
+    screenContent:'User-corrected welcome wording, without 热烈 and with 2026 intake; hand-drawn deer mascots at both ends; geometry retained',
   };
   return{group,solids:b.solids,cameraSolids:group.children,layout:p};
 }

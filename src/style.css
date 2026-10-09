@@ -70,10 +70,6 @@
 /* Entry and display controls stay in normal flow, including short phone screens. */
 .entry-actions{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
 .entry-actions .enter{flex:0 1 235px}
-.welcome-screen-toggle{min-height:44px;padding:12px 16px;border:1px solid #ffffff55;border-radius:3px;background:#20382d80;color:#f7f4e9;font-size:12px}
-.welcome-screen-toggle:hover:not(:disabled){background:#20382dcc}
-.welcome-screen-toggle:disabled{cursor:default}
-.screen-status{max-width:390px;margin-top:9px;font-size:10px;line-height:1.6;color:#e5eddbb0}
 .screen-setting>span{min-width:0}.screen-setting small{line-height:1.6}
 .screen-setting button{flex-shrink:0;min-height:44px;white-space:nowrap}
 .screen-setting button:disabled{cursor:default}

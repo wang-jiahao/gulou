@@ -91,7 +91,7 @@ export async function createAvatar(kind: CharacterKind = 'male') {
   return {
     root, head: bones.Head, kind, height, materials,
     setOutfit(style: OutfitStyle) {
-      const palette = style === 'forest' ? [0x627b69, 0xd9d4c6, 0x525f65, 0x887456] : style === 'warm' ? [0xa5856b, 0xe0d7c7, 0x626d77, 0x595e54] : kind === 'female' ? [0x81978a, 0x879b8e, 0x63788a, 0x9b7b58] : [0x293f53, 0xd5d2c5, 0x536371, 0x555d54];
+      const palette = style === 'forest' ? [0x627b69, 0xd9d4c6, 0x525f65, 0x887456] : style === 'warm' ? [0xa5856b, 0xe0d7c7, 0x626d77, 0x595e54] : kind === 'female' ? [0x899682, 0xf0eee6, 0x8b9fac, 0xd6d1c3] : [0x253549, 0xf0eee6, 0x545557, 0x292c2b];
       for (const material of materials) {
         if (!(material instanceof T.MeshStandardMaterial)) continue;
         const index = ['student-cotton', 'student-tee', 'student-denim', 'student-backpack'].indexOf(material.name);
