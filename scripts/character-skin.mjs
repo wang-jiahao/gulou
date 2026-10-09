@@ -7,33 +7,33 @@ import sharp from 'sharp';
 export function sampleStudentSkin(x,y,z,gender) {
   const female=gender==='female',front=T.MathUtils.smoothstep(z,.045,.10);
   const gaussian=(v,c,s)=>Math.exp(-(((v-c)/s)**2));
-  const color=new T.Color(female?0xe0b6a1:0xd1ab92);
-  const mouthY=female?1.5605:1.5555,halfWidth=female?.0265:.028;
+  const color=new T.Color(female?0xebc5b6:0xe2baa7);
+  const mouthY=female?1.5605:1.5555,halfWidth=female?.023:.025;
   const across=Math.abs(x)/halfWidth,tip=T.MathUtils.smoothstep(across,.68,1.04);
   const seam=mouthY+.003*across*across;
   const cupid=.0018*gaussian(Math.abs(x),.008,.005)-.0010*gaussian(x,0,.004);
-  const upperExtent=T.MathUtils.lerp(female?.010:.0085,.002,tip)+cupid;
-  const lowerExtent=T.MathUtils.lerp(female?.009:.008,.002,tip);
+  const upperExtent=T.MathUtils.lerp(female?.0071:.0065,.002,tip)+cupid;
+  const lowerExtent=T.MathUtils.lerp(female?.0068:.0060,.002,tip);
   const insideWidth=1-T.MathUtils.smoothstep(across,.82,1.07);
   const upper=T.MathUtils.smoothstep(y,seam-.001,seam+.001)*(1-T.MathUtils.smoothstep(y,seam+upperExtent-.004,seam+upperExtent));
   const lower=(1-T.MathUtils.smoothstep(y,seam-.001,seam+.001))*T.MathUtils.smoothstep(y,seam-lowerExtent,seam-lowerExtent+.004);
   const lip=(upper*.92+lower*.82)*insideWidth*front;
-  color.lerp(new T.Color(female?0xb57c77:0xa47767),lip*.68);
+  color.lerp(new T.Color(female?0xc78985:0xb8877a),lip*.44);
   // The source has an actual mouth opening. Its recessed mucosa is not skin.
-  const cavity=gaussian(y,seam,.004)*insideWidth*T.MathUtils.smoothstep(z,.025,.065)*(1-T.MathUtils.smoothstep(z,.115,.14));
-  color.lerp(new T.Color(0x472a2b),cavity);
+  const cavity=gaussian(y,seam,.0015)*insideWidth*T.MathUtils.smoothstep(z,.025,.065)*(1-T.MathUtils.smoothstep(z,.100,.118));
+  color.lerp(new T.Color(0x704342),cavity);
   const cheeks=gaussian(Math.abs(x),.048,.026)*gaussian(y,1.600,.018)*front;
-  color.lerp(new T.Color(female?0xc67f78:0xb87f6c),cheeks*.28);
+  color.lerp(new T.Color(female?0xc67f78:0xb87f6c),cheeks*(female?.16:.10));
   const nose=gaussian(x,0,.020)*gaussian(y,1.598,.018)*front;
-  color.lerp(new T.Color(female?0xc18578:0xad7664),nose*.20);
+  color.lerp(new T.Color(female?0xc18578:0xad7664),nose*.12);
   const underEyes=gaussian(Math.abs(x),.032,.018)*gaussian(y,1.625,.006)*front;
-  color.lerp(new T.Color(0xa88172),underEyes*.18);
+  color.lerp(new T.Color(0xc49c90),underEyes*.035);
   const ears=gaussian(Math.abs(x),.081,.014)*gaussian(y,1.616,.042);
   color.lerp(new T.Color(0xbe8070),ears*.18);
   const tzone=Math.max(nose,gaussian(x,0,.036)*gaussian(y,1.67,.025)*front);
   const pigment=Math.sin(x*195+y*137+z*181)*Math.sin(y*221-x*119)*.010+Math.sin(x*843+y*617)*Math.sin(z*721+y*543)*.004;
   color.multiplyScalar(1+pigment);
-  const roughness=T.MathUtils.clamp(.72-.04*lip-.07*tzone+.02*Math.sin(x*420+y*650+z*370),.5,.78);
+  const roughness=T.MathUtils.clamp(.61-.025*lip-.055*tzone+.014*Math.sin(x*420+y*650+z*370),.49,.68);
   return {color:color.convertLinearToSRGB().toArray(),roughness};
 }
 

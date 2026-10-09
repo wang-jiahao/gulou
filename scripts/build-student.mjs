@@ -39,6 +39,8 @@ for(const line of (await readFile('assets/source-models/character/mouth-corner-p
 const sourceHip=data.joints.pelvis[1],sourceNeck=data.joints.neck[1];
 const morph=p=>new T.Vector3(...p);
 const v=data.vertices.map(morph);
+const preservedOutfitSource=v.map(p=>p.clone());
+{const v=preservedOutfitSource;
 // Reference portrait: relaxed almond eyes, narrower nose/lips and tapered jaw.
 // Localized facial edits leave source eye centres and all animation joints fixed.
 const faceGaussian=(value,centre,width)=>Math.exp(-(((value-centre)/width)**2));
@@ -54,6 +56,53 @@ for(const p of v){
  // Lower the upper lid a little at the centre without moving the tear ducts.
  for(const side of ['l','r']){const eye=data.joints[side+'-eye'];const upper=faceGaussian(p.x,eye[0],.013)*faceGaussian(p.y,eye[1]+.009,.005)*T.MathUtils.smoothstep(p.z,eye[2]+.005,eye[2]+.013);p.y-=.0013*upper;}
 }
+}
+// Coordinate face volumes, socket aperture and lip mass while keeping clothes fixed.
+// Joints, hands, neck attachment and reference clothes remain unchanged.
+const faceGaussian=(value,centre,width)=>Math.exp(-(((value-centre)/width)**2));
+const eyeShift=female?.0010:.0006;
+for(const side of ['l','r']) data.joints[side+'-eye'][0]+=Math.sign(data.joints[side+'-eye'][0])*eyeShift;
+for(const p of v){
+ if(p.y<1.485||Math.abs(p.x)>.113)continue;
+ const ox=p.x,oy=p.y,oz=p.z,front=T.MathUtils.smoothstep(oz,.025,.083),ax=Math.abs(ox);
+ // Soften the side planes into an oval; distinguish a firmer male chin.
+ const jaw=faceGaussian(oy,1.539,.035)*T.MathUtils.smoothstep(ax,.023,.066)*front;
+ p.x*=1-(female?.075:.065)*jaw;
+ const chin=faceGaussian(oy,1.506,.019)*faceGaussian(ox,0,.030)*front;
+ p.y+=(female?.0050:.0025)*chin;p.z-=(female?.0020:.0005)*chin;
+ const malar=faceGaussian(oy,1.605,.027)*faceGaussian(ax,.047,.024)*front;
+ p.z+=(female?.0006:.0003)*malar;
+ // Bridge and alar width are sculpted separately, keeping a readable nose tip.
+ const nose=faceGaussian(oy,1.594,.022)*faceGaussian(ox,0,.027)*front;
+ p.x*=1-(female?.21:.19)*nose;
+ p.z-=(female?.0015:.0012)*nose;
+ p.z+=(female?.0010:.0018)*faceGaussian(oy,1.626,.024)*faceGaussian(ox,0,.010)*front;
+ // Bring the lip mound into the face and compress it around the actual seam.
+ const mouthY=female?1.5605:1.5555,mouth=faceGaussian(oy,mouthY,.020)*faceGaussian(ox,0,.036)*front;
+ p.x*=1-(female?.19:.14)*mouth;
+ p.y=T.MathUtils.lerp(p.y,mouthY+(oy-mouthY)*.66,mouth*.82);
+ p.z-=(female?.0048:.0040)*mouth;
+ const corners=faceGaussian(ax,female?.023:.025,.009)*faceGaussian(oy,mouthY,.009)*front;
+ p.y+=.0013*corners;
+ // Widen the almond opening, lift the outer corner and soften the lower socket.
+ for(const side of ['l','r']){
+  const e=data.joints[side+'-eye'],sign=Math.sign(e[0]),originalX=e[0]-sign*eyeShift;
+  const dx=ox-originalX,dy=oy-e[1],socket=faceGaussian(dx,0,.021)*faceGaussian(dy,0,.020)*T.MathUtils.smoothstep(oz,e[2]+.003,e[2]+.010);
+  p.x+=sign*eyeShift*socket+dx*.19*socket;
+  const outer=T.MathUtils.clamp(sign*dx/.018,-1,1);p.y+=.0014*outer*socket;
+  const upper=faceGaussian(dy,.008,.006)*socket;p.y+=.0010*upper;
+  const lower=faceGaussian(dy,-.009,.006)*socket;p.z+=.0001*lower;p.y-=.0008*lower;
+ }
+}
+// Keep every garment helper and the neck attachment on the formal-v113
+// source surface. Only exposed face/head body vertices receive the sculpt.
+const sculptBodyIds=new Set(data.groups.body.flatMap(face=>face.map(([id])=>id)));
+for(let i=0;i<v.length;i++){
+ const changed=v[i].clone(),preserved=preservedOutfitSource[i];
+ if(!sculptBodyIds.has(i)){v[i].copy(preserved);continue;}
+ const headBlend=T.MathUtils.smoothstep(preserved.y,1.500,1.525);
+ v[i].copy(preserved).lerp(changed,headBlend);
+}
 const joint=name=>morph(data.joints[name]);
 const root=new T.Group();root.name='GulouStudent-'+gender;
 const definitions=[
@@ -65,7 +114,7 @@ const bones={},positions={},indices={};
 definitions.forEach(([name,j,p],i)=>{const bone=new T.Bone();bone.name='mixamorig'+name;positions[name]=joint(j);bone.position.copy(positions[name]);if(p){bone.position.sub(positions[p]);bones[p].add(bone);}else root.add(bone);bones[name]=bone;indices[name]=i;});
 root.updateMatrixWorld(true);const skeleton=new T.Skeleton(definitions.map(([name])=>bones[name]));
 const mat=(name,color,roughness=.86)=>new T.MeshStandardMaterial({name,color,roughness});
-const skin=mat('student-skin',0xffffff,.59),shirt=mat('student-cotton',female?0xcfc5ae:0x354c61,.9),pants=mat('student-denim',female?0x63788a:0x536371,.93),hair=mat('student-hair',female?0x30231f:0x242322,.86),shoe=mat('student-shoes',0xd4d6d0),sole=mat('student-sole',0xc6c9c2),bag=mat('student-backpack',female?0x9b7b58:0x555d54);
+const skin=new T.MeshPhysicalMaterial({name:'student-skin',color:0xffffff,roughness:.65,specularIntensity:.30,specularColor:0xffeee7}),shirt=mat('student-cotton',female?0xcfc5ae:0x354c61,.9),pants=mat('student-denim',female?0x63788a:0x536371,.93),hair=mat('student-hair',female?0x40322b:0x39302d,.86),shoe=mat('student-shoes',0xd4d6d0),sole=mat('student-sole',0xc6c9c2),bag=mat('student-backpack',female?0x9b7b58:0x555d54);
 
 const hipY=positions.Hips.y,neckY=positions.Neck.y;
 pants.color.set(female?0x8b9fac:0x545557);bag.color.set(female?0xd6d1c3:0x292c2b);
@@ -89,6 +138,29 @@ const skinGeometry=smoothBody(data.groups.body,p=>{
   return Math.abs(p.x)>.32&&p.clone().sub(wrist).dot(axis)>-.06;
 });
 const skinPos=skinGeometry.getAttribute('position');
+// Relax nose-to-cheek and lower orbital relief on the actual continuous skin.
+// Preserve eye/lip apertures, nose bridge, silhouette, UVs and neck connection.
+{
+ const pos=skinGeometry.getAttribute('position'),map=new Map(),ids=[],pts=[],adj=[];
+ for(let i=0;i<pos.count;i++){const p=new T.Vector3().fromBufferAttribute(pos,i),key=p.toArray().join(',');let id=map.get(key);if(id===undefined){id=pts.length;map.set(key,id);pts.push(p);adj.push(new Set());}ids.push(id);}
+ const ix=skinGeometry.index;
+ for(let i=0;i<ix.count;i+=3){const a=ids[ix.getX(i)],b=ids[ix.getX(i+1)],c=ids[ix.getX(i+2)];for(const[u,v]of[[a,b],[b,c],[c,a]]){adj[u].add(v);adj[v].add(u);}}
+ const original=pts.map(p=>p.clone()),weights=pts.map(p=>{
+  if(p.y<1.535||p.y>1.643||p.z<.09||Math.abs(p.x)>.082)return 0;
+  const ax=Math.abs(p.x),eyeY=1.6345;
+  const eyeProtect=1-faceGaussian(ax,.0325,.020)*T.MathUtils.smoothstep(p.y,1.622,eyeY);
+  const lipProtect=1-faceGaussian(p.y,female?1.5605:1.5555,.013)*faceGaussian(p.x,0,.025);
+  const bridgeProtect=T.MathUtils.smoothstep(ax,.012,.023);
+  const groove=faceGaussian(ax,.036,.016)*faceGaussian(p.y,1.584,.029);
+  const under=faceGaussian(ax,.033,.021)*faceGaussian(p.y,1.616,.010);
+  const cheek=faceGaussian(ax,.058,.017)*faceGaussian(p.y,1.588,.028);
+  return Math.min(.48,Math.max(groove*.48,under*.40,cheek*.34))*eyeProtect*lipProtect*bridgeProtect*T.MathUtils.smoothstep(p.z,.09,.119);
+ });
+ for(let step=0;step<10;step++){const next=pts.map(p=>p.z);for(let i=0;i<pts.length;i++){if(!weights[i]||!adj[i].size)continue;let z=0;for(const j of adj[i])z+=pts[j].z;next[i]=T.MathUtils.lerp(pts[i].z,z/adj[i].size,weights[i]);}for(let i=0;i<pts.length;i++)pts[i].z=next[i];}
+ let changed=0,maxDelta=0;for(let i=0;i<pts.length;i++){const delta=pts[i].distanceTo(original[i]);if(delta>1e-8)changed++;maxDelta=Math.max(maxDelta,delta);}for(let i=0;i<pos.count;i++)pos.setXYZ(i,...pts[ids[i]].toArray());
+ console.log('Face surface relaxation',JSON.stringify({changedCanonicalVertices:changed,maxDeltaMeters:maxDelta,iterations:10,region:'lower orbit, nasolabial transition, cheek; apertures and neck preserved'}));
+}
+
 // Only the head/neck and hands are exposed. Continue the neck inside the
 // garment instead of retaining anatomical shoulder patches through the cloth.
 for(let i=0;i<skinPos.count;i++){
@@ -181,8 +253,8 @@ for(const side of ['Left','Right']){
   buildStudentEyes({female,centre:eye,side,makeSkinned});
   const browPosition=[],browIndex=[],sign=side==='Left'?1:-1;
   for(let i=0;i<=24;i++){
-    const t=i/24,x=sign*(Math.abs(eye.x)-.012+t*.030),y=eye.y+.007+(female?.0030:.0023)*Math.sin(Math.PI*t)-.0015*t;
-    const width=(female?.0015:.0019)*Math.sin(Math.PI*t)**.45*(1-.45*t);
+    const t=i/24,x=sign*(Math.abs(eye.x)-.012+t*.030),y=eye.y+.010+(female?.0038:.0028)*Math.sin(Math.PI*t)-.0011*t;
+    const width=(female?.00195:.00215)*Math.sin(Math.PI*t)**.45*(1-.45*t);
     for(const edge of [-1,1]){
       const yy=y+width*edge;surfaceRay.set(new T.Vector3(x,yy,.5),new T.Vector3(0,0,-1));
       const hit=surfaceRay.intersectObject(surface,false)[0];
@@ -191,7 +263,25 @@ for(const side of ['Left','Right']){
     if(i<24){const k=i*2;if(sign>0)browIndex.push(k,k+2,k+1,k+1,k+2,k+3);else browIndex.push(k,k+1,k+2,k+1,k+3,k+2);}
   }
   const browGeometry=new T.BufferGeometry();browGeometry.setAttribute('position',new T.Float32BufferAttribute(browPosition,3));browGeometry.setAttribute('uv',new T.Float32BufferAttribute(Array.from({length:50},(_,i)=>[Math.floor(i/2)/24,i%2]).flat(),2));browGeometry.setIndex(browIndex);browGeometry.computeVertexNormals();
-  makeSkinned(browGeometry,mat('student-eyebrow',female?0x392821:0x302923,.95),side+' surface eyebrow','Head');
+  const browMaterial=mat('student-eyebrow',female?0x392821:0x302923,.95);
+  makeSkinned(browGeometry,browMaterial,side+' surface eyebrow','Head');
+  // Fine upper lash line follows the actual ocular surface instead of a
+  // painted oval. The exposed lower waterline stays light and open.
+  const lp=[],li=[],luv=[];
+  for(let i=0;i<=32;i++){
+    const t=i/32,dx=(t-.5)*.032,xx=eye.x+dx;
+    const yy=eye.y+.0012+Math.sin(Math.PI*t)*.0047+Math.sign(eye.x)*dx*.075;
+    const width=(female?.00030:.00018)*Math.sin(Math.PI*t)**.5;
+    for(const edge of[-1,1]){
+      const y=yy+edge*width;surfaceRay.set(new T.Vector3(xx,y,.5),new T.Vector3(0,0,-1));
+      const hit=surfaceRay.intersectObject(surface,false).find(h=>h.point.z>eye.z+.005);
+      const sphere=eye.z+Math.sqrt(Math.max(.000025,(female?.0160:.01669)**2-dx*dx-(y-eye.y)**2));
+      lp.push(xx,y,(hit?hit.point.z:sphere)+.00025);luv.push(t,(edge+1)/2);
+    }
+    if(i<32){const k=i*2;li.push(k,k+2,k+1,k+1,k+2,k+3);}
+  }
+  const lashGeometry=new T.BufferGeometry();lashGeometry.setAttribute('position',new T.Float32BufferAttribute(lp,3));lashGeometry.setAttribute('uv',new T.Float32BufferAttribute(luv,2));lashGeometry.setIndex(li);lashGeometry.computeVertexNormals();
+  makeSkinned(lashGeometry,browMaterial,side+' upper lash line','Head');
 }
 buildStudentShoes({female,positions,makeSkinned,shoe,sole});
 const bagPosition=new T.Vector3(0,positions.Spine2.y-.12,-.15);

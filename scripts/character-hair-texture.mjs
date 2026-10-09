@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import {KHRMaterialsAnisotropy} from '@gltf-transform/extensions';
 
 /** Neutral, original strand relief: the material supplies the hair colour.
  * Fine filaments sit inside broad irregular locks, with restrained gloss so
@@ -7,8 +8,8 @@ export async function bakeStudentHairFlow({size=512}={}){
   if(![256,512,1024].includes(size))throw new Error('Hair texture size must be 256, 512 or 1024');
   let state=0x69c112;
   const random=()=>{state|=0;state=state+0x6D2B79F5|0;let t=Math.imul(state^state>>>15,1|state);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
-  const strands=Array.from({length:190},()=>({u:random(),width:.00075+random()*.0017,strength:.22+random()*.60,phase:random()*Math.PI*2,rate:1.1+random()*2.4,bend:(random()-.5)*.014}));
-  const bundles=Array.from({length:17},()=>({u:random(),width:.009+random()*.020,strength:.12+random()*.20,phase:random()*Math.PI*2}));
+  const strands=Array.from({length:240},()=>({u:random(),width:.00075+random()*.0017,strength:.22+random()*.60,phase:random()*Math.PI*2,rate:1.1+random()*2.4,bend:(random()-.5)*.014}));
+  const bundles=Array.from({length:23},()=>({u:random(),width:.009+random()*.020,strength:.12+random()*.20,phase:random()*Math.PI*2}));
   const height=new Float32Array(size*size),color=new Uint8Array(size*size*3),normal=new Uint8Array(size*size*3),roughness=new Uint8Array(size*size*3);
   const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
   for(let y=0;y<size;y++){
@@ -18,9 +19,9 @@ export async function bakeStudentHairFlow({size=512}={}){
       for(const strand of paths){const delta=Math.abs(u-strand.at),d=Math.min(delta,1-delta);if(d<strand.width*3)fine+=strand.strength*Math.exp(-((d/strand.width)**2));}
       for(const bundle of bundles){const at=(bundle.u+.009*Math.sin(v*2.8+bundle.phase)+1)%1,delta=Math.abs(u-at),d=Math.min(delta,1-delta);broad+=bundle.strength*Math.exp(-((d/bundle.width)**2));}
       const relief=fade*(fine*.24+broad*.11),h=.30+relief;height[y*size+x]=h;
-      const variation=1.8*Math.sin(v*17+u*Math.PI*10)*Math.sin(v*9-u*Math.PI*18),value=Math.max(190,Math.min(244,216+fine*10+broad*12+variation));
+      const variation=1.8*Math.sin(v*17+u*Math.PI*10)*Math.sin(v*9-u*Math.PI*18),value=Math.max(182,Math.min(255,233+fine*10-broad*29+variation*1.4-6*(1-v)));
       color.set([Math.round(value),Math.round(value),Math.round(value)],(y*size+x)*3);
-      const gloss=Math.max(177,Math.min(214,204-fine*14-broad*10+variation));roughness.set([255,Math.round(gloss),0],(y*size+x)*3);
+      const gloss=Math.max(131,Math.min(190,162-fine*12+broad*17+variation*1.5+7*(1-v)));roughness.set([255,Math.round(gloss),0],(y*size+x)*3);
     }
   }
   for(let y=0;y<size;y++)for(let x=0;x<size;x++){
@@ -38,7 +39,10 @@ export async function attachStudentHairFlow(doc,options={}){
   const images=await bakeStudentHairFlow(options);
   const texture=name=>doc.createTexture(`original fine hair ${name}`).setImage(images[name]).setMimeType('image/png');
   material.setBaseColorTexture(texture('albedo'));
-  material.setNormalTexture(texture('normal')).setNormalScale(.25);
+  material.setNormalTexture(texture('normal')).setNormalScale(.38);
   material.setMetallicRoughnessTexture(texture('roughness')).setRoughnessFactor(1).setMetallicFactor(0);
+  // V follows each continuous root-to-tip column; orient anisotropy along V.
+  const anisotropy=doc.createExtension(KHRMaterialsAnisotropy).createAnisotropy().setAnisotropyStrength(.48).setAnisotropyRotation(Math.PI/2);
+  material.setExtension('KHR_materials_anisotropy',anisotropy);
   for(const info of[material.getBaseColorTextureInfo(),material.getNormalTextureInfo(),material.getMetallicRoughnessTextureInfo()])info.setWrapS(10497).setWrapT(33071);
 }
