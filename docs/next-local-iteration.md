@@ -1,21 +1,25 @@
-# 最新断点：v0.109已验证；人物按最新要求整体重做
+# 最新断点：v0.110校园修正已验；继续人物与剩余28项
 
-用户最新已授权并行：3个活跃子agent life_facilities/activity_dining/signs_stories正在独立工作树处理31条中的建筑/介绍欠账；分工、工作树和浏览器协调见parallel-work-2026-10-09.md。先list_agents，不重复启动。root留人物及整合/性能。尚未合并任何子agent提交。
+工作树 `/Users/zackaria/Desktop/gulou campus`，main，版本0.110.0；本次整合提交e69f075/acdd906/89c7b47/bb2f651/9ea07ab/1492da8/4e90f4a/88d6df3，收尾提交见git log -1。3个子agent已交回并完成，先list_agents勿重复启动旧工作。三个工作树保留可继续使用；4181/4182/4183已关闭。主4173 PID5451/session14121仍运行；无需重启。browser2，验证页已全关（末tab21）。
 
-root当前还有独立原型14待视觉检查：已在忽略目录应用官方CC0 mouth-corner-puller轻微表情、贴面眉形、女发前侧体积；build-male14/build-female14均通过，尚未正常UI验，不当达标。13版生成器/GLB/头发已另存*-thirteen。新增target在assets/source-models/character，未提交。需要复用4173，先和activity_dining协调浏览器2时段。
+## 本版完成，不重做
 
-main，v0.108=789c47a；v0.109=158a40e。四吉祥物（不是商店）朝北汉口门，北侧地图抵达；欢迎/设置导航仓库→作者→赞赏，三个图标。五日47条真实原文已取回本机忽略docs/validation/v0.109/user-requests-extracted.json；详细104项+16延续项见request-audit-2026-10-09.md。不要重复抓全历史。
+- 用户明确不存在的plan-87/93已从地图删去，生成器排除；逐字段确认其他地图数据原样。原记录在忽略docs/validation/v0.110-gate/removed-features.json。
+- 用户新视频+官方gl-1-02：北门内两侧19组灰砖/浅檐玻璃橱窗，东步道草带；plan85入口、松林路径、西430路口及喷泉通道留空，北端未见连接不硬封。
+- 门禁改各通道定向感应（法向移动>=65%），按骑车前端/速度留开门时间；低空flight不触发。660路径/486状态全过，初版骑车穿闸与横漂误触发失败报告保留。主UI中央杆与人行闸开关/离开/双向正常，人行不抬车杆。
+- 超市109、独立菜鸟楼100、邮政棚柜、革命烈士碑、东南楼医学院入口、南园11舍4层；53篇故事。屏体只在独立预览，位置与海报未完成。
+- 正常UI已实看上述处与指南E打开地图，搜索南大记忆别名有效；087/电话亭无地点，console[]。截图docs/validation/v0.110-gate/ui。
 
-人物重做仍在独立原型，正式v0.109模型/生成器未替换。最新输出docs/validation/v0.110/student-{male,female}-prototype.glb，由同目录build-student-prototype.mjs生成；末次日志build-{male,female}13.log（两者通过）。新增裁边/实体领口工具，形变后统一UV接缝法线，连续发型取代悬空发束。正常UI定位并修正原型手掌低于骨盆误绑腿、外套衣摆误随大腿；最终全身/跑步/坐姿实看，但不代表完整动作验收。已加原创UV肤色/粗糙度贴图并消除男性太阳穴凸刺，脸部表情/眉眼、女性侧发薄片感、服装造型仍不达标，人物需求未完成。详见character-redesign-2026-10-09.md，不重做旧导航喷泉检查。
+## 已过/未过
 
-已过skin-check（UV朝向/岛一致性/边界扩展/通道），surface-check、tailoring-check（男女UV裁切/闭合内外壁/边界环/朝向及形变法线），Node语法；正式游戏资产/生成器与158a40e一致，未重复无关构建。未过整体美术/完整动作/校园/GPU。最新正面图male/female-skin-thirteen，之前动作run-eleven、sit-eleven；console error[]，tab15关闭。原baseline、第六轮及十一轮副本保留，不运行--before。恢复检查：Node scripts/character-surface-check.mjs及scripts/character-tailoring-check.mjs；恢复生成：Node docs/validation/v0.110/build-student-prototype.mjs（女生加--female）；预览同目录preview.html。
+types、src lint、Vite build（保留既有chunk>500kB提示）；整合专项生活17路线/5射线/6公共路扫描，碑15/5，东南楼11/20，墙32/12/14，电子屏12/6。日志/tmp/gulou-v110-final；门禁报告docs/validation/access-passage/run-1791541029359.json，旧失败run-1791540698827.json。不得把这些局部fixture当全校园/GPU性能完成。
 
-最新用户：人物不是修复而是重做，太丑；参考大型游戏建模。v107旧人物技术检查不等于造型达标，人物美术标为未完成。优先重设脸型、头身比例、发型与服装轮廓，做好近景/实际游玩距离再验动作；不要只补发梢。生成脚本scripts/build-student.mjs，游戏src/player/avatar.ts，预览scripts/character-preview.html。旧before必须保护。
+原104表仍28项未闭合（10未完成/17部分/1待复核）；只关闭19/35/71，新增纠错另列N项。具体待资料清单reference-gaps-2026-10-09.md；已请用户协助，不能再无证据填楼层/牌位。人物54、性能86、宣传片88—91仍未完。正式宣传片未录，完成所有待办/质量后已授权直接录本地约一分钟，无需再问。
 
-v109已过：fountain-mascots-check（原57碰撞/铺装/绿化，13步行/14相机、8正反面射线）、types、src ESLint、Vite构建。日志/tmp/gulou-v109/{mascots,types,lint,build,metrics}.log；正常CUA北侧喷泉正面及步行、欢迎图标、两处导航顺序/链接、赞赏弹窗，console error[]，tab10关闭。图docs/validation/v0.109。设置截图停在上部，导航顺序由AX核对；未做移动端/全场GPU，不伪称已验。
+## 下一步人物
 
-README工作量已刷新，赞赏保持绝对末尾。v108商店朝向核对仅历史观察，已纠正审计中对象误解。持续FPS仍未通过；未证实收益的零强度灯实验已全部撤回，备份仅/tmp/gulou-v109/unlit-lamps-unvalidated.patch等，不误提交。
+正式人物仍沿用158a40e资产，未把原型替换。独立原型docs/validation/v0.110/build-student-prototype.mjs及student-hair.mjs，末build-male14/build-female14均过，root男女正面已实看(console[]，tab16早已关)：女侧发薄片感/男太阳穴小空隙/面部与服装仍不达标。参考和所有基线见character-redesign-2026-10-09.md；原baseline、第六/十一/十三版均保护，不运行--before。继续完整人物造型，不把技术检查当美术达标；接着动作/校园GPU/全校步骑飞及公共道路验收。
 
-其后：邮政左棚/美团柜、教育超市109与独立快递楼、活动中心宽度/南青格庐、食堂层标/四楼用途、屏幕海报、苏浙牌/碑名/导览、缺项介绍与井盖等待核实项，全校步骑飞/公共道路/天气/性能验收后按已有授权直接录本地1分钟片。宣传片未录，不能用旧capture脚本绕过浏览器。
+恢复：git status --short；Node=/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node。node scripts/access-passage-check.mjs 或 scripts/north-gate-noticeboards-check.mjs（仅有新改动时重跑）。禁止脚本开浏览器，UI只用正常CUA。
 
-恢复：cd '/Users/zackaria/Desktop/gulou campus' && git status --short。Node=/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node。复用4173 PID5451/session14121；browser2，QA页均关闭。仅本地不推送；Git作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。四旧未跟踪scripts/{astronomy-check.mjs,dormitory-family-check.mjs,promotion-capture.mjs,promotion-shots.json}保持未跟踪。原媒体不提交；保护所有before，不运行--before。压缩配置240000不保证规避413。
+仅本地、不推送/发布/Pages。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。README赞赏绝对末尾。四旧未跟踪scripts/{astronomy-check.mjs,dormitory-family-check.mjs,promotion-capture.mjs,promotion-shots.json}保留未跟踪；原媒体在忽略references（用户新视频本地副本phase110-user/north-gate-user.mp4）。240000压缩阈值不保证规避413；只读最新断点/相关证据。

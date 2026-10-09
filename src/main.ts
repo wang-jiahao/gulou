@@ -146,7 +146,8 @@ async function boot() {
   let seatExit: {x:number;z:number}|null=null;
   const destinations=el<HTMLSelectElement>('travel-place');
   const search=document.createElement('input');search.type='search';search.placeholder='搜索建筑、宿舍或地点';search.setAttribute('aria-label','搜索校园地点');search.id='place-search';destinations.before(search);
-  const fillDestinations=()=>{const previous=destinations.value;destinations.replaceChildren(new Option('选择地点',''));travelPlaces.forEach((place,i)=>{if(place.name.includes(search.value.trim()))destinations.add(new Option(place.name,String(i)));});if([...destinations.options].some(o=>o.value===previous))destinations.value=previous;};
+  const destinationAliases:Record<string,string[]>= {'校园纪念品商店':['南大记忆']};
+  const fillDestinations=()=>{const previous=destinations.value,query=search.value.trim();destinations.replaceChildren(new Option('选择地点',''));travelPlaces.forEach((place,i)=>{if([place.name,...(destinationAliases[place.name]??[])].some(name=>name.includes(query)))destinations.add(new Option(place.name,String(i)));});if([...destinations.options].some(o=>o.value===previous))destinations.value=previous;};
   search.oninput=fillDestinations;fillDestinations();
   const travel = (x: number, z: number, name: string, yaw = game.cameraRig.yaw, pitch?: number, firstPerson?: boolean, photoFov?: number, surface: 'highest' | 'ground' = 'highest') => {
     if (game.world.sectors < 3) { el('map-selection').textContent = '校园区域正在加载，请稍候再传送。'; return; }

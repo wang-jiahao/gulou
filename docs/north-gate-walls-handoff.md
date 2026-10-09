@@ -33,3 +33,7 @@ GULOU_NODE='/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependen
 ```
 
 4181仍使用本子任务session18071，待root看完这轮墙后停止；主4173未动。旧 `scripts/directory-check.mjs` 的固定9米横栏坐标属于历史基线，不用于这次布局重做；本轮使用新专项和正常UI。
+
+## 主分支整合后UI
+
+root主4173正常UI已看两侧长橱窗、东步道草带、西侧墙前原创目录；地图抵达地面，E正确打开南园地图，console[]。截图docs/validation/v0.110-gate/ui/gulou-final-{northwalls,directory}-800.png。整合专项32/12/14重过，tab21关闭；4181已停止，主4173保留。

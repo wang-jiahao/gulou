@@ -37,6 +37,8 @@ names.update(reviewed_names)
 hero={26:'88778620',30:'88778613',31:'88778615',37:'88778619',40:'teaching-priority'}
 features=[]
 for f in source['features']:
+    # User's 2026-10-09 on-site correction: these plan traces are not buildings.
+    if f['id'] in {87, 93}: continue
     kind=f['kind'];name=names.get(f['id'],f"{'南园' if f['center'][1]>2580 else '北园'}建筑 {f['id']:03}")
     if f['id']==123:kind='dormitory'  # Nanyuan 8: six-storey flat-roof dorm, confirmed by user photo.
     tags={'name':name,'source':'user supplied NJU campus plan','confidence':'map-traced; geographic scale approximate','garden':'south' if f['center'][1]>2580 else 'north','plan_id':str(f['id'])}

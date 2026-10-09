@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {updateAccessSensor,type AccessSensor,type AccessTravelState} from './access-sensor.ts';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Builder, type Solid } from './geometry.ts';
 import { southEastGate } from './south-boundary-layout.ts';
@@ -54,8 +55,8 @@ export function createAccessControls(mats:Materials){
  const blue=new T.MeshStandardMaterial({color:0x97c6c7,transparent:true,opacity:.54,roughness:.24,metalness:.05,side:T.DoubleSide});
  const screenWait=readerDisplay(false),screenPass=readerDisplay(true);
  const pedestrianMark=label('人行通道',1.2,.22);
- const readers:{entrance:string;x:number;z:number;flaps:T.Group[];screens:T.Mesh[];authorized:boolean;progress:number;indicator:T.MeshBasicMaterial}[]=[];
- const booms:{entrance:string;x:number;z:number;pivot:T.Group;progress:number}[]=[];
+ const readers:{entrance:string;x:number;z:number;flaps:T.Group[];screens:T.Mesh[];authorized:boolean;progress:number;indicator:T.MeshBasicMaterial;sensor:AccessSensor}[]=[];
+ const booms:{entrance:string;x:number;z:number;pivot:T.Group;progress:number;sensor:AccessSensor}[]=[];
  for(const e of campusEntrances){
   const base=new Builder(),local=new T.Group(),lenses:T.Mesh[]=[];local.name=e.name;local.position.set(e.x,0,e.z);local.rotation.y=e.angle;
   const world=(x:number,z:number)=>({x:e.x+x*Math.cos(e.angle)+z*Math.sin(e.angle),z:e.z-x*Math.sin(e.angle)+z*Math.cos(e.angle)});
@@ -75,7 +76,7 @@ export function createAccessControls(mats:Materials){
    }
    const display=mergeEquipment(screens,'paired reader displays');local.add(display,mergeEquipment(lights,'paired reader indicators'));
    const mark=pedestrianMark.clone();mark.position.set(x,.035,1.15);mark.rotation.x=-Math.PI/2;local.add(mark);
-   readers.push({entrance:e.id,...world(x,0),flaps,screens:[display],authorized:false,progress:0,indicator});
+   readers.push({entrance:e.id,...world(x,0),sensor:{...world(x,0),angle:e.angle,halfWidth:.50,approach:1.25,occupied:.62,clear:1.65,hold:0,sweep:.53},flaps,screens:[display],authorized:false,progress:0,indicator});
   }
   local.add(mergeEquipment(lenses,'reader lenses'));
   // A six-metre boom leaves the original centre road open when raised.
@@ -86,7 +87,7 @@ export function createAccessControls(mats:Materials){
   const stripes:T.Mesh[]=[];
   for(let x=-.4;x>-5.9;x-=.65){const stripe=new T.Mesh(new T.BoxGeometry(.25,.1,.096),red);stripe.position.x=x;stripe.rotation.z=.22;stripes.push(stripe);}
   pivot.add(mergeEquipment(stripes,'boom red stripes'));
-  local.add(pivot);booms.push({entrance:e.id,...world(0,-1.45),pivot,progress:0});
+  local.add(pivot);booms.push({entrance:e.id,...world(0,-1.45),sensor:{...world(0,-1.45),angle:e.angle,halfWidth:2.65,approach:2.1,occupied:1.15,clear:2.25,hold:0,sweep:.05},pivot,progress:0});
   if(e.id!=='hankou'&&e.id!=='guangzhou'){
    for(const side of[-1,1]){base.box(.32,2.1,.32,side*6.0,1.05,0,mats.stone,true);base.box(.35,.13,.35,side*6,2.13,0,steel);}
    const name=label(e.name,2.6,.42);name.position.set(3.7,2.35,-1.8);local.add(name);base.box(.07,2.30,.07,3.7,1.15,-1.84,steel);
@@ -94,10 +95,13 @@ export function createAccessControls(mats:Materials){
   local.add(base.finish('entrance equipment'));group.add(local);
   for(const s of base.solids){const p=world(s.x,s.z);solids.push({...s,...p,angle:(s.angle??0)+e.angle});}
  }
- const update=(dt:number,position:T.Vector3,active:boolean)=>{
-  if(!active)return;
-  for(const r of readers){const near=position.y<3&&Math.hypot(position.x-r.x,position.z-r.z)<3.4;r.progress=T.MathUtils.damp(r.progress,near?1:0,near?10:3,dt);r.flaps.forEach(f=>f.rotation.y=(f.userData.side as number)*r.progress*Math.PI*.48);r.indicator.color.setHex(near?0x7aebaa:0x65aab0);if(near!==r.authorized){r.authorized=near;r.screens.forEach(screen=>screen.material=near?screenPass:screenWait);}}
-  for(const b of booms){const near=position.y<4&&Math.hypot(position.x-b.x,position.z-b.z)<10;b.progress=T.MathUtils.damp(b.progress,near?1:0,near?5:2,dt);b.pivot.rotation.z=-b.progress*Math.PI*.48;}
+ let previous:T.Vector3|null=null;
+ const update=(dt:number,position:T.Vector3,active:boolean,travel:AccessTravelState={})=>{
+  if(!active){previous=null;return;}
+  const step=Math.max(0,Math.min(dt,.05));
+  for(const r of readers){const near=updateAccessSensor(r.sensor,position,previous,step,travel);r.progress=T.MathUtils.damp(r.progress,near?1:0,near?18:3,step);r.flaps.forEach(f=>f.rotation.y=(f.userData.side as number)*r.progress*Math.PI*.48);r.indicator.color.setHex(near?0x7aebaa:0x65aab0);if(near!==r.authorized){r.authorized=near;r.screens.forEach(screen=>screen.material=near?screenPass:screenWait);}}
+  for(const b of booms){const near=updateAccessSensor(b.sensor,position,previous,step,travel);b.progress=T.MathUtils.damp(b.progress,near?1:0,near?12:2,step);b.pivot.rotation.z=-b.progress*Math.PI*.48;}
+  previous=position.clone();
  };
  const snapshot=()=>({entrances:campusEntrances.length,readers:readers.map(r=>({entrance:r.entrance,x:r.x,z:r.z,open:r.progress,display:r.authorized?'pass':'wait'})),booms:booms.map(b=>({entrance:b.entrance,x:b.x,z:b.z,open:b.progress}))});
  return{group,solids,update,snapshot};
