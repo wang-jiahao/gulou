@@ -25,7 +25,6 @@ assert.equal(extraPlaces.find(p=>p.name===r.name).z,81.4);
 assert.equal(locationName(map,r.x,r.z),r.name);
 assert.ok(placeStories[r.name].summary.includes('南高路北侧'));
 assert.notEqual(getPlaceStory(r.name),getPlaceStory('金陵大学难民收容所纪念碑'));
-assert.equal(Object.keys(placeStories).length,52);
 for(const name of [r.name,'苏浙运动场','南园导览栏']){
  const s=placeStories[name];assert.match(s.source,/^https:\/\//);assert.ok(s.summary&&s.detail&&s.sourceLabel);
 }

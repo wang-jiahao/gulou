@@ -13,6 +13,7 @@ import {buildRabeHouse} from './rabe-house.ts';
 import {buildChemistryEntrance,chemistryFrontage} from './chemistry-entrance.ts';
 import {createChemistryFacade} from './chemistry-facade.ts';
 import {buildHospitalEntrance} from './hospital-entrance.ts';
+import {buildSoutheastEntrance,southeastFrontage} from './southeast-entrance.ts';
 import {buildSportsHall} from './sports-halls.ts';
 import {buildLibraryComplex} from './library-complex.ts';
 import {buildSpecific} from './specific-buildings.ts';
@@ -80,6 +81,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   let chemistryEntry:ReturnType<typeof buildChemistryEntrance>|undefined;
   let taoyuanThreeEntry:ReturnType<typeof buildTaoyuanThreeEntrance>|undefined;
   let nanyuanEightEntry:ReturnType<typeof buildNanyuanEightEntrance>|undefined;
+  let southeastEntry:ReturnType<typeof buildSoutheastEntrance>|undefined;
   const records: {id:string;name:string;source:string;height:number;windows:number;roof:string;dormitory:boolean;frontage?:number[];entrance?:ReturnType<typeof buildHospitalEntrance>}[]=[];
   for (const f of features) {
     if (!f.tags.building || f.tags['gulou:custom-model'] || heroIds.includes(f.id) || f.points.length < 3) continue;
@@ -128,7 +130,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     const edges=faces.filter(face=>face.ri===0);
       // Choose a long exterior facade facing the nearest public route, rather
       // than putting a doorway onto an inner hole or a two-metre return wall.
-      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=f.id==='plan-3'?edges.find(chemistryFrontage):f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):candidates.sort((a,c)=>{
+      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=f.id==='plan-3'?edges.find(chemistryFrontage):f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):f.id==='plan-44'?edges.find(southeastFrontage):candidates.sort((a,c)=>{
         const score=(e:typeof a)=>{
           if(scores.has(e))return scores.get(e)!;
           let best=10000;
@@ -207,6 +209,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       for(let j=0;j<bays;j++)for(let floor=0;floor<profile.levels;floor++){
         const u=len*((j+1)/(bays+1)-.5),y=floorHeight*(floor+.60),w=Math.min(profile.windowWidth,len/(bays+1)*.76),h=Math.min(profile.windowHeight,floorHeight*.72);
         const g=glass[Math.floor(random()*glass.length)];
+        if(f.id==='plan-44'&&face===frontage&&floor<2&&Math.abs(u)-w/2<3.8)continue;
         if(threeFrontage)continue;
         if(taoyuanFrontage&&Math.abs(u)-w/2<len*.23)continue;
         if(glazedGarden&&floor===0)continue;
@@ -339,6 +342,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         if(f.id==='plan-17')frontView=tian.entrance(b,fixedMeshes,doors,e);
         else if(f.id==='plan-3')chemistryEntry=buildChemistryEntrance(b,fixedMeshes,cameraSolids,doors,e);
         else if(f.id==='plan-80')entrance=buildHospitalEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e.x,e.z,e.angle);
+        else if(f.id==='plan-44')southeastEntry=buildSoutheastEntrance(b,fixedMeshes,cameraSolids,doors,e);
         else if(f.id==='plan-118'){
           taoyuanThreeEntry=buildTaoyuanThreeEntrance(b,fixedMeshes,cameraSolids,plaques,doors,e,f.tags.name);windows+=taoyuanThreeEntry.panes.length;
           frontView=[e.x+taoyuanThreeEntry.entryU*Math.cos(e.angle),e.z-taoyuanThreeEntry.entryU*Math.sin(e.angle),e.nx,e.nz];
@@ -394,6 +398,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.chemistryEntrance=chemistryEntry;
   group.userData.taoyuanThreeEntrance=taoyuanThreeEntry;
   group.userData.nanyuanEightEntrance=nanyuanEightEntry;
+  group.userData.southeastEntrance=southeastEntry;
   group.userData.chemistryFacade=chemistry.metadata;
   if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;group.userData.yifuTower=yifuUpper;}
   for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
