@@ -282,7 +282,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   let sectors = 1;
 
   async function expand(afterSector: () => void = () => {}) {
-    // Yield between optional sectors so input and the first rendered frame can run.
+    // Yield between sectors so the welcome screen can paint loading progress.
     await new Promise<void>(resolve => setTimeout(resolve, 50));
     const moreSolids: Solid[] = [];
     root.add(ordinary.group);cameraSolids.push(...ordinary.cameraSolids);

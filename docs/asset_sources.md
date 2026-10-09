@@ -688,3 +688,8 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 沿用已有CC0 MakeHuman头部、手部与关节数据及项目原创服装/绑定。按用户“人物精修一点吧，对标大型游戏里的角色的精致度，至少立体一点，帅一点”执行首轮：用头部表面射线贴合发底和眉毛，减细并缩短发束、保留鼻部轮廓、补上下眼睑、填合衣袖肩部；女发束根部嵌入新的发底。正常UI动作观察发现旧裤腰随大腿摆动并穿过T恤，增加衣摆和腰部包覆、裤腰骨盆权重与腿部过渡，保留原58骨骼和原动画/碰撞代码。没有新增外部图片、音乐或人物照片。大型游戏级材质与姿态质量尚未达到，不把本轮当人物需求全部完成。
 
 保护本地v0.107/student-{male,female}-before.glb及before PNG。最终男女各107004/121000三角形，GLB分别1002320/1119336字节（相对before均不足2%增量），每人增加一个眼睑材质。几何/索引属性/权重/骨骼一致、裤腰权重与15条正面包覆射线/人、别名资源一致检查通过；实际avatar站走跑坐骑飞六姿态19854个变形顶点采样通过（仅纹理替身，非GPU和校内碰撞测试）；51资源、types/src ESLint/build通过，保留原TEXCOORD和大chunk提示。正常CUA人物预览正侧脸及动作实看，最终console[]。预览加入可见的人物/视角/动作选项，复用实际createAvatar；不通过隐藏调试注入操作浏览器。最终图以male-face-final、male-quarter-final、female-face-final2、walk-coverage-final、run/ride/sit/fly-final为准，早期after和waist-issue-found保留问题过程。发梢、皮肤细节、手部/坐姿自然度及校园整体验收待继续。
+
+
+### v0.108 纪念品方位复核与有效预加载
+
+再次实看用户南大记忆门面图（references/phase33/nju-memory-user.png）和汉口路校园图（references/plan-hankou-crop.png），并在正常CUA中前往店前后转身检查汉口路校门：当前店面在汉口路南侧、正面朝北，邮政左/纪念品右。未复现用户所指反向，不改变建模方向；不能确认用户当时运行的版本。证据及加载测量口径见docs/loading-validation-2026-10-09.md。未新增第三方媒体资产。

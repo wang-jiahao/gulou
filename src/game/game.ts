@@ -13,6 +13,7 @@ import { Basketball } from './basketball.ts';
 import { Music } from '../audio/music.ts';
 import { Ambience } from '../audio/ambience.ts';
 import { Atmosphere } from '../world/atmosphere.ts';
+import { FrameSample } from './frame-sample.ts';
 
 export type Quality = 'high' | 'medium' | 'low';
 export type Mode = 'loading' | 'ready' | 'playing' | 'paused' | 'photo';
@@ -41,6 +42,8 @@ export class Game {
   cpuMs = 0;
   gpuMs: number | null = null;
   readyMs = 0;
+  readonly frameSample = new FrameSample();
+  readonly loadingTimings: string[] = [];
   elapsed = 0;
   onTick: () => void = () => {};
   onNotice: (s: string) => void = () => {};
@@ -76,6 +79,8 @@ export class Game {
     this.renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); this.mode = 'paused'; this.onNotice('图形上下文已中断，请重新加载页面。'); });
   }
   async init(progress: (p: number, label: string) => void) {
+    const started = performance.now();
+    const mark = (label: string) => this.loadingTimings.push(`${label} ${Math.round(performance.now()-started)} ms`);
     progress(.04, '准备行走与碰撞');
     void this.music.load();
     const [hdr,,materials]=await Promise.all([
@@ -89,6 +94,7 @@ export class Game {
     this.windTime=materials.windTime; this.foliageLight=materials.foliageLight;
     progress(.5, '搭建北大楼与树荫步道');
     this.world = await createWorld(this.scene, materials, this.quality);
+    mark('core');
     this.player = new Player(this.scene, this.world.solids, await createAvatar(this.character),this.world.fixedMeshes);
     this.player.avatar.setOutfit(this.outfit);
     this.football = new Football(this.scene, this.player, this.world.pitch); this.football.onGoal = () => this.onNotice('进球！足球即将回到中场。');
@@ -97,21 +103,37 @@ export class Game {
     this.traffic=new StreetTraffic(this.scene,this.player);
     const initialMeshes=this.world.fixedMeshes.length;
     this.shadow = this.createContactShadow(); this.scene.add(this.shadow);
+    // The welcome screen stays up until the real campus work is complete.
+    // Letting the player in sooner used to overlap expansion with their first
+    // frames and could leave newly visible props without their final colliders.
+    progress(.74, '搭建院系楼、宿舍与生活设施');
+    let completedSectors = 0;
+    const solids = await this.world.expand(() => {
+      completedSectors++;
+      progress(completedSectors === 1 ? .82 : .89, completedSectors === 1 ? '准备林荫道与校园设施' : '准备校园碰撞与雨天遮挡');
+    });
+    this.player.addSolids(solids);this.player.addMeshes(this.world.fixedMeshes.slice(initialMeshes));
+    this.cameraRig.prepareObstacles(this.world.cameraSolids);
+    this.atmosphere.setLamps(this.world.lampPositions);
     this.setupShadowMaterials();
-    progress(.83, '准备日光与近景阴影');
+    mark('expansion');
+    await this.atmosphere.buildRainHeights((x,z)=>this.player.groundHeightAt(x,z));
+    mark('rain heights');
+    progress(.94, '准备全校材质与日光阴影');
     this.cameraRig.update(spawn, 1, this.world.cameraSolids, false);
+    // compileAsync visits hidden detail cells too. The following real frame
+    // additionally uploads the opening view's textures/geometry and shadows.
     await this.renderer.compileAsync(this.scene, this.camera);
+    mark('all shaders');
+    progress(.98, '准备第一幅校园画面');
+    const firstFrame = await new Promise<number>(resolve => requestAnimationFrame(resolve));
+    this.last = firstFrame; this.tick(firstFrame);
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+    mark('first frame');
     this.mode = 'ready'; this.readyMs = performance.now(); progress(1, '校园已就绪 · 无需注册');
+    mark('entry enabled');
+    if (import.meta.env.DEV) this.frameSample.start(performance.now());
     this.last = performance.now(); this.renderer.setAnimationLoop(t => this.tick(t));
-    void this.world.expand(()=>this.setupShadowMaterials()).then(async solids => {
-      this.player.addSolids(solids);this.player.addMeshes(this.world.fixedMeshes.slice(initialMeshes));
-      this.atmosphere.setLamps(this.world.lampPositions);this.atmosphere.register();
-      // Expanded facades have materials that the core-only warm-up never saw.
-      // Prepare their shader variants (including currently hidden detail cells)
-      // before the first flight crosses into a new part of campus.
-      await this.renderer.compileAsync(this.scene,this.camera);
-      void this.atmosphere.buildRainHeights((x,z)=>this.player.groundHeightAt(x,z));
-    }).catch(e => { console.error(e); this.onNotice('部分远景未加载，核心区域仍可游玩。'); });
   }
   private setupShadowMaterials() {
     this.atmosphere?.register();
@@ -206,7 +228,9 @@ export class Game {
     if (ext && this.gpuQueries.length < 4 && this.elapsed > this.updateStatsAt) { query = gl.createQuery(); if (query) gl.beginQuery(ext.TIME_ELAPSED_EXT, query); this.updateStatsAt = this.elapsed + .5; }
     this.renderer.render(this.scene, this.camera);
     if (query && ext) { gl.endQuery(ext.TIME_ELAPSED_EXT); this.gpuQueries.push(query); }
-    this.cpuMs = T.MathUtils.lerp(this.cpuMs, performance.now() - start, .04);
+    const cpuMs = performance.now() - start;
+    this.cpuMs = T.MathUtils.lerp(this.cpuMs, cpuMs, .04);
+    if (import.meta.env.DEV) this.frameSample.add(time, rawDt*1000, cpuMs);
     if (this.elapsed > this.saveAt && this.mode === 'playing' && !this.player.noclip) { this.saveAt = this.elapsed + 5; try { localStorage.setItem('gulou-position-v1', JSON.stringify(this.player.position.toArray())); } catch { /* Storage may be disabled. */ } }
     this.onTick();
   }

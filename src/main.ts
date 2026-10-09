@@ -227,8 +227,9 @@ async function boot() {
     el('flight-label').textContent=game.player.flying?'降落 F':'起飞 F';el('flight-hud').hidden=!game.player.flying;el('flight-state').textContent=game.player.flightState==='launching'?'正在起飞':game.player.flightState==='landing'?'正在降落':'滑翔中';el('flight-altitude').textContent=`${Math.round(pos.y)} m`;
     el('boundary-hint').hidden=!(pos.x<bounds.minX+12||pos.x>bounds.maxX-12||pos.z<bounds.minZ+12||pos.z>bounds.maxZ-12);
     el('compass-arrow').style.transform = `rotate(${-game.cameraRig.yaw * 180 / Math.PI - 8.2}deg)`;
-    if (!el('debug').hidden) { const s = game.stats(); el('debug-stats').textContent = `FPS             ${s.fps}\nFrame           ${s.frameMs} ms\nCPU submission  ${s.cpuMs} ms\nGPU             ${s.gpuMs ?? 'unavailable'} ms\nTriangles       ${s.triangles.toLocaleString()}\nDraw calls      ${s.drawCalls}\nTextures        ${s.textures}\nPosition        ${s.position.map(n => n.toFixed(1)).join(', ')}\nLoaded sectors  ${s.sectors}/3\nQuality         ${s.quality}\nReady           ${s.readyMs} ms`; }
+    if (!el('debug').hidden) { const s = game.stats(); el('debug-stats').textContent = `FPS             ${s.fps}\nFrame           ${s.frameMs} ms\nCPU submission  ${s.cpuMs} ms\nGPU             ${s.gpuMs ?? 'unavailable'} ms\nTriangles       ${s.triangles.toLocaleString()}\nDraw calls      ${s.drawCalls}\nTextures        ${s.textures}\nPosition        ${s.position.map(n => n.toFixed(1)).join(', ')}\nLoaded sectors  ${s.sectors}/3\nQuality         ${s.quality}\nReady           ${s.readyMs} ms\nLoading stages\n${game.loadingTimings.join("\n")}\nFrame sample\n${game.frameSample.summary()}`; }
   };
+  el('debug-sample').onclick = () => game.frameSample.start(performance.now());
   el('debug-reset').onclick = () => { game.basketball.cancel(); game.player.reset(); game.cameraRig.reset(); };
   el('debug-noclip').onclick = () => { game.player.noclip = !game.player.noclip; el('debug-noclip').textContent = `Noclip: ${game.player.noclip ? 'on' : 'off'}`; };
   el('debug-front').onclick = () => { game.basketball.cancel(); game.player.teleport(0, .03, 24); };

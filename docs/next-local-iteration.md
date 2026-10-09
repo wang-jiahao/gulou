@@ -1,9 +1,11 @@
-# 最新断点：v0.107 人物第一轮已验证
+# 最新断点：v0.108 已验证，继续渲染性能与生活设施
 
-v0.106宿舍已本地提交ca29c14，不重复研究/验收；v0.107本地提交以git log -1为准。头发贴头/眉毛贴脸/眼睑/鼻部轮廓、肩部接缝、上衣包覆与裤腰骨盆权重完成。男女58骨骼不变；几何/权重/裤腰30条包覆射线、别名、真实avatar六姿态19854变形采样、51资源、types/src ESLint/build均过。正常CUA预览脸部/走跑坐骑飞实看，console[]，tab2已关闭。近景和动作最终图docs/validation/v0.107；早期after图/waist-issue-found留作问题过程。仍未达到大型游戏级，发梢、皮肤材质、手部/坐姿自然度和校园实景整体验收继续做，不能把人物待办删掉。
+分支main；v0.107=8240731、v0.106=ca29c14；v0.108本地提交见git log -1。必要准备移到入场前：完整expand/碰撞/相机边界、雨天高度、全场compile和起点实际首帧。没有固定延迟/降低画质。保留10秒FrameSample调试按钮和loading阶段记录，按反引号显示；采样从开放入场时自动开始，手动按钮可重采样。正式性能对照在docs/loading-validation-2026-10-09.md，不重测已过加载案例。原新页最长333ms，候选新页3次68/67/34ms，开放入场约+0.8–1.5秒。连续热更新页383ms异常保留；持续FPS、全校路线仍未通过，不能宣称卡顿全解决。
 
-日志/tmp/gulou-v107-{male-coverage,female-coverage,integrity-coverage,poses-final,assets-final,types,lint,build}.log。先前male.log为生成脚本一元负号/指数语法错误，已修复并重建，不是游戏运行错误。README/来源/metrics已刷新，赞赏保持绝对末尾。before v105/taoyuan、v106/dormitory、v107/student-{male,female}-before.glb与before PNG保护，禁止--before或覆盖。新character-integrity-check.mjs/character-pose-check.mjs可本地复验；前者依赖保护的v107基线，后者只纹理替身，非GPU或校内碰撞测试。四个旧未跟踪脚本astronomy、dormitory-family、promotion-capture、promotion-shots仍不提交。原图/个人音乐不提交不分发。
+已过：真实Game.init顺序及expand/rain/shader/首帧4失败路径（脚本替身GPU）、types、src ESLint、Vite build。正常CUA步行z68→66.2/南园店前传送/阵雨实看，恢复随机天气，console[]，tab7已关闭。所有本轮QA页已关。日志/tmp/gulou-v108/{readiness-final,types-final,lint-final,vite-final}.log。build-final.log是npm命令不存在，非有效构建；直接Node的vite-final才是通过。package-lock不存在的编辑尝试仅工具错误，实际package.json版本已更新。shader既有大chunk提示保留。
 
-下一步优先：纪念品面向汉口路门的正常UI诊断（最新覆盖旧广州路说法），实测卡顿/有效预加载，然后人物剩余细节与生活设施。五日29组审计request-audit-2026-10-09.md已整理，不重提历史。邮政左外卖棚/美团柜、独立快递楼/教育超市109、活动中心宽度/一层南青格庐、食堂楼层及四层民族食堂用途、喷泉对面屏幕海报、苏浙捐建牌/教学楼后纪念碑正式名、有来源介绍及全场路线/交互/性能仍未完成；以current-request和审计为准。已有宿舍/院系等版本跳过。宣传片未录；用户授权所有待办和质量验收过关后直接录约60秒本地片，录制能力未验证。
+纪念品方向已正常UI核对：plan76面向北侧汉口路，前往店前转身可见对面偏东汉口门，未复现反向，不盲翻。已看phase33/nju-memory-user和plan-hankou-crop。证据docs/validation/v0.108/memory-{north-front,facing-gate}.png；memory-drag-overlay不是方向证据。楼体/门面模型本轮没改，配套棚与柜仍待补。
 
-恢复：cd '/Users/zackaria/Desktop/gulou campus' && git status --short；Node=/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node。4173 Vite dev session14121先确认复用，不重启；浏览器正常CUA/browser2，无待关闭QA页。严格本地不push/发布/Pages；作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。自动压缩阈值已按用户改240000，不能保证规避413。
+接续优先：持续帧率（中画质起点约2577880tri/475draw/79textures；CPU6–10ms，GPU常18–36ms波动，先测具体瓶颈，不降体验），再邮政左外卖棚/美团柜、独立快递楼/教育超市109、活动中心宽度/一层南青格庐、食堂层标及四层民族食堂来源、喷泉对面屏幕海报、苏浙牌/教学楼后碑正式名/导览、有来源介绍、人物发梢/皮肤/手部/坐姿及真实交互全场验收。五日29组audit已整理，不再翻历史。宿舍家族v106、院系97–105及人物第一轮v107不要重复。用户允许全部待办和质量验收后直接录约60秒本地片，尚未录，能力仍未确认；不得用旧capture脚本绕过浏览器。
+
+恢复：cd '/Users/zackaria/Desktop/gulou campus' && git status --short。Node=/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node。4173 Vite PID5451/session14121确认后复用；browser2，无待关页。保护所有before基线，禁止--before/覆盖；v108原始txt已存忽略的validation目录，旧逻辑与候选备份在/tmp/gulou-v108，勿把旧逻辑覆盖回成品。四旧未跟踪脚本astronomy、dormitory-family、promotion-capture、promotion-shots不提交；原图/个人音乐不分发。仅本地，作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。README赞赏绝对末尾。压缩阈值240000，不能保证规避413。
