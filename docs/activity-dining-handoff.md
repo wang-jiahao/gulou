@@ -21,6 +21,7 @@
 - `references/official-vr/phase10/scene_gl-1-02-{f,b,l,r}.jpg`，实际查看四面；北门与喷泉之间道路两侧有长公告墙。右侧背景灰砖楼，左侧背景有现代窗带；这不能唯一证明2023照片电子屏属于哪一段。
 - `references/official-vr/phase10/scene_gl-1-03-{f,b,l,r}.jpg`、`scene_gl-1-04-{f,b,l,r}.jpg`、`scene_gl-1-05-{f,b,l,r}.jpg`，分组缩成800px联系图实际查看，用于核对松林楼、林间路径与临街公告设施背景。
 - `references/official-vr/phase74/gl110-f-l3.jpg`，实际查看大厅正面：高玻璃、银色柱、石字墙、两侧门与台阶，后方高楼另属于邻栋。
+- `references/official-vr/phase73/gl110-b-l3.jpg`，本次又实际查看2560原图的800px全图和门头局部：从东路向上大台阶到达的平台门头写“第二学生餐厅”，蓝棚则从相邻位置向下通行。现有游戏可见第一层平台不等于餐厅编号中的第一层，不能按可见立面从低到高直接贴1F/2F/3F。
 - `references/official-vr/phase68/gl124-b-l3.jpg`、`references/official-vr/phase10/scene_gl-1-24-f.jpg`、`references/official-vr/phase67/gl-1-24-d-l2.jpg`，实际查看南北向航拍和喷泉俯视。树冠遮挡使电子屏仍不能定位。
 - `references/plan-components-south.png`，实际查看。plan113图中文字包含第一、第二、第三学生餐厅、民族食堂、南园综合楼、南苑餐厅；该图不是楼层图。
 - [南京大学官方VR](https://vr.nju.edu.cn/newUI/#/) 本地原文 `docs/sources/official-newui-gulou.xml`、`official-excerpts.json`：note145名称“鼓楼食堂 ｜ 综合楼”；note146原文“耀良楼坐落于鼓楼校区南园，2003年建成，曾为鼓楼校区大学生活动中心……现为鼓楼综合服务大厅所在地”；note154原文“南园橱窗位于连接南园校门与南园喷泉的道路两侧……”。这些说明未提供楼层号或电子屏具体坐标。
