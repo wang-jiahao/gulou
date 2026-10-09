@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>电子屏参考模型</title>
+<style>body{margin:0;background:#e7ebed;font:14px system-ui}canvas{display:block}aside{position:absolute;top:16px;left:16px;max-width:390px;padding:14px 18px;background:#fffffff0;border-radius:8px;color:#233b43}h1{font-size:17px;margin:0 0 8px}p{margin:6px 0}button{padding:6px 12px;margin:8px 6px 0 0}</style></head>
+<body><aside><h1>南园电子屏 · 独立参考模型</h1><p>位置未核实，尚未放入校园。尺寸与遮挡处近似。</p><p>2023迎新屏文字来自用户照片；海报只保留色块，原文待核。</p><button id="front">正面</button><button id="angle">斜侧</button><button id="back">背面</button></aside>
+<script type="module">
+import * as T from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {createNanyuanElectronicDisplay} from '../src/world/nanyuan-electronic-display.ts';
+const scene=new T.Scene();scene.background=new T.Color('#e7ebed');
+const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);document.body.append(renderer.domElement);
+const camera=new T.PerspectiveCamera(42,innerWidth/innerHeight,.1,150),controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,1.8,0);camera.position.set(0,3.4,22);controls.update();
+scene.add(new T.HemisphereLight(0xffffff,0x526364,2.8));const sun=new T.DirectionalLight(0xffffff,3);sun.position.set(-5,10,12);scene.add(sun);
+const display=createNanyuanElectronicDisplay();scene.add(display.group);
+const ground=new T.Mesh(new T.PlaneGeometry(100,100),new T.MeshStandardMaterial({color:0xadb9b8,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.01;scene.add(ground);
+for(const [id,pos] of [['front',[0,3.4,22]],['angle',[13,5.8,17]],['back',[-8,4,-20]]])document.getElementById(id).onclick=()=>{camera.position.set(...pos);controls.update();};
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera);});
+</script></body></html>
