@@ -2,7 +2,9 @@
 
 main，v0.108=789c47a；v0.109=158a40e。四吉祥物（不是商店）朝北汉口门，北侧地图抵达；欢迎/设置导航仓库→作者→赞赏，三个图标。五日47条真实原文已取回本机忽略docs/validation/v0.109/user-requests-extracted.json；详细104项+16延续项见request-audit-2026-10-09.md。不要重复抓全历史。
 
-人物重做已做五轮原型，但外观未达标，未替换正式模型；生成器/GLB/独立预览保存于忽略docs/validation/v0.110。正式资产与生成器已恢复158a40e。准确缺口、来源和恢复方式见docs/character-redesign-2026-10-09.md；保留UV已完成，下一轮从真实服装拓扑/皮肤与原创脸型继续，不把旧v107或新原型当完成。第五轮已把原型生成器输出改为独立目录，不写public。新增character-source/surface模块及对应check：原始UV岛/接缝法线和男女独立形体/关节标记检查通过。官方成年目标数据已保存本机，源commit及校验和见asset_sources。第五轮男女正面仍未达美术要求；完整动作/GPU未验。tab13已关。恢复检查Node scripts/character-{source,surface}-check.mjs；正常预览URL在重做文档。
+人物重做仍在独立原型，正式v0.109模型/生成器未替换。最新输出docs/validation/v0.110/student-{male,female}-prototype.glb，由同目录build-student-prototype.mjs生成；末次日志build-{male,female}11.log（两者通过）。新增裁边/实体领口工具，形变后统一UV接缝法线，连续发型取代悬空发束。正常UI定位并修正原型手掌低于骨盆误绑腿、外套衣摆误随大腿；最终全身/跑步/坐姿实看，但不代表完整动作验收。脸部材质/眉眼、发缘/男性太阳穴凸起、服装造型仍不达标，人物需求未完成。详见character-redesign-2026-10-09.md，不重做旧导航喷泉检查。
+
+已过surface-check、tailoring-check（男女UV裁切/闭合内外壁/边界环/朝向及形变法线），Node语法；正式游戏资产/生成器与158a40e一致，未重复无关构建。未过整体美术/完整动作/校园/GPU。最新截图run-eleven、sit-eleven；console error[]，tab14关闭。原baseline与第六轮副本保留，不运行--before。恢复检查：Node scripts/character-surface-check.mjs及scripts/character-tailoring-check.mjs；恢复生成：Node docs/validation/v0.110/build-student-prototype.mjs（女生加--female）；预览同目录preview.html。
 
 最新用户：人物不是修复而是重做，太丑；参考大型游戏建模。v107旧人物技术检查不等于造型达标，人物美术标为未完成。优先重设脸型、头身比例、发型与服装轮廓，做好近景/实际游玩距离再验动作；不要只补发梢。生成脚本scripts/build-student.mjs，游戏src/player/avatar.ts，预览scripts/character-preview.html。旧before必须保护。
 

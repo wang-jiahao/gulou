@@ -84,3 +84,23 @@ export function subdivideCharacterSurface(vertices, uvs, faces, include) {
   geometry.setIndex(indices);
   return geometry;
 }
+
+/** Rebuild smooth normals after shaping, without splitting lighting at UV seams.
+ * Intended for an anatomical smooth surface, not hard-edged garment trim.
+ */
+export function recomputeCharacterNormals(geometry) {
+  const p=geometry.getAttribute('position'),sums=new Map(),keys=[];
+  for(let i=0;i<p.count;i++){
+    const key=[p.getX(i),p.getY(i),p.getZ(i)].join(',');keys.push(key);
+    if(!sums.has(key))sums.set(key,new T.Vector3());
+  }
+  const count=geometry.index?.count??p.count,index=i=>geometry.index?geometry.index.getX(i):i;
+  for(let i=0;i<count;i+=3){
+    const ids=[index(i),index(i+1),index(i+2)],points=ids.map(j=>new T.Vector3().fromBufferAttribute(p,j));
+    const area=points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0]));
+    for(const id of ids)sums.get(keys[id]).add(area);
+  }
+  for(const normal of sums.values())normal.normalize();
+  geometry.setAttribute('normal',new T.Float32BufferAttribute(keys.flatMap(key=>sums.get(key).toArray()),3));
+  return geometry;
+}

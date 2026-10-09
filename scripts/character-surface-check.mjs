@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import * as T from 'three';
-import { subdivideCharacterSurface } from './character-surface.mjs';
+import { subdivideCharacterSurface, recomputeCharacterNormals } from './character-surface.mjs';
 
 // Two adjacent quads deliberately use separated texture islands. The shared
 // geometric edge must remain continuous in both its position and lighting.
@@ -19,6 +19,17 @@ for(let i=0;i<pp.count;i++) {
 assert.equal(seam.length,2,'UV discontinuity duplicates the midpoint only as needed');
 assert.deepEqual(seam.map(i=>Number(pt.getX(i).toFixed(5))).sort(),[.4,.6],'both source texture islands retained');
 assert.ok(seam.every(i=>Math.abs(pt.getY(i)-.5)<1e-6),'edge texture interpolation retained');
+
+// Bend the two UV islands into different planes. Recomputing by the split
+// vertex index creates a lighting discontinuity; the geometric seam stays smooth.
+for(let i=0;i<pp.count;i++)pp.setZ(i,Math.max(0,pp.getX(i)-1)*.5);
+patch.computeVertexNormals();
+assert.notEqual(patch.getAttribute('normal').getX(seam[0]),patch.getAttribute('normal').getX(seam[1]));
+const textureBefore=[...pt.array];recomputeCharacterNormals(patch);
+const deformedNormals=patch.getAttribute('normal');
+assert.deepEqual(new T.Vector3().fromBufferAttribute(deformedNormals,seam[0]).toArray(),new T.Vector3().fromBufferAttribute(deformedNormals,seam[1]).toArray());
+assert.deepEqual([...pt.array],textureBefore,'smoothing must not merge texture islands');
+assert.ok(deformedNormals.getX(seam[0])<-.1&&deformedNormals.getZ(seam[0])>.8,'seam interpolates the bent planes');
 
 const data=JSON.parse(await readFile('assets/source-models/character/human-data.json','utf8'));
 const body=subdivideCharacterSurface(data.vertices.map(p=>new T.Vector3(...p)),data.uvs,data.groups.body,p=>p.y>data.joints.neck[1]-.004);
@@ -38,6 +49,6 @@ for(const group of groups.values())if(group.length>1){
 }
 assert.ok(seamCopies>0,'real head includes preserved texture seams');
 assert.ok([...uv.array].every(x=>x>=-1e-6&&x<=1+1e-6),'head uses normalized UVs instead of world-position projection');
-const result={passed:true,headVertices:p.count,triangles:body.index.count/3,uvSeamCopies:seamCopies,scope:'UV islands and subdivision geometry only; no art or GPU acceptance'};
+const result={passed:true,headVertices:p.count,triangles:body.index.count/3,uvSeamCopies:seamCopies,scope:'UV islands, subdivision and deformed seam normals only; no art or GPU acceptance'};
 await writeFile('docs/validation/v0.110/surface-check.json',JSON.stringify(result,null,2)+'\n');
 console.log(JSON.stringify(result));
