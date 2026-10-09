@@ -3,6 +3,7 @@ import type { Game, Quality } from './game/game.ts';
 import type { OutfitStyle } from './player/avatar.ts';
 import {getPlaceStory} from './world/place-stories.ts';
 import { locationName } from './world/place-index.ts';
+import { findNearbyPlace } from './world/nearby-place.ts';
 import { CampusMapView } from './ui/campus-map.ts';
 import { TouchControls, touchDevice } from './ui/touch-controls.ts';
 import { DEFAULT_CYCLE_MINUTES, restoreCycleMinutes, type WeatherMode } from './game/environment-state.ts';
@@ -164,16 +165,12 @@ async function boot() {
   el('football-reset').onclick = () => game.football.resetBall();
   el('football-help').textContent = touchDevice ? '靠近球点踢球 · 快走时可加力' : '靠近球按 E 踢球 · Shift 加力 · R 回球';
   if (!touchDevice) el('football-reset').setAttribute('aria-keyshortcuts', 'R');
-  const nearbyPlace=()=>{
-    const pos=game.player.position;
-    if(Math.hypot(pos.x+246,pos.z-112)<12&&pos.y<5)return{name:'大纛坪',description:''};
-    return game.world.doors.find(d=>Math.hypot(d.x-pos.x,d.z-pos.z)<7&&Math.abs(pos.y-d.y)<5)??campusPlaces.find(p=>Math.hypot(pos.x-p.x,pos.z-p.z)<9);
-  };
+  const nearbyPlace=(mode:'interact'|'about'='about')=>findNearbyPlace(game.player.position,game.world.doors,campusPlaces,mode);
   function showPlaceInfo(name:string,fallback=''){
     const content=getPlaceStory(name,fallback),paragraphs=info.querySelectorAll('p');el('info-title').textContent=name;paragraphs[0].textContent=content.summary;paragraphs[1].textContent=content.detail;
     const link=info.querySelector('a')!;link.href=content.source;link.textContent=content.sourceLabel+' ↗';game.mode='paused';game.player.clearInput();document.exitPointerLock?.();info.showModal();
   }
-  const showNearbyInfo=()=>{const place=nearbyPlace();if(game.mode==='playing'&&place)showPlaceInfo(place.name,'description'in place?place.description:'');};
+  const showNearbyInfo=()=>{const place=nearbyPlace();if(game.mode==='playing'&&place)showPlaceInfo(place.name,place.description??'');};
   el('place-about').onclick=showNearbyInfo;
   window.addEventListener('keydown',e=>{if(e.code==='KeyI'&&!e.repeat)showNearbyInfo();});
   function interact() {
@@ -194,9 +191,8 @@ async function boot() {
     const bench = benchLocations.find(p => p.distanceTo(game.player.position) < 2.4);
     if (bench && game.world.sectors >= 3) { game.player.teleport(bench.x, bench.y+.03, bench.z); game.player.seatHeight=bench.y+.5575;game.player.seated = true; game.player.avatar.root.rotation.y = 0;seatExit={x:bench.x,z:bench.z-1.1};toast(touchDevice?'坐一会儿，点提示即可起身。':'坐一会儿。按 E 起身。'); }
     else {
-      const entry=game.world.doors.find(d=>Math.hypot(d.x-game.player.position.x,d.z-game.player.position.z)<4&&Math.abs(game.player.position.y-d.y)<4);
-      const place=(entry?{name:entry.name,description:'可以透过玻璃门看到门厅与门禁。室内暂未开放，后续将逐步加入进入建筑与室内探索。'}:undefined)??campusPlaces.find(p=>Math.hypot(game.player.position.x-p.x,game.player.position.z-p.z)<5.5);
-      if(place)showPlaceInfo(place.name,place.description);
+      const place=nearbyPlace('interact');
+      if(place)showPlaceInfo(place.name,place.description??'可以透过玻璃门看到门厅与门禁。室内暂未开放，后续将逐步加入进入建筑与室内探索。');
     }
   }
   el('interact').onclick = interact;
@@ -211,7 +207,7 @@ async function boot() {
     el('basketball-shots').textContent = String(basketball.physics.shots);
     if (++tick % 15) return;
     const pos = game.player.position, onBench = game.player.seated || (game.world.sectors >= 3 && (benchLocations.some(p => p.distanceTo(pos) < 2.4)||Boolean(game.world.garden.nearby(pos))));
-    const nearBuilding = game.world.doors.find(d=>Math.hypot(d.x-pos.x,d.z-pos.z)<4&&Math.abs(pos.y-d.y)<4)??campusPlaces.find(p=>Math.hypot(pos.x-p.x,pos.z-p.z)<5.5);
+    const nearBuilding = nearbyPlace('interact');
     const nearBicycle=game.world.bicycles.some(b=>b.group.position.distanceTo(pos)<2.3);
     const nearFlag=game.world.dadaoping.nearby(pos);
     const about=nearbyPlace();el('place-about').hidden=!about||game.mode!=='playing'||game.player.flying;el('place-about').textContent=about?`了解${about.name}${touchDevice?'':' · I'}`:'';
