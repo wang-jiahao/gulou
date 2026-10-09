@@ -42,7 +42,7 @@ for f in source['features']:
     tags={'name':name,'source':'user supplied NJU campus plan','confidence':'map-traced; geographic scale approximate','garden':'south' if f['center'][1]>2580 else 'north','plan_id':str(f['id'])}
     if f['id'] in reviewed_names:tags['labelConfidence']='read from supplied campus plan'
     if kind=='athletics':tags['leisure']='track'
-    else:tags.update({'building':'university','building:levels':str(2 if f['id']==38 else 3 if kind=='historic' else 6 if kind=='dormitory' else 2 if kind=='service' else 4)})
+    else:tags.update({'building':'university','building:levels':str(2 if f['id']==38 else 4 if f['id']==120 else 3 if kind=='historic' else 6 if kind=='dormitory' else 2 if kind=='service' else 4)})
     features.append({'id':hero.get(f['id'],'plan-'+str(f['id'])),'tags':tags,'kind':kind,'points':poly(f['polygon']),'holes':[poly(x) for x in f['holes']],'planCenter':f['center']})
 
 im=cv2.imread(str(root/'references/gulou-campus-plan-user.png'));hsv=cv2.cvtColor(im,cv2.COLOR_BGR2HSV);gray=cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)

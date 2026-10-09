@@ -1,6 +1,6 @@
 # 资产来源与使用范围
 
-当前本地版本 v0.102.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
+当前本地版本 v0.103.0。游戏资产、空间基准和建模参考分别列出，第三方资料保留各自权利。
 
 | 资产 / 资料 | 来源与许可 | 使用方式 |
 | --- | --- | --- |
@@ -653,3 +653,10 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 实际查看本地用户照片 `references/phase96-user/nanyuan-8.png`（654×800缩览）。据可见立面补六层米黄色墙面、棕色窗框、中央宽窗和两侧窄楼梯窗、灰色门楼、略上翘卷檐、铜色“8”、红门、灰色墙基及花池。空调移至窗侧，入口范围避让。照片不提交或分发；楼体轮廓保持原地图配准，隐蔽尺寸及字形近似。照片门扇开启，但模型仍保留原关闭的门与碰撞，不据照片推断室内；不可读竖牌留白。
 
 有限几何、120台空调与玻璃/门楼净空、原门/楼体/入口朝向及119/122对照宿舍不变检查通过；Rapier 16项行走、8项相机检查通过。类型、src ESLint、构建通过，保留既有大chunk提示。最终实看 `docs/validation/v0.102/nanyuan-eight-final.png`，控制台无error。fixture不含全场道具及异步树木，不代表全场GPU性能；`dormitory-before.json`基线保留。
+
+
+## v0.103 外教公寓
+
+实际查看用户照片 `references/phase96-user/international-apartments.png`、校园图与官方 VR `references/official-vr/phase10/scene_gl-1-23-f.jpg`，结合23/24号周围视角定位 plan-120：南芳园南侧、南苑宾馆北侧，东西向、北入口。按可见立面重建四层灰砖主楼、较低西翼、三排上层窗、蓝玻璃与深色竖屏、金色“外教公寓”、双屋檐图案、英文门楣及浅玻璃雨棚/门斗。校准层数从6改4；原轮廓、街道与相邻楼保持。照片不分发，隐蔽立面、绝对尺度与字体为近似。
+
+独立 Rapier 检查通过15项行走与8项相机射线，并覆盖有限几何、主楼/西翼面积、北入口及相邻117/121/123对照楼。类型、src ESLint、构建通过；最终正常UI画面 `docs/validation/v0.103/international-apartments-final.png` 已实看，console无error。局部fixture不含全场道具或异步树木，不代表GPU性能；before与原失败记录保留。

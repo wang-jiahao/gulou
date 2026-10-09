@@ -96,7 +96,7 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
   'plan-116': profile(historic,'gl-1-07','two-storey grey masonry, red windows and central pale portal',{levels:2,roof:'heritage',frame:0x76433d}),
   'plan-118': profile(dorm,'gl-1-24','south-campus residential block with regular grid'),
   'plan-119': profile(dorm,'gl-1-07 / gl-1-24','pale residential row, utility units on facade'),
-  'plan-120': profile(modern,'gl-1-23','foreign-teacher apartments, broad blue glazing, deep canopy and pale frame',{levels:6,style:'glass',ac:true,windowWidth:2.6}),
+  'plan-120': profile(modern,'user international-apartments.png / gl-1-23','four-storey grey-brick apartments south of Nanfangyuan, lower west wing, screened stair glazing and shallow vestibule; dedicated model, hidden faces and heights approximate',{levels:4,wall:0x7a7c78,style:'modern',ac:false,roof:'flat'}),
   'plan-122': profile(dorm,'gl-1-14 / gl-1-24','pale dormitory beside southern grounds'),
   'plan-123': profile(dorm,'user nanyuan-8.png / gl-1-05 / gl-1-12','six-storey cream dormitory, brown frames, grey ground floor, projecting piers and window-side AC; footprint/frontage approximate',{levels:6,wall:0xd8d4b6,frame:0x695748,roof:'flat',groundWall:0x969f9c,groundWindowGuards:true,pilasterWidth:.24,acBesideWindows:true}),
   'plan-124': profile(dorm,'gl-1-14 / gl-1-24','south-east residential block, regular pale grid'),
