@@ -17,11 +17,11 @@ function morph(p){
   const head=y>sourceNeck, upper=y>sourceHip+.15;
   x*=female?(head?.96:upper?.92:1):1;
   if(head){
-    // A softer jaw and less projected nose/lips keep the neutral face youthful.
+    // Keep the sculpted bridge and tip visible in profile while softening the jaw.
     const jaw=Math.exp(-1*((y-1.536)/.04)**2);
     x*=1-jaw*(female?.055:.025);
     const nose=Math.exp(-1*((x/.025)**2)-((y-1.601)/.026)**2)*T.MathUtils.smoothstep(z,.112,.154);
-    z-=nose*(female?.009:.006); x*=1-nose*.12;
+    z-=nose*(female?.003:.0015); x*=1-nose*.08;
     const lips=Math.exp(-1*((x/.032)**2)-((y-1.558)/.012)**2)*T.MathUtils.smoothstep(z,.12,.15);
     z-=lips*.004;
     y+=.0018*Math.exp(-1*((Math.abs(x)-.027)/.010)**2-((y-1.557)/.012)**2)*T.MathUtils.smoothstep(z,.11,.15);
@@ -40,7 +40,7 @@ const bones={},positions={},indices={};
 definitions.forEach(([name,j,p],i)=>{const bone=new T.Bone();bone.name='mixamorig'+name;positions[name]=joint(j);bone.position.copy(positions[name]);if(p){bone.position.sub(positions[p]);bones[p].add(bone);}else root.add(bone);bones[name]=bone;indices[name]=i;});
 root.updateMatrixWorld(true);const skeleton=new T.Skeleton(definitions.map(([name])=>bones[name]));
 const mat=(name,color,roughness=.86)=>new T.MeshStandardMaterial({name,color,roughness});
-const skin=mat('student-skin',0xffffff,.7),shirt=mat('student-cotton',female?0xc4b9a2:0x354c61,.9),pants=mat('student-denim',female?0x63788a:0x536371,.93),hair=mat('student-hair',female?0x30231f:0x242322,.72),shoe=mat('student-shoes',0xd4d6d0),sole=mat('student-sole',0xc6c9c2),bag=mat('student-backpack',female?0x9b7b58:0x555d54);
+const skin=mat('student-skin',0xffffff,.7),shirt=mat('student-cotton',female?0xc4b9a2:0x354c61,.9),pants=mat('student-denim',female?0x63788a:0x536371,.93),hair=mat('student-hair',female?0x30231f:0x242322,.86),shoe=mat('student-shoes',0xd4d6d0),sole=mat('student-sole',0xc6c9c2),bag=mat('student-backpack',female?0x9b7b58:0x555d54);
 
 const hipY=positions.Hips.y,neckY=positions.Neck.y;
 const segments=definitions.filter(d=>d[2]).map(([name,,parent])=>({name:parent,tip:name,a:positions[parent],b:positions[name]}));
@@ -52,7 +52,8 @@ function handWeights(point,side){
 }
 function weights(point,force){
   if(force==='torso'&&point.y<hipY+.10)return [[indices.Hips,1]];
-  if(force&&force!=='torso')return [[indices[force],1]];
+  if(force==='trousers'&&point.y>hipY-.035)return [[indices.Hips,1]];
+  if(force&&force!=='torso'&&force!=='trousers')return [[indices[force],1]];
   const side=point.x>0?'Left':'Right';
   if(point.y>neckY+.015)return [[indices.Head,1]];
   const armDistance=Math.min(...segments.filter(s=>[side+'Arm',side+'ForeArm'].includes(s.name)).map(s=>segmentDistance(point,s)));
@@ -65,7 +66,13 @@ function weights(point,force){
   }
   const candidates=segments.filter(s=>limb==='arm'?[side+'Arm',side+'ForeArm'].includes(s.name):limb==='leg'?[side+'UpLeg',side+'Leg',side+'Foot'].includes(s.name):['Hips','Spine','Spine1','Spine2','Neck'].includes(s.name));
   const nearest=candidates.map(s=>({i:indices[s.name],distance:segmentDistance(point,s)})).sort((a,b)=>a.distance-b.distance).slice(0,2);
-  const a=nearest.map(n=>1/Math.pow(n.distance+.014,3)),sum=a.reduce((x,y)=>x+y,0);return nearest.map((n,i)=>[n.i,a[i]/sum]);
+  const a=nearest.map(n=>1/Math.pow(n.distance+.014,3)),sum=a.reduce((x,y)=>x+y,0);
+  const result=nearest.map((n,i)=>[n.i,a[i]/sum]);
+  if(force==='trousers'&&point.y>hipY-.18){
+    const hipWeight=T.MathUtils.smoothstep(point.y,hipY-.18,hipY-.035);
+    return [[indices.Hips,hipWeight],...result.map(([index,weight])=>[index,weight*(1-hipWeight)])];
+  }
+  return result;
 }
 function makeSkinned(geometry,material,name,force){
   const position=geometry.getAttribute('position'),ids=[],ws=[];
@@ -117,7 +124,9 @@ for(let i=0;i<skinPos.count;i++){
 skinGeometry.setAttribute('color',new T.Float32BufferAttribute(skinColors,3));skin.vertexColors=true;makeSkinned(skinGeometry,skin,'soft face neck and hands');
 // Layered campus clothing: a cream tee/navy overshirt or sage tee/ecru cardigan.
 const fit=female?.94:1;
-const torsoRings=[[hipY+.015,.191*fit,.116,.016],[hipY+.04,.194*fit,.119,.016],[hipY+.14,.186*fit,.121,.014],[hipY+.28,.207*fit,.131,.016],[neckY-.11,.227*fit,.116,.013],[neckY-.064,.208*fit,.094,.013],[neckY-.013,.072,.058,.014]];
+// The trouser helper reaches z=.154 at the hips. Both garment layers must
+// enclose it; the old .116-depth hem cut through the waistband while walking.
+const torsoRings=[[hipY-.055,.209,.155,.016],[hipY-.025,.211,.155,.016],[hipY+.065,.207,.157,.016],[hipY+.14,.191*fit,.135,.014],[hipY+.28,.207*fit,.131,.016],[neckY-.11,.227*fit,.116,.013],[neckY-.064,.208*fit,.094,.013],[neckY-.013,.072,.058,.014]];
 function ringMesh(rings,gap=0){const p=[],u=[],idx=[],n=64;for(let r=0;r<rings.length;r++){const[y,rx,rz,z]=rings[r];for(let i=0;i<=n;i++){const a=Math.PI/2+gap+i/n*(Math.PI*2-gap*2),fold=1+Math.sin(a*7+y*19)*.006;p.push(Math.cos(a)*rx*fold,y,z+Math.sin(a)*rz*fold);u.push(i/n,r/(rings.length-1));if(r<rings.length-1&&i<n){const k=r*(n+1)+i;idx.push(k,k+n+1,k+1,k+1,k+n+1,k+n+2);}}}const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setAttribute('uv',new T.Float32BufferAttribute(u,2));g.setIndex(idx);g.computeVertexNormals();return g;}
 const tee=mat('student-tee',female?0x879b8e:0xd5d2c5,.94),trim=mat('jacket-trim',female?0xafa38d:0x304251,.92);
 makeSkinned(ringMesh(torsoRings.map(([y,x,z,c])=>[y+.005,x-.011,z-.011,c])),tee,'cotton crew-neck tee','torso');
@@ -129,7 +138,7 @@ for(const side of ['Left','Right']){
  const end=wrist.clone().addScaledVector(direction,-.025),start=shoulder.clone().add(new T.Vector3(-sign*.07,-.010,0));
  const curve=new T.CatmullRomCurve3([start,start.clone().lerp(elbow,.5),elbow,elbow.clone().lerp(end,.7),end]);
  const g=new T.TubeGeometry(curve,28,1,24,false),p=g.getAttribute('position');
- for(let row=0;row<=28;row++){const t=row/28,c=curve.getPointAt(t),radius=(T.MathUtils.lerp(.078*fit,.04,t)+Math.sin(t*Math.PI)*.003)*Math.max(.001,T.MathUtils.smoothstep(t,0,.06));for(let col=0;col<=24;col++){const i=row*25+col,q=new T.Vector3().fromBufferAttribute(p,i).sub(c).multiplyScalar(radius).add(c);p.setXYZ(i,q.x,q.y,q.z);}}
+ for(let row=0;row<=28;row++){const t=row/28,c=curve.getPointAt(t),radius=(T.MathUtils.lerp(.078*fit,.04,t)+Math.sin(t*Math.PI)*.003)*T.MathUtils.lerp(.78,1,T.MathUtils.smoothstep(t,0,.10));for(let col=0;col<=24;col++){const i=row*25+col,q=new T.Vector3().fromBufferAttribute(p,i).sub(c).multiplyScalar(radius).add(c);p.setXYZ(i,q.x,q.y,q.z);}}
  g.computeVertexNormals();makeSkinned(g,shirt,side+' tailored sleeve');
  const cuff=new T.CylinderGeometry(.041,.043,.033,24,1,true).applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),direction));cuff.translate(...end.clone().addScaledVector(direction,-.012).toArray());makeSkinned(cuff,trim,side+' cuff');
  const gap=female?.43:.34;
@@ -146,23 +155,37 @@ for(let i=0;i<trouserPositions.count;i++){
  const taper=T.MathUtils.clamp((hipY-.13-y)/(hipY-.24),0,1),rx=.085*(1-taper)+.058*taper,rz=.089*(1-taper)+.062*taper,fold=1+Math.sin(y*54+angle*2)*.012;
  const blend=T.MathUtils.smoothstep(hipY-y,.10,.30);trouserPositions.setXYZ(i,T.MathUtils.lerp(trouserPositions.getX(i),center.x+Math.cos(angle)*rx*fold,blend),y,T.MathUtils.lerp(trouserPositions.getZ(i),center.z+Math.sin(angle)*rz*fold,blend));
 }
-trouserGeometry.computeVertexNormals();makeSkinned(trouserGeometry,pants,'tailored trousers');
+trouserGeometry.computeVertexNormals();makeSkinned(trouserGeometry,pants,'tailored trousers','trousers');
 const hairCenter=new T.Vector3(0,1.655,.063);
-const scalpPoint=(theta,phi)=>{const front=Math.max(0,Math.sin(phi)),back=Math.max(0,-Math.sin(phi));return new T.Vector3(Math.sin(theta)*Math.cos(phi)*.094,Math.cos(theta)*.112,Math.sin(theta)*Math.sin(phi)*(.124+back*.005)).add(hairCenter).add(new T.Vector3(0,front*.008*Math.cos(phi),0));};
-const hp=[],hu=[],hi=[];for(let row=0;row<=24;row++)for(let col=0;col<=72;col++){const phi=col/72*Math.PI*2,front=Math.max(0,Math.sin(phi)),back=Math.max(0,-Math.sin(phi));const end=1.98-front*(.58+.21*Math.cos(phi))+back*.18+(female?.12:0)+.04*Math.sin(phi*5);const theta=row/24*end;hp.push(...scalpPoint(theta,phi).toArray());hu.push(col/72,row/24);if(row<24&&col<72){const k=row*73+col;if(row>0)hi.push(k,k+1,k+73);hi.push(k+1,k+74,k+73);}}
+const surface=new T.Mesh(skinGeometry,new T.MeshBasicMaterial({side:T.DoubleSide})),surfaceRay=new T.Raycaster();
+const scalpEnd=phi=>1.88-Math.max(0,Math.sin(phi))*(.55+.15*Math.cos(phi))+Math.max(0,-Math.sin(phi))*.16+(female?.13:0);
+const scalpPoint=(theta,phi)=>{
+ const direction=new T.Vector3(Math.sin(theta)*Math.cos(phi)*.094,Math.cos(theta)*.112,Math.sin(theta)*Math.sin(phi)*.124).normalize();
+ surfaceRay.set(hairCenter.clone().addScaledVector(direction,.4),direction.clone().negate());
+ const hit=surfaceRay.intersectObject(surface,false).find(h=>h.point.y>1.54);
+ const point=hit?hit.point.clone():hairCenter.clone().addScaledVector(direction,.10);
+ const volume=.005+(female?.008:.026)*Math.exp(-1*((theta-.65)/.65)**2)*Math.sin(theta)*Math.max(0,Math.sin(phi));
+ return point.addScaledVector(direction,volume);
+};
+const hp=[],hu=[],hi=[];for(let row=0;row<=24;row++)for(let col=0;col<=72;col++){const phi=col/72*Math.PI*2,end=scalpEnd(phi),theta=row/24*end;hp.push(...scalpPoint(theta,phi).toArray());hu.push(col/72,row/24);if(row<24&&col<72){const k=row*73+col;if(row>0)hi.push(k,k+1,k+73);hi.push(k+1,k+74,k+73);}}
 const scalp=new T.BufferGeometry();scalp.setAttribute('position',new T.Float32BufferAttribute(hp,3));scalp.setAttribute('uv',new T.Float32BufferAttribute(hu,2));scalp.setIndex(hi);scalp.computeVertexNormals();makeSkinned(scalp,hair,'fitted hair foundation','Head');
 function lock(points,width,depth,name){const curve=new T.CatmullRomCurve3(points),g=new T.TubeGeometry(curve,24,1,10,false),p=g.getAttribute('position');for(let r=0;r<=24;r++){const t=r/24,c=curve.getPointAt(t),radius=Math.max(.08,Math.sin(Math.PI*(.15+.82*t)));for(let j=0;j<=10;j++){const i=r*11+j,q=new T.Vector3().fromBufferAttribute(p,i).sub(c);q.multiply(new T.Vector3(width,depth,width)).multiplyScalar(radius).add(c);p.setXYZ(i,q.x,q.y,q.z);}}g.computeVertexNormals();makeSkinned(g,hair,name,'Head');}
 // Fine surface-following locks keep a natural part without detached arches.
 for(let i=0;i<40;i++){
- const phi=i/40*Math.PI*2,front=Math.max(0,Math.sin(phi)),back=Math.max(0,-Math.sin(phi)),end=1.98-front*(.58+.21*Math.cos(phi))+back*.18+(female?.12:0)+.04*Math.sin(phi*5);
- const points=[];for(let j=0;j<7;j++){const t=j/6,theta=.18+t*(end-.2);const p=scalpPoint(theta,phi+.06*Math.sin(t*Math.PI));p.addScaledVector(p.clone().sub(hairCenter).normalize(),.0014);points.push(p);}
- lock(points,.0022,.0016,'fine hair flow');
+ const phi=i/40*Math.PI*2,end=scalpEnd(phi);
+ const points=[];for(let j=0;j<9;j++){const t=j/8,theta=.12+t*(end-.30);const p=scalpPoint(theta,phi+.24*Math.sin(t*Math.PI));p.addScaledVector(p.clone().sub(hairCenter).normalize(),.0005);points.push(p);}
+ lock(points,.00045,.00030,'fine hair flow');
 }
 if(female){
- for(const side of [-1,1])for(let i=0;i<10;i++){const t=i/9;lock([new T.Vector3(side*.05,1.744,.027-t*.09),new T.Vector3(side*.094,1.64,.056-t*.145),new T.Vector3(side*(.098+.012*Math.sin(t*Math.PI)),1.53,.07-t*.16),new T.Vector3(side*.08,1.475+t*.035,.066-t*.13)],.018,.015,'shoulder-length bob');}
+ for(const side of [-1,1])for(let i=0;i<10;i++){
+  const t=i/9,phi=Math.atan2((.027-t*.09-hairCenter.z)/.124,side*.05/.094),start=scalpPoint(.45,phi);
+  start.addScaledVector(start.clone().sub(hairCenter).normalize(),-.012);
+  lock([start,new T.Vector3(side*.094,1.64,.056-t*.145),new T.Vector3(side*(.098+.012*Math.sin(t*Math.PI)),1.53,.07-t*.16),new T.Vector3(side*.08,1.475+t*.035,.066-t*.13)],.018,.015,'shoulder-length bob');
+ }
  // A continuous nape mass fills the space between the individual side locks.
  for(let i=0;i<9;i++){const x=(i-4)*.019;lock([new T.Vector3(x*.7,1.70,-.045),new T.Vector3(x,1.60,-.072),new T.Vector3(x,1.51,-.062),new T.Vector3(x*.84,1.46,-.022)],.021,.019,'bob nape');}
 }
+const eyelid=mat('student-eyelids',female?0xd1a692:0xc59c85,.76);
 for(const side of ['Left','Right']){
   const s=side==='Left'?'l':'r',eye=joint(s+'-eye');
   const white=mat('eye-white',0xd0c7b7,.4),iris=mat('iris',female?0x534137:0x4a4034,.45),pupil=mat('pupil',0x161819,.25);
@@ -170,7 +193,16 @@ for(const side of ['Left','Right']){
   makeSkinned(new T.SphereGeometry(.0054,20,12).scale(1,1,.20).translate(eye.x,eye.y,eye.z+.0116),iris,side+' iris','Head');
   makeSkinned(new T.SphereGeometry(.0026,16,10).scale(1,1,.18).translate(eye.x,eye.y,eye.z+.0126),pupil,side+' pupil','Head');
   makeSkinned(new T.SphereGeometry(.00085,8,6).translate(eye.x-.0015,eye.y+.002,eye.z+.013),mat('eye-catchlight',0xe4ddd1,.1),side+' eye catchlight','Head');
-  const browPoints=[new T.Vector3(eye.x-.016,eye.y+.018,eye.z+.028),new T.Vector3(eye.x-.005,eye.y+.021,eye.z+.032),new T.Vector3(eye.x+.006,eye.y+.020,eye.z+.033),new T.Vector3(eye.x+.015,eye.y+.017,eye.z+.029)];
+  for(const upper of[true,false]){
+    const points=[];
+    for(let i=0;i<=8;i++){
+      const t=i/8,x=(t-.5)*.023,y=Math.sin(t*Math.PI)*(upper?.0048:-.0035);
+      const z=Math.sqrt(Math.max(0,.0118**2-x*x-y*y));points.push(new T.Vector3(eye.x+x,eye.y+y,eye.z+z));
+    }
+    makeSkinned(new T.TubeGeometry(new T.CatmullRomCurve3(points),16,upper?.0011:.0007,6,false),eyelid,side+(upper?' upper eyelid':' lower eyelid'),'Head');
+  }
+  const browPoints=[new T.Vector3(eye.x-.016,eye.y+.016,eye.z+.028),new T.Vector3(eye.x-.005,eye.y+.020,eye.z+.032),new T.Vector3(eye.x+.006,eye.y+.019,eye.z+.033),new T.Vector3(eye.x+.015,eye.y+.015,eye.z+.029)];
+  for(const p of browPoints){surfaceRay.set(new T.Vector3(p.x,p.y,.5),new T.Vector3(0,0,-1));const hit=surfaceRay.intersectObject(surface,false)[0];if(hit)p.z=hit.point.z+.0007;}
   const curve=new T.CatmullRomCurve3(browPoints),bg=new T.TubeGeometry(curve,16,1,8,false),bp=bg.getAttribute('position');for(let r=0;r<=16;r++){const t=r/16,c=curve.getPointAt(t),radius=(female?.00115:.0015)*(.3+.7*Math.sin(Math.PI*t));for(let j=0;j<=8;j++){const i=r*9+j,q=new T.Vector3().fromBufferAttribute(bp,i).sub(c).multiplyScalar(radius).add(c);bp.setXYZ(i,q.x,q.y,q.z);}}bg.computeVertexNormals();makeSkinned(bg,hair,side+' tapered eyebrow','Head');
   const ankle=positions[side+'Foot'];
   const sp=[],su=[],si=[],rings=[[.025,.047,.126,.064],[.04,.055,.145,.062],[.075,.056,.142,.06],[.10,.052,.135,.054],[.128,.043,.098,.025],[.15,.037,.063,-.005]];

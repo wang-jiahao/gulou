@@ -1,9 +1,47 @@
-<!doctype html><html><meta charset="utf-8"><style>body{margin:0;background:#e8e6df}canvas{display:block}</style><script type="module">
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gulou 人物外观检查</title>
+<style>
+body{margin:0;background:#e8e6df;font:14px system-ui;color:#27332e}canvas{display:block}header{position:absolute;top:16px;left:16px;display:flex;gap:12px;flex-wrap:wrap;padding:12px;background:#fffffff0;border-radius:10px}label{display:flex;gap:6px;align-items:center}select,button{font:inherit;padding:6px}output{position:absolute;bottom:16px;left:16px;padding:10px;background:#fffffff0;border-radius:8px;font-size:12px}
+</style>
+<header>
+<label>人物<select id="kind"><option value="male">男生</option><option value="female">女生</option><option value="both">两人</option></select></label>
+<label>视角<select id="view"><option value="portrait">面部正面</option><option value="quarter">面部侧前方</option><option value="profile">面部侧面</option><option value="full">全身正面</option><option value="back">全身背面</option></select></label>
+<label>动作<select id="pose"><option value="idle">站立</option><option value="walk">行走</option><option value="run">跑步</option><option value="sit">坐姿</option><option value="ride">骑车姿势</option><option value="fly">滑翔姿势</option></select></label>
+<button id="freeze">暂停动作</button>
+</header>
+<output id="status">正在加载人物…</output>
+<script type="module">
 import * as T from 'three';
 import {createAvatar} from '/src/player/avatar.ts';
-const scene=new T.Scene();scene.background=new T.Color('#e8e6df');const camera=new T.PerspectiveCamera(38,innerWidth/innerHeight,.03,30);camera.position.set(0,1.1,-3.8);camera.lookAt(0,1.02,0);
-const renderer=new T.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;document.body.appendChild(renderer.domElement);
-scene.add(new T.HemisphereLight(0xf2f1e9,0xaaa699,2));const sun=new T.DirectionalLight(0xfff2df,3);sun.position.set(-2.5,4,-3);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-3;sun.shadow.camera.right=3;sun.shadow.camera.top=4;sun.shadow.camera.bottom=-2;sun.shadow.normalBias=.02;scene.add(sun);
+const scene=new T.Scene();scene.background=new T.Color('#e8e6df');
+const camera=new T.PerspectiveCamera(38,innerWidth/innerHeight,.03,30);
+const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;document.body.appendChild(renderer.domElement);
+scene.add(new T.HemisphereLight(0xf2f1e9,0xaaa699,2));
+const sun=new T.DirectionalLight(0xfff2df,3);sun.position.set(-2.5,4,-3);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-3,right:3,top:4,bottom:-2});sun.shadow.normalBias=.02;scene.add(sun);
 const floor=new T.Mesh(new T.PlaneGeometry(200,200),new T.MeshStandardMaterial({color:0xdedbd2,roughness:1}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
-const male=await createAvatar('male'),female=await createAvatar('female');male.root.position.x=-.5;female.root.position.x=.5;scene.add(male.root,female.root);male.update(.016,0,false);female.update(.016,0,false);window.preview={male,female,camera,scene};renderer.setAnimationLoop(()=>renderer.render(scene,camera));window.ready=true;
-</script></html>
+const male=await createAvatar('male'),female=await createAvatar('female');scene.add(male.root,female.root);
+const kind=document.querySelector('#kind'),view=document.querySelector('#view'),pose=document.querySelector('#pose'),status=document.querySelector('#status');
+let elapsed=0,paused=false;
+function frame(){
+ const both=kind.value==='both',avatar=kind.value==='female'?female:male,h=avatar.height;
+ male.root.visible=both||kind.value==='male';female.root.visible=both||kind.value==='female';male.root.position.x=both?-.5:0;female.root.position.x=both?.5:0;
+ const close=!['full','back'].includes(view.value)&&!both,y=close?h-.135:1.02;
+ const x=view.value==='quarter'?.48:view.value==='profile'?.66:0,z=view.value==='back'?3.5:close?(view.value==='profile'?-.10:view.value==='quarter'?-.65:-.83):-3.8;
+ camera.position.set(x,y,z);camera.lookAt(0,y,0);camera.updateProjectionMatrix();
+}
+kind.onchange=view.onchange=frame;frame();
+document.querySelector('#freeze').onclick=e=>{paused=!paused;e.target.textContent=paused?'继续动作':'暂停动作';};
+let last=performance.now(),ticks=0;
+renderer.setAnimationLoop(now=>{
+ const dt=Math.min((now-last)/1000,.05);last=now;if(!paused)elapsed+=dt;
+ for(const avatar of [male,female])avatar.update(paused?0:dt,pose.value==='walk'?1.3:pose.value==='run'?4.2:0,pose.value==='sit',pose.value==='fly',.55,pose.value==='ride'?elapsed*3:undefined);
+ renderer.render(scene,camera);
+ if(ticks++%30===0)status.textContent=`${kind.options[kind.selectedIndex].text} · ${renderer.info.render.triangles.toLocaleString()} 三角形 · ${renderer.info.render.calls} 绘制调用 · ${renderer.info.memory.textures} 纹理`;
+});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;renderer.setSize(innerWidth,innerHeight);frame();});
+</script>
+</html>
