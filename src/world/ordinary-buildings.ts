@@ -28,6 +28,8 @@ import {buildTangEntrance} from './tang-entrance.ts';
 import {buildNanyuanDining} from './nanyuan-dining.ts';
 import {buildYaoliangHall} from './yaoliang-hall.ts';
 import {buildNjuMemory} from './nju-memory.ts';
+import {buildEducationStore} from './education-store.ts';
+import {buildNanyuanParcel} from './nanyuan-parcel.ts';
 import {buildNanyuanTeaching} from './nanyuan-teaching.ts';
 import {buildWestHeritage} from './west-heritage.ts';
 import {buildNanyuanEightEntrance} from './nanyuan-eight-entrance.ts';
@@ -88,6 +90,8 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(f.id==='plan-128'){records.push(buildRabeHouse(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-77'){records.push(buildZhongshan(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-105'){records.push(buildNanyuanTeaching(f,b,fixedMeshes,cameraSolids,doors));continue;}
+    if(f.id==='plan-109'){records.push(buildEducationStore(f,b,fixedMeshes,cameraSolids,doors));continue;}
+    if(f.id==='plan-100'){records.push(buildNanyuanParcel(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-76'){records.push(buildNjuMemory(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-113'){records.push(buildNanyuanDining(f,b,fixedMeshes,cameraSolids,doors));continue;}
     if(f.id==='plan-114'){records.push(buildYaoliangHall(f,mats,b,fixedMeshes,cameraSolids,doors));continue;}

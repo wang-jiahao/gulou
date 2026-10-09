@@ -101,7 +101,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const map: CampusMap = await mapResponse.json();
   const memorial=map.features.find(f=>f.id==='plan-50');if(memorial){memorial.tags={...memorial.tags,name:'赛珍珠纪念馆','building:levels':'2',source:'NJU Archives 2023-12-24 + user campus plan labelled 赛珍珠楼 + gl-2-05'};}
   const parcel=map.features.find(f=>f.id==='plan-100');if(parcel){
-    parcel.tags={...parcel.tags,old_name:parcel.tags.name,name:'南园快递取件点',source:'User correction and matching screenshot; descriptive label, official service name unverified'};
+    parcel.tags={...parcel.tags,old_name:parcel.tags.name,name:'南园快递取件点','building:levels':'1',source:'User nanyuan-parcel.png exterior (Cainiao signage) and matching east approach screenshot; dimensions/rear approximate'};
   }
   const oldLabs=map.features.findIndex(f=>f.id==='plan-36');if(oldLabs>=0)map.features.splice(oldLabs,1,...splitTeachingFeature(map.features[oldLabs]));
   const southTeaching=map.features.find(f=>f.id==='plan-73');if(southTeaching){

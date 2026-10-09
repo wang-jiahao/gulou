@@ -4,6 +4,7 @@ import {insidePolygon,planShape,type MapFeature} from './campus-map.ts';
 import {splitBuildingRoof} from './building-roof.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
 import type {DoorRecord} from './building-entrances.ts';
+import {buildPostalTakeaway} from './postal-takeaway.ts';
 
 /** Official 2016 opening notice: Hankou Road 9, beside the Nanyuan post office.
  * User and 2020 alumni photographs establish the street-facing shopfront.
@@ -59,5 +60,6 @@ export function buildNjuMemory(f:MapFeature,b:Builder,meshes:CollisionMesh[],cam
  for(const v of[.55,1.60,2.65,3.70])box(0,.041,v,e.len,.006,.015,trim);
  box(shop,.048,.88,3.1,.016,.93,dark);
  const[x,z]=point(shop,.39);doors.push({name:f.tags.name,x,y:0,z,yaw:e.yaw,width:3.15});
- return{id:f.id,name:f.tags.name,source:'user storefront; NJU Logistics 2016-05-19 Hankou Road 9 postal neighbour; NJU Alumni 2020 photograph; dimensions approximate',height:7.54,windows,roof:'low flat coping; concealed roof approximate',dormitory:false,frontage:[e.x,e.z,e.nx,e.nz],storeys:2,streetAccessible:true};
+ const takeaway=buildPostalTakeaway(b,meshes,camera);
+ return{takeaway,id:f.id,name:f.tags.name,source:'user storefront; NJU Logistics 2016-05-19 Hankou Road 9 postal neighbour; NJU Alumni 2020 photograph; dimensions approximate',height:7.54,windows,roof:'low flat coping; concealed roof approximate',dormitory:false,frontage:[e.x,e.z,e.nx,e.nz],storeys:2,streetAccessible:true};
 }
