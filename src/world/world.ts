@@ -29,6 +29,7 @@ import {createYaoliangForecourt,yaoliangForecourtLayout} from './yaoliang-foreco
 import { createSouthRoadDetails } from './south-road-details.ts';
 import { createSouthTreeDetails } from './south-tree-details.ts';
 import { createCampusDirectory } from './campus-directory.ts';
+import {preloadCollegePortraitImages} from './college-portrait-panel.ts';
 import {createPublicStreets} from './public-streets.ts';
 import {createCampusBoundaries} from './campus-boundaries.ts';
 import {createGuangzhouGate} from './guangzhou-gate.ts';
@@ -209,7 +210,16 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const garden = createSonglinGarden(mats); root.add(garden.group); solids.push(...garden.solids); fixedMeshes.push(...garden.fixedMeshes);cameraSolids.push(...garden.group.children);
   const dadaoping=createDadaoping(mats);root.add(dadaoping.group);solids.push(...dadaoping.solids);cameraSolids.push(...dadaoping.group.children);
   const martyrs=createMartyrsMemorial(mats);root.add(martyrs.group);solids.push(...martyrs.solids);fixedMeshes.push(...martyrs.fixedMeshes);cameraSolids.push(...martyrs.cameraSolids);
+  let collegePortraitLoadError:string|null=null;
+  try{await preloadCollegePortraitImages(import.meta.env.BASE_URL);}
+  catch(error){
+    collegePortraitLoadError=error instanceof Error?error.message:String(error);
+    console.warn('书院肖像加载失败，展板保留姓名与生平。',error);
+  }
+  // Only optional image loading falls back. Canvas/layout/rendering failures
+  // still reject world initialization and reach the existing visible error UI.
   const directory = createCampusDirectory(map, mats); root.add(directory.group); solids.push(...directory.solids); cameraSolids.push(...directory.group.children);
+  directory.group.userData.portraitLoad={status:collegePortraitLoadError?'failed':'loaded',error:collegePortraitLoadError};
   const fountain=createNanyuanFountain(mats);root.add(fountain.group);solids.push(...fountain.solids);cameraSolids.push(...fountain.cameraSolids);
   const gateFont = await new FontLoader().loadAsync(`${import.meta.env.BASE_URL}assets/fonts/gate-lettering.typeface.json`);
   const priority = createPriorityDetails(map, mats, gateFont); root.add(priority.group); solids.push(...priority.solids);

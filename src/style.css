@@ -33,7 +33,7 @@
 .project-icon{width:17px;height:17px;flex:none}
 .project-links a:hover,.project-links button:hover{background:#ffffff18;transform:translateY(-2px)}
 .project-links :focus-visible{outline:2px solid currentColor;outline-offset:5px}
-#welcome>.project-links{position:absolute;left:8%;bottom:80px;color:#fff8e8}
+
 #settings>.project-links{margin:22px 0;color:#425640}
 #sponsor{width:490px;max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
 #sponsor .dialog-heading{margin-bottom:18px}
@@ -43,9 +43,9 @@
 .sponsor-caption,.sponsor-note{font-size:12px;line-height:1.7;color:#556451;text-align:center}
 .sponsor-save{display:table;margin:14px auto;text-decoration:none}
 .sponsor-note{margin:16px 0 0}
-@media(max-height:650px){#welcome>.project-links{left:auto;right:4.5%;bottom:68px;max-width:260px;justify-content:flex-end}#sponsor .sponsor-code{width:210px}}
-@media(max-width:520px){#welcome>.project-links{left:8%;right:auto;bottom:80px;max-width:84%;justify-content:flex-start;gap:16px}#sponsor{padding:22px}}
-@media(max-height:480px) and (min-width:521px){#welcome>.project-links{bottom:62px;flex-direction:row;gap:10px}}
+@media(max-height:650px){#sponsor .sponsor-code{width:210px}}
+@media(max-width:520px){#sponsor{padding:22px}}
+
 
 /* Practice controls share a compact corner panel on keyboard and touch. */
 #basketball-hud { position:absolute; top:105px; left:35px; width:min(340px,calc(100vw - 32px)); padding:12px 15px; border:1px solid #ffffff30; border-radius:12px; background:#172b29e8; color:#fff; box-shadow:0 5px 22px #14242128; pointer-events:auto; }
@@ -57,3 +57,25 @@
 #basketball-meter { display:block; height:100%; background:#91bfa8; }
 .basketball-track b { position:absolute; left:69.5%; width:5%; top:0; bottom:0; background:#ffd775; box-shadow:0 0 6px #ffdf98; }
 @media(max-width:600px) { #basketball-hud { top:80px; left:16px; padding:9px 12px; } }
+
+/* Keep entry progress and project links in one flow at every viewport height. */
+#welcome{display:grid;grid-template-rows:auto 1fr auto;padding:34px 4.5% 24px;overflow-y:auto;overscroll-behavior:contain}
+#welcome .masthead{position:static}
+#welcome .welcome-copy{position:static;align-self:center;margin:32px 0 32px 3.85%;max-width:min(540px,84vw)}
+#welcome .project-links{margin-top:24px;color:#fff8e8}
+#welcome .welcome-footer{position:static;gap:24px}
+@media(max-height:650px){#welcome{padding-top:16px;padding-bottom:16px}#welcome .university-emblem{width:34px;height:52px}#welcome .welcome-copy{margin-block:20px}#welcome h1{font-size:42px;margin:14px 0}#welcome .welcome-copy p{margin:10px 0 18px}#welcome .enter{padding:14px 22px}#welcome .project-links{margin-top:20px}#welcome .welcome-footer{font-size:10px}}
+@media(max-height:480px){#welcome h1{font-size:32px;margin:10px 0}#welcome .welcome-copy{margin-block:14px}#welcome .welcome-copy p{font-size:12px;margin:8px 0 14px}}
+
+/* Entry and display controls stay in normal flow, including short phone screens. */
+.entry-actions{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
+.entry-actions .enter{flex:0 1 235px}
+.welcome-screen-toggle{min-height:44px;padding:12px 16px;border:1px solid #ffffff55;border-radius:3px;background:#20382d80;color:#f7f4e9;font-size:12px}
+.welcome-screen-toggle:hover:not(:disabled){background:#20382dcc}
+.welcome-screen-toggle:disabled{cursor:default}
+.screen-status{max-width:390px;margin-top:9px;font-size:10px;line-height:1.6;color:#e5eddbb0}
+.screen-setting>span{min-width:0}.screen-setting small{line-height:1.6}
+.screen-setting button{flex-shrink:0;min-height:44px;white-space:nowrap}
+.screen-setting button:disabled{cursor:default}
+html:fullscreen{width:100%;height:100%}
+html:-webkit-full-screen{width:100%;height:100%}

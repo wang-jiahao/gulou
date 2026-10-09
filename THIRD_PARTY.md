@@ -13,3 +13,7 @@
 See docs/asset_sources.md for the asset inventory and public/credits.html for the in-game credits.
 
 - **Library, history museum and new-teaching sign contours**: reconstructed from NJU archival / official VR photographs for this local campus model. These are approximate derived silhouettes, not original vector calligraphy. Source photos remain excluded; no separate copyright claim or university endorsement is implied.
+
+## 七书院冠名人物肖像
+
+六张384×512 WebP衍生图的逐项出处、裁切与许可说明见 [肖像来源说明](public/assets/portraits/colleges/LICENSES.md)。历史照片保留来源所列PD-China等地域性依据，吴健雄图按CC BY 4.0署名；不将地域性标签等同全球许可。戴安邦目前没有分发肖像，展板明确标识待补。原始下载未纳入游戏资产。

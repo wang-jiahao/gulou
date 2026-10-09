@@ -10,7 +10,7 @@ import { DEFAULT_CYCLE_MINUTES, restoreCycleMinutes, type WeatherMode } from './
 
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let game: Game;
-let uiHidden = false, toastTimer = 0, entered = false, dragging = false, tick = 0;
+let uiHidden = false, toastTimer = 0, entered = false, hasVisited = false, dragging = false, tick = 0;
 const mapDialog = el<HTMLDialogElement>('campus-map');
 const sponsor = el<HTMLDialogElement>('sponsor');
 let sponsorOpener: HTMLElement | null = null;
@@ -32,8 +32,83 @@ const settings = el<HTMLDialogElement>('settings'), info = el<HTMLDialogElement>
 const toast = (message: string) => { el('toast').textContent = message; el('toast').hidden = false; clearTimeout(toastTimer); toastTimer = window.setTimeout(() => { el('toast').hidden = true; }, 3500); };
 const fatal = (e: unknown) => { console.error(e); el('fatal').hidden = false; el('fatal-message').textContent = e instanceof Error ? e.message : '请检查网络或换用支持 WebGL2 的浏览器。'; };
 const saveSettings = () => { try { const a=game.atmosphere?.state;localStorage.setItem('gulou-settings-v1', JSON.stringify({ quality: game.quality, character: game.character, outfit: game.outfit, volume: game.audio.volume, musicVolume: game.music.volume, musicEnabled: game.music.enabled, sensitivity: game.cameraRig.sensitivity,world:a?{hour:a.hour,autoTime:a.autoTime,cycleMinutes:a.cycleMinutes,weatherMode:a.weatherMode}:undefined })); } catch { /* Optional preferences. */ } };
-function lockPointer() { if (touchDevice || !game.renderer.domElement.requestPointerLock) return; const r = game.renderer.domElement.requestPointerLock(); if (r) void r.catch(() => toast('也可以按住鼠标拖动视角，WASD 行走。')); }
-function resume() { sponsor.close(); settings.close(); info.close();worldSettings.close(); mapDialog.close(); game.mode = 'playing'; el('resume').hidden = true; lockPointer(); }
+function lockPointer() { if (touchDevice || !game.renderer.domElement.requestPointerLock) return; const r = game.renderer.domElement.requestPointerLock(); if (r) void r.catch(() => { if(entered)toast('也可以按住鼠标拖动视角，WASD 行走。'); }); }
+function resume() { if(!entered)return; sponsor.close(); settings.close(); info.close();worldSettings.close(); mapDialog.close(); game.mode = 'playing'; el('resume').hidden = true; lockPointer(); }
+function enterCampus() {
+  if(entered || el<HTMLButtonElement>('enter').disabled)return;
+  const continuing=hasVisited;
+  if(!continuing)game.atmosphere.state.resetForEntry();
+  hasVisited=entered=true;uiHidden=false;dragging=false;game.player.clearInput();
+  el('viewport').inert=false;el('welcome').hidden=true;el('hud').hidden=false;
+  if(!continuing)game.music.start();
+  resume();void game.audio.start().catch(() => { if(entered)toast('环境声暂不可用，可继续漫步。'); });
+  toast(continuing?'已回到刚才的位置，继续漫步。':touchDevice?'左手摇杆移动，右手拖动画面。地图里可以传送。':'欢迎回来。F 起飞 · V 切换视角 · M 地图与传送');
+}
+function returnToWelcome() {
+  if(!entered)return;
+  // Mark the visit inactive before closing dialogs so their delayed close
+  // events cannot reveal a resume button over the welcome page.
+  entered=false;game.mode='ready';dragging=false;uiHidden=false;sponsorOpener=null;
+  game.player.clearInput();touchControls?.update(false,false);game.basketball.cancel();
+  document.exitPointerLock?.();
+  for(const dialog of[sponsor,settings,info,worldSettings,mapDialog])dialog.close();
+  for(const id of['hud','resume','photo-panel','debug'])el(id).hidden=true;
+  clearTimeout(toastTimer);el('toast').hidden=true;el('viewport').inert=true;
+  el('enter-label').textContent='继续漫步';el('loading-text').textContent='校园已就绪 · 位置已保留';
+  el('loading-percent').textContent='100%';el('loading-bar').style.width='100%';
+  el('welcome').hidden=false;tick=14;el('enter').focus({preventScroll:true});
+}
+
+type FullscreenDocument = Document & { webkitFullscreenElement?: Element; webkitFullscreenEnabled?: boolean; webkitExitFullscreen?: () => Promise<void> | void };
+type FullscreenRoot = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
+const fullscreenDocument=document as FullscreenDocument,fullscreenRoot=document.documentElement as FullscreenRoot;
+let fullscreenPending=false;
+function currentFullscreen() { return document.fullscreenElement ?? fullscreenDocument.webkitFullscreenElement ?? null; }
+function supportsFullscreen() {
+  return (typeof fullscreenRoot.requestFullscreen==='function'&&document.fullscreenEnabled!==false)
+    ||(typeof fullscreenRoot.webkitRequestFullscreen==='function'&&fullscreenDocument.webkitFullscreenEnabled!==false);
+}
+function syncFullscreen(message='') {
+  const active=Boolean(currentFullscreen()),supported=supportsFullscreen();
+  const note=message||(fullscreenPending?'正在切换屏幕显示…':active?(touchDevice?'已进入全屏，可用按钮退出。':'已进入全屏，可按 Esc 或用按钮退出。'):supported?'可将校园和操作界面一起切换到全屏。':touchDevice?'此浏览器不支持网页全屏（部分手机 Safari 有此限制），可继续在当前窗口游玩。':'当前浏览器或页面不支持网页全屏，可继续在当前窗口游玩。');
+  for(const id of['fullscreen-toggle','welcome-fullscreen']){
+    const button=el<HTMLButtonElement>(id);button.textContent=fullscreenPending?'切换中…':active?'退出全屏':supported?'全屏显示':'全屏不可用';
+    button.disabled=fullscreenPending||(!active&&!supported);button.setAttribute('aria-pressed',String(active));
+  }
+  for(const id of['fullscreen-status','welcome-fullscreen-status'])el(id).textContent=note;
+}
+async function toggleFullscreen() {
+  if(fullscreenPending)return;
+  if(!currentFullscreen()&&!supportsFullscreen()){syncFullscreen();return;}
+  const wasFullscreen=Boolean(currentFullscreen());
+  fullscreenPending=true;syncFullscreen();let message='';
+  try {
+    if(currentFullscreen()){
+      if(document.fullscreenElement&&document.exitFullscreen)await document.exitFullscreen();
+      else if(fullscreenDocument.webkitExitFullscreen)await fullscreenDocument.webkitExitFullscreen();
+      else if(document.exitFullscreen)await document.exitFullscreen();
+      else message='此浏览器无法通过按钮退出，请使用浏览器的退出全屏操作。';
+    }else if(fullscreenRoot.requestFullscreen&&document.fullscreenEnabled!==false)await fullscreenRoot.requestFullscreen();
+    else await fullscreenRoot.webkitRequestFullscreen!();
+    // Some embedded WebKit views expose the API but decline the request
+    // without rejecting it. Report the observed state rather than success.
+    if(!wasFullscreen&&!currentFullscreen()){
+      await new Promise<void>(resolve=>window.setTimeout(resolve,300));
+      if(!currentFullscreen())message='当前浏览器未进入全屏，可在支持网页全屏的浏览器中打开，或继续在当前窗口游玩。';
+    }
+  }catch{message='未能切换全屏。请重试，或继续在当前窗口游玩。';}
+  finally{fullscreenPending=false;syncFullscreen(message);}
+}
+function fullscreenChanged() {
+  syncFullscreen();
+  if(entered&&game.mode==='playing'){
+    game.mode='paused';game.player.clearInput();dragging=false;touchControls?.update(false,false);el('resume').hidden=false;
+  }
+}
+for(const event of['fullscreenchange','webkitfullscreenchange'])document.addEventListener(event,fullscreenChanged);
+for(const event of['fullscreenerror','webkitfullscreenerror'])document.addEventListener(event,()=>{fullscreenPending=false;syncFullscreen('未能切换全屏。请重试，或继续在当前窗口游玩。');});
+for(const id of['fullscreen-toggle','welcome-fullscreen'])el(id).onclick=()=>void toggleFullscreen();
+syncFullscreen();
 function openSettings() { if (!entered) return; game.mode = 'paused'; game.player.clearInput(); document.exitPointerLock?.(); el('photo-panel').hidden = true; el('hud').hidden = uiHidden; settings.showModal(); el('view-toggle').textContent = game.cameraRig.firstPerson ? '第一人称 ⇄' : '第三人称 ⇄'; }
 function togglePhoto() {
   if (!entered || settings.open || info.open||worldSettings.open||mapDialog.open||sponsor.open) return;
@@ -58,25 +133,23 @@ async function boot() {
   await game.init((p, label) => { el('loading-bar').style.width = `${p * 100}%`; el('loading-percent').textContent = `${Math.round(p * 100)}%`; el('loading-text').textContent = label; });
   try{const saved=JSON.parse(localStorage.getItem('gulou-settings-v1')??'{}').world;game.atmosphere.state.cycleMinutes=restoreCycleMinutes(saved?.cycleMinutes);}catch{/* Use defaults. */}
   el<HTMLButtonElement>('enter').disabled = false; el('enter-label').textContent = '进入校园';
-  el('enter').onclick = () => {
-    game.atmosphere.state.resetForEntry();
-    entered = true; game.music.start(); el('welcome').hidden = true; el('hud').hidden = false; game.mode = 'playing'; lockPointer(); void game.audio.start().catch(() => toast('环境声暂不可用，可继续漫步。'));
-    toast(touchDevice ? '左手摇杆移动，右手拖动画面。地图里可以传送。' : '欢迎回来。F 起飞 · V 切换视角 · M 地图与传送');
-  };
+  el('enter').onclick = enterCampus;
   const canvas = game.renderer.domElement;
   touchControls = new TouchControls(game.player, game.cameraRig, canvas);
   el('touch-view').onclick = () => game.cameraRig.toggle();
   el('touch-fly').onclick = () => { if (game.mode === 'playing') game.toggleFlight(); };
   canvas.addEventListener('click', () => { if (entered && game.mode !== 'photo' && !settings.open && !info.open&&!worldSettings.open&&!mapDialog.open&&!sponsor.open) resume(); });
-  canvas.addEventListener('pointerdown', e => { if (e.button === 0 && e.pointerType === 'mouse') dragging = true; });
+  canvas.addEventListener('pointerdown', e => { if (entered && e.button === 0 && e.pointerType === 'mouse') dragging = true; });
   window.addEventListener('pointerup', () => { dragging = false; });
   window.addEventListener('mousemove', e => { if (entered && !settings.open && !info.open&&!worldSettings.open&&!mapDialog.open&&!sponsor.open && (document.pointerLockElement === canvas || dragging)) game.cameraRig.look(e.movementX, e.movementY); });
-  canvas.addEventListener('wheel', e => { if (!game.cameraRig.firstPerson) game.cameraRig.distance = Math.max(1.2, Math.min(8, game.cameraRig.distance + e.deltaY * .003)); }, { passive: true });
-  document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && game.mode === 'playing') { game.mode = 'paused'; game.player.clearInput(); el('resume').hidden = false; } });
-  window.addEventListener('blur', () => { game.player.clearInput(); if (game.mode === 'playing') { game.mode = 'paused'; el('resume').hidden = false; } });
+  canvas.addEventListener('wheel', e => { if (entered && !game.cameraRig.firstPerson) game.cameraRig.distance = Math.max(1.2, Math.min(8, game.cameraRig.distance + e.deltaY * .003)); }, { passive: true });
+  document.addEventListener('pointerlockchange', () => { if (entered && !document.pointerLockElement && game.mode === 'playing') { game.mode = 'paused'; game.player.clearInput(); dragging=false;el('resume').hidden = false; } });
+  const suspendInput=()=>{game.player.clearInput();dragging=false;touchControls?.update(false,false);if(entered&&game.mode==='playing'){game.mode='paused';el('resume').hidden=false;}};
+  window.addEventListener('blur',suspendInput);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)suspendInput();});
   window.addEventListener('keydown', e => {
     if (!entered || (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement)) return;
-    if (e.code === 'Escape') { if (game.mode === 'photo') togglePhoto(); else if (!settings.open && !info.open&&!worldSettings.open&&!mapDialog.open&&!sponsor.open) openSettings(); return; }
+    if (e.code === 'Escape') { if(currentFullscreen())return; if (game.mode === 'photo') togglePhoto(); else if (!settings.open && !info.open&&!worldSettings.open&&!mapDialog.open&&!sponsor.open) openSettings(); return; }
     if (settings.open || info.open||worldSettings.open||mapDialog.open||sponsor.open) return;
     if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
     if(e.shiftKey)game.player.keys.add('ShiftLeft');
@@ -96,21 +169,22 @@ async function boot() {
   window.addEventListener('keyup', e => {game.player.keys.delete(e.code);if(!e.shiftKey){game.player.keys.delete('ShiftLeft');game.player.keys.delete('ShiftRight');}});
   el('resume').onclick = resume; el('settings-open').onclick = openSettings; el('photo-open').onclick = togglePhoto; el('photo-close').onclick = togglePhoto;
   el('settings-resume').onclick = resume;
+  el('return-welcome').onclick = returnToWelcome;
   el('flight-toggle').onclick=()=>{if(game.mode==='paused')resume();if(game.mode==='playing')game.toggleFlight();};
   const syncWorld=()=>{
     const a=game.atmosphere.state;el('time-value').textContent=a.clock;el<HTMLInputElement>('time-slider').value=String(a.hour);el<HTMLInputElement>('auto-time').checked=a.autoTime;el<HTMLSelectElement>('cycle-speed').value=String(a.cycleMinutes);el('weather-value').textContent=a.weatherLabel;
     worldSettings.querySelectorAll<HTMLButtonElement>('[data-weather]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.weather===a.weatherMode)));
   };
   el('world-open').onclick=()=>{game.mode='paused';game.player.clearInput();document.exitPointerLock?.();syncWorld();worldSettings.showModal();};
-  el('world-resume').onclick=resume;worldSettings.addEventListener('close',()=>{if(game.mode==='paused')el('resume').hidden=false;});
+  el('world-resume').onclick=resume;worldSettings.addEventListener('close',()=>{if(entered&&game.mode==='paused')el('resume').hidden=false;});
   el<HTMLInputElement>('time-slider').oninput=e=>{game.setTime(Number((e.target as HTMLInputElement).value));syncWorld();saveSettings();};
   worldSettings.querySelectorAll<HTMLButtonElement>('[data-hour]').forEach(button=>button.onclick=()=>{game.setTime(Number(button.dataset.hour));syncWorld();saveSettings();});
   el<HTMLInputElement>('auto-time').onchange=e=>{game.atmosphere.state.autoTime=(e.target as HTMLInputElement).checked;saveSettings();};
   el<HTMLSelectElement>('cycle-speed').onchange=e=>{game.atmosphere.state.cycleMinutes=Number((e.target as HTMLSelectElement).value);saveSettings();};
   worldSettings.querySelectorAll<HTMLButtonElement>('[data-weather]').forEach(button=>button.onclick=()=>{game.atmosphere.state.setWeather(button.dataset.weather as WeatherMode);syncWorld();saveSettings();});
   el('world-reset').onclick=()=>{const a=game.atmosphere.state;a.cycleMinutes=DEFAULT_CYCLE_MINUTES;a.resetForEntry();syncWorld();saveSettings();};
-  settings.addEventListener('close', () => { if (game.mode === 'paused') { el('resume').hidden = false; } });
-  info.addEventListener('close', () => { el('resume').hidden = false; });
+  settings.addEventListener('close', () => { if (entered && game.mode === 'paused') { el('resume').hidden = false; } });
+  info.addEventListener('close', () => { if(entered&&game.mode==='paused')el('resume').hidden = false; });
   el('reset').onclick = () => { game.basketball.cancel(); game.player.reset(); game.cameraRig.reset(); toast('已回到北大楼前。'); };
   el('view-toggle').onclick = () => { game.cameraRig.toggle(); el('view-toggle').textContent = game.cameraRig.firstPerson ? '第一人称 ⇄' : '第三人称 ⇄'; };
   el<HTMLSelectElement>('character-style').onchange = async e => {
@@ -127,7 +201,7 @@ async function boot() {
   mapView = new CampusMapView(el<HTMLCanvasElement>('map-canvas'), game.world.map, el('map-selection'));
   mapView.onClear = () => { selectedMapPoint = null; el<HTMLButtonElement>('map-teleport').disabled = true; };
   el('map-open').onclick = () => { game.mode = 'paused'; game.player.clearInput(); document.exitPointerLock?.(); mapDialog.showModal(); mapView.update(game.player.position.x,game.player.position.z,game.cameraRig.yaw); };
-  el('map-resume').onclick = resume; mapDialog.addEventListener('close', () => { if (game.mode === 'paused') el('resume').hidden = false; });
+  el('map-resume').onclick = resume; mapDialog.addEventListener('close', () => { if (entered && game.mode === 'paused') el('resume').hidden = false; });
   mapDialog.querySelectorAll<HTMLButtonElement>('[data-map-region]').forEach(button => button.onclick = () => { mapView.setRegion(button.dataset.mapRegion!); mapView.update(game.player.position.x,game.player.position.z,game.cameraRig.yaw); mapDialog.querySelectorAll('[data-map-region]').forEach(b => b.setAttribute('aria-pressed', String(b === button))); });
   const syncMusic = () => {
     const select = el<HTMLSelectElement>('music-track'); select.replaceChildren();
@@ -145,6 +219,15 @@ async function boot() {
   el<HTMLInputElement>('music-files').onchange = e => game.music.import(Array.from((e.target as HTMLInputElement).files ?? []));
   const { benchLocations,campusPlaces,bounds,travelPlaces } = await import('./world/world.ts');
   let seatExit: {x:number;z:number}|null=null;
+  game.onRespawn = () => {
+    seatExit = null; dragging = false;
+    touchControls?.update(false, false);
+    el('interact').hidden = true; el('place-about').hidden = true;
+    el('basketball-charge').hidden = true;
+    // Refresh all location/action labels on this frame instead of retaining
+    // the old ledge's interaction prompt for the normal fifteen-frame interval.
+    tick = 14;
+  };
   const destinations=el<HTMLSelectElement>('travel-place');
   const search=document.createElement('input');search.type='search';search.placeholder='搜索建筑、宿舍或地点';search.setAttribute('aria-label','搜索校园地点');search.id='place-search';destinations.before(search);
   const destinationAliases:Record<string,string[]>= {'校园纪念品商店':['南大记忆']};
@@ -219,7 +302,7 @@ async function boot() {
     el('location-name').textContent = locationName(game.world.map,pos.x,pos.z,game.player.flying);
     el('football-hud').hidden = Boolean(game.player.riding) || basketball.nearby || !game.football.nearby || game.mode !== 'playing'; el('football-score').textContent = String(game.football.goals);
     if (mapDialog.open) mapView.update(pos.x, pos.z, game.cameraRig.yaw);
-    const a=game.atmosphere.state;el('clock-chip').textContent=`${a.clock} · ${a.weatherLabel}`;el('welcome-atmosphere').textContent=`北大楼 · ${a.clock} · ${a.weatherLabel}`;
+    const a=game.atmosphere.state;el('clock-chip').textContent=`${a.clock} · ${a.weatherLabel}`;el('welcome-atmosphere').textContent=`${hasVisited?el('location-name').textContent:'北大楼'} · ${a.clock} · ${a.weatherLabel}`;
     if(worldSettings.open)el('weather-value').textContent=a.weatherLabel;
     el('flight-label').textContent=game.player.flying?'降落 F':'起飞 F';el('flight-hud').hidden=!game.player.flying;el('flight-state').textContent=game.player.flightState==='launching'?'正在起飞':game.player.flightState==='landing'?'正在降落':'滑翔中';el('flight-altitude').textContent=`${Math.round(pos.y)} m`;
     el('boundary-hint').hidden=!(pos.x<bounds.minX+12||pos.x>bounds.maxX-12||pos.z<bounds.minZ+12||pos.z>bounds.maxZ-12);

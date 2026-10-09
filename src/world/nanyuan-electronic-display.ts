@@ -1,10 +1,13 @@
 import * as T from 'three';
 import {Builder} from './geometry.ts';
 
-/** Asset study from the user's south-electronic-display-user.png, 2023 welcome
- * screen. No campus position is inferred from the tightly cropped photograph.
- * Dimensions, obscured ends and poster composition remain approximate.
- * Deliberately not registered in world.ts until its street frontage is located. */
+/** Geometry from the user's south-electronic-display-user.png, 2023 welcome
+ * screen; displayed wording updated at the user's request for the 2026 intake.
+ * The later north-gate screenshot locates its wall at the property
+ * centre frontage; dimensions, obscured ends and poster composition remain
+ * approximate. Calling without a placement still returns the local study. */
+// Original independent-study dimensions, reused unchanged when placed. The
+// photograph supplies aspect/proportion, not a surveyed 14.4m physical width.
 export const electronicDisplayStudy = {
   width: 14.4,
   height: 3.55,
@@ -15,7 +18,7 @@ export const electronicDisplayStudy = {
   posterY: .78,
   posterHeight: 1.02,
   location: 'unverified',
-  welcomeText: '热烈欢迎南京大学2023级新生',
+  welcomeText: '欢迎2026级新生',
 } as const;
 
 // Observed portrait sheets alternate light, red, cyan, dark and blue layouts.
@@ -68,11 +71,13 @@ function artwork(kind:'screen'|'posters') {
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
   texture.anisotropy=4;
   return kind==='screen'
-    ?new T.MeshBasicMaterial({name:'electronic-display-welcome-2023',map:texture,toneMapped:false})
+    ?new T.MeshBasicMaterial({name:'electronic-display-welcome-2026',map:texture,toneMapped:false})
     :new T.MeshStandardMaterial({name:'electronic-display-poster-colour-study',map:texture,roughness:.92});
 }
 
-export function createNanyuanElectronicDisplay(){
+export type ElectronicDisplayPlacement={x:number;z:number;angle:number};
+
+export function createNanyuanElectronicDisplay(placement?:ElectronicDisplayPlacement){
   const b=new Builder(),p=electronicDisplayStudy;
   const metal=new T.MeshStandardMaterial({name:'electronic-display-dark-frame',color:0x3a4143,roughness:.64,metalness:.34});
   const trim=new T.MeshStandardMaterial({name:'electronic-display-silver-trim',color:0x8a9292,roughness:.47,metalness:.58});
@@ -89,12 +94,23 @@ export function createNanyuanElectronicDisplay(){
   b.box(p.width,.06,.09,0,.22,.28,trim);
   b.add(new T.PlaneGeometry(p.screenWidth,p.screenHeight),artwork('screen'),0,p.screenY,.296);
   b.add(new T.PlaneGeometry(p.screenWidth,p.posterHeight),artwork('posters'),0,p.posterY,.297);
-  const group=b.finish('Nanyuan electronic display — unplaced reference study');
+  const group=b.finish(placement?'Nanyuan property frontage electronic display':'Nanyuan electronic display — unplaced reference study');
+  // Bake world placement into each direct mesh child: world.ts uses a
+  // nonrecursive camera raycast, and physics consumes world-space solids.
+  if(placement){
+    const {x,z,angle}=placement,cos=Math.cos(angle),sin=Math.sin(angle);
+    const transform=new T.Matrix4().compose(new T.Vector3(x,0,z),new T.Quaternion().setFromEuler(new T.Euler(0,angle,0)),new T.Vector3(1,1,1));
+    for(const child of group.children){const mesh=child as T.Mesh;mesh.geometry.applyMatrix4(transform);mesh.geometry.computeBoundingSphere();}
+    for(const solid of b.solids){const localX=solid.x,localZ=solid.z;solid.x=x+localX*cos+localZ*sin;solid.z=z-localX*sin+localZ*cos;solid.angle=(solid.angle??0)+angle;}
+  }
   group.userData={
     source:'User south-electronic-display-user.png; image kept local',
-    placement:'unverified; not in the campus world',dimensions:'approximate',
+    placement:placement?'property centre south frontage; fitted from user north-gate screenshot':'unverified; not in the campus world',
+    ...(placement?{transform:placement}:{}),dimensions:'approximate',
     posterCount:posterPalette.length,posterContent:'colour/layout study; unreadable text omitted',
     screenText:electronicDisplayStudy.welcomeText,referenceYear:2023,
+    referenceScreenText:'热烈欢迎南京大学2023级新生',
+    screenContent:'2026 welcome wording supplied by the user; reference photo geometry retained',
   };
   return{group,solids:b.solids,cameraSolids:group.children,layout:p};
 }

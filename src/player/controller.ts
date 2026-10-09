@@ -8,6 +8,14 @@ import { createGlider } from './glider.ts';
 import {terrainHeight} from '../world/courtyard-terrain.ts';
 import type {CampusBicycle} from '../world/bicycle.ts';
 
+// About three storeys in this metre-scaled game, not a medical injury boundary.
+export const FATAL_FALL_HEIGHT = 10;
+export type FallRespawnEvent = {
+  reason: 'fall'; count: number; fallHeight: number;
+  impact: { x: number; y: number; z: number };
+  spawn: { x: number; y: number; z: number };
+};
+
 export class Player {
   avatar: Awaited<ReturnType<typeof createAvatar>>;
   readonly physics = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
@@ -23,6 +31,10 @@ export class Player {
   requestJump(){if(!this.riding&&!this.flying&&!this.seated)this.jumpRequest=.12;}
   velocityY = 0;
   speed = 0;
+  respawnCount = 0;
+  lastRespawn: FallRespawnEvent | null = null;
+  onRespawn: (event: FallRespawnEvent) => void = () => {};
+  private fallPeak: number | null = null;
   riding:CampusBicycle|null=null;
   rideYaw=0;
   rideSpeed=0;
@@ -138,18 +150,24 @@ export class Player {
     if(this.riding)return false;
     const overhead=this.physics.castRay(new RAPIER.Ray({x:this.position.x,y:this.position.y+1.85,z:this.position.z},{x:0,y:1,z:0}),30,true,undefined,undefined,this.collider,this.body);
     if(overhead)return false;
-    this.seated=false;this.flightState='launching';this.launchTime=0;this.launchTarget=Math.min(this.position.y+26,maxFlightAltitude-2);this.flightVelocity.set(0,0,0);this.motor.disableAutostep();this.motor.disableSnapToGround();this.glider.visible=true;return true;
+    this.fallPeak=null;this.seated=false;this.flightState='launching';this.launchTime=0;this.launchTarget=Math.min(this.position.y+26,maxFlightAltitude-2);this.flightVelocity.set(0,0,0);this.motor.disableAutostep();this.motor.disableSnapToGround();this.glider.visible=true;return true;
   }
   land(){if(this.flying)this.flightState='landing';}
-  private finishFlight(){this.flightState='walking';this.flightVelocity.set(0,0,0);this.velocityY=0;this.motor.enableAutostep(.3,.2,false);this.motor.enableSnapToGround(.4);this.glider.visible=false;this.avatar.root.rotation.z=0;}
+  private finishFlight(){this.fallPeak=null;this.flightState='walking';this.flightVelocity.set(0,0,0);this.velocityY=0;this.motor.enableAutostep(.3,.2,false);this.motor.enableSnapToGround(.4);this.glider.visible=false;this.avatar.root.rotation.z=0;}
   reset() { this.parkBicycle();this.finishFlight();this.teleport(spawn.x, spawn.y, spawn.z); this.seated = false; this.clearInput(); this.avatar.root.rotation.y = 0; }
+  private respawnAfterFall(fallHeight:number){
+    const impact={x:this.position.x,y:this.position.y,z:this.position.z};
+    this.reset();this.accumulated=0;this.speed=0;this.rideCameraTurn=0;this.rideSteering=0;this.pedalPhase=0;this.direction.set(0,0,0);
+    const event:FallRespawnEvent={reason:'fall',count:++this.respawnCount,fallHeight,impact,spawn:{x:this.position.x,y:this.position.y,z:this.position.z}};
+    this.lastRespawn=event;this.onRespawn(event);
+  }
   teleport(x: number, y: number, z: number) {
     this.placeOnSupport(x,Math.max(.03,terrainHeight(x,z)+.035,y),z);
   }
   // Travel and mount/dismount already verify support and clearance. Preserve their actual
   // floor elevation, including lower landings, without changing teleport rules.
   private placeOnSupport(x:number,y:number,z:number){
-    this.grounded=false;this.jumpRequest=0;
+    this.fallPeak=null;this.grounded=false;this.jumpRequest=0;
     this.position.set(T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), y, T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1));
     this.body.setTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }, true);
     this.body.setNextKinematicTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }); this.velocityY = 0; this.previous.copy(this.position); this.avatar.root.position.copy(this.position);
@@ -192,6 +210,9 @@ export class Player {
     this.accumulated = Math.min(this.accumulated + dt, .1); this.previous.copy(this.position);
     while (this.accumulated >= 1 / 60) {
       const step = 1 / 60; this.accumulated -= step;
+      // Capture before collision handling: a controlled touchdown can call finishFlight.
+      const trackFall=active&&!this.flying&&!this.noclip&&!this.seated,startHeight=this.position.y;
+      if(this.flying||this.noclip||this.seated)this.fallPeak=null;
       if(active){
         if(this.jumpRequest>0&&this.grounded&&!this.riding&&!this.flying&&!this.seated){this.velocityY=4.8;this.grounded=false;this.jumpRequest=0;}
         this.jumpRequest=Math.max(0,this.jumpRequest-step);
@@ -207,6 +228,26 @@ export class Player {
       this.body.setNextKinematicTranslation(next); this.physics.step();
       const p = this.body.translation(); this.position.set(p.x, p.y - .86, p.z);
       if (this.position.y < -3 || !Number.isFinite(this.position.y)) this.reset();
+      else if(trackFall){
+        // Include both endpoints of every physics substep, even on the first step
+        // off a ledge. Grounded stairs reset the peak; pausing never erases a fall.
+        this.fallPeak=Math.max(this.fallPeak??startHeight,startHeight,this.position.y);
+        if(this.grounded&&movement.y<=0){
+          let landingHeight=this.position.y;
+          // Fast contacts can report grounded a few centimetres before the
+          // capsule settles. Only near a fatal drop, resolve the real support
+          // locally instead of adding a raycast to ordinary walking/stairs.
+          if(this.fallPeak-landingHeight>=FATAL_FALL_HEIGHT-.5){
+            const origin={x:this.position.x,y:landingHeight+.1,z:this.position.z};
+            const support=this.physics.castRayAndGetNormal(new RAPIER.Ray(origin,{x:0,y:-1,z:0}),.6,true,undefined,undefined,this.collider,this.body);
+            if(support&&support.normal.y>.65)landingHeight=origin.y-support.timeOfImpact;
+          }
+          const fallHeight=this.fallPeak-landingHeight;this.fallPeak=null;
+          // Rapier's float contact coordinates can undershoot an exact metre
+          // boundary by sub-millimetres; this does not change the 10m rule.
+          if(fallHeight+1e-3>=FATAL_FALL_HEIGHT){this.respawnAfterFall(fallHeight);break;}
+        }
+      }
     }
     this.speed = dt > 0 ? Math.hypot(this.position.x - this.previous.x, this.position.z - this.previous.z) / dt : 0;
     this.avatar.root.position.copy(this.position);

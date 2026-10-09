@@ -4,7 +4,7 @@ import { CSM } from 'three/addons/csm/CSM.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { loadMaterials } from '../world/materials.ts';
 import { createWorld, spawn, type CampusWorld } from '../world/world.ts';
-import { Player } from '../player/controller.ts';
+import { Player, type FallRespawnEvent } from '../player/controller.ts';
 import { createAvatar, type CharacterKind, type OutfitStyle } from '../player/avatar.ts';
 import { WalkCamera } from '../player/camera.ts';
 import {StreetTraffic} from './street-traffic.ts';
@@ -47,6 +47,7 @@ export class Game {
   elapsed = 0;
   onTick: () => void = () => {};
   onNotice: (s: string) => void = () => {};
+  onRespawn: (event: FallRespawnEvent) => void = () => {};
   private last = 0;
   private photoSaving = false;
   private saveAt = 0;
@@ -100,6 +101,12 @@ export class Game {
     this.football = new Football(this.scene, this.player, this.world.pitch); this.football.onGoal = () => this.onNotice('进球！足球即将回到中场。');
     this.basketball = new Basketball(this.scene, this.player);
     this.basketball.onScore = points => this.onNotice(`${points === 3 ? '三分' : '两分'}命中！`);
+    this.player.onRespawn = event => {
+      this.basketball.cancel();
+      this.cameraRig.reset();
+      this.onRespawn(event);
+      this.onNotice('坠落后已回到北大楼前。');
+    };
     this.traffic=new StreetTraffic(this.scene,this.player);
     const initialMeshes=this.world.fixedMeshes.length;
     this.shadow = this.createContactShadow(); this.scene.add(this.shadow);
@@ -121,9 +128,9 @@ export class Game {
     mark('rain heights');
     progress(.94, '准备全校材质与日光阴影');
     this.cameraRig.update(spawn, 1, this.world.cameraSolids, false);
-    // compileAsync visits hidden detail cells too. The following real frame
-    // additionally uploads the opening view's textures/geometry and shadows.
-    await this.renderer.compileAsync(this.scene, this.camera);
+    // Compile hidden detail cells with both daytime and nighttime light counts.
+    // The real frame below additionally uploads opening geometry and shadows.
+    await this.atmosphere.warmLightingVariants(() => this.renderer.compileAsync(this.scene, this.camera));
     mark('all shaders');
     progress(.98, '准备第一幅校园画面');
     const firstFrame = await new Promise<number>(resolve => requestAnimationFrame(resolve));
@@ -195,6 +202,8 @@ export class Game {
     if (this.photoSaving) { this.last = time; return; }
     const rawDt = Math.max(.001, (time - this.last) / 1000); this.last = time;
     const dt = Math.min(rawDt, .05), start = performance.now(); this.elapsed += dt;
+    // The existing total-CPU clocks remain; extra boundaries run only inside a dev sample.
+    const sampling = import.meta.env.DEV && this.frameSample.isSampling(time);
     if(this.windTime)this.windTime.value+=dt*(1+(this.atmosphere?.state.rain??0)*1.5);
     this.frameMs = T.MathUtils.lerp(this.frameMs, Math.min(rawDt * 1000, 200), .03);
     this.football.prepare(this.mode === 'playing');
@@ -205,7 +214,9 @@ export class Game {
     if(this.player.riding)this.cameraRig.yaw+=this.player.rideCameraTurn;
     this.football.update(dt);
     this.basketball.update(dt);
+    const cameraStart = sampling ? performance.now() : 0;
     this.cameraRig.update(this.player.position, dt, this.world.cameraSolids, this.player.seated,this.player.flying,this.player.avatar.height,Boolean(this.player.riding));
+    const environmentStart = sampling ? performance.now() : 0;
     this.atmosphere.update(dt,this.mode==='playing',this.camera.position);
     if(this.foliageLight)this.foliageLight.value=this.atmosphere.daylight;
     this.world.updateVegetation(this.player.position, this.quality, this.player.flying,this.camera.position);
@@ -220,17 +231,33 @@ export class Game {
     this.camera.updateMatrixWorld();this.csm?.update();
     this.audio.setEnvironment(this.atmosphere.state.rain,this.atmosphere.night,this.player.flying);
     this.audio.update(dt, this.player.riding?0:this.player.speed, this.mode === 'playing');
+    const environmentEnd = sampling ? performance.now() : 0;
     const ext = this.timerExtension, gl = this.gl;
     if (ext && this.gpuQueries.length && gl.getQueryParameter(this.gpuQueries[0], gl.QUERY_RESULT_AVAILABLE)) {
-      const q = this.gpuQueries.shift()!; if (!gl.getParameter(ext.GPU_DISJOINT_EXT)) this.gpuMs = gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6; gl.deleteQuery(q);
+      const q = this.gpuQueries.shift()!;
+      if (!gl.getParameter(ext.GPU_DISJOINT_EXT)) {
+        const gpuMs = gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6;
+        if (Number.isFinite(gpuMs) && gpuMs >= 0) this.gpuMs = gpuMs;
+        if (import.meta.env.DEV) this.frameSample.completeGpuQuery(time, q, gpuMs);
+      } else if (import.meta.env.DEV) this.frameSample.invalidateGpuQueries();
+      gl.deleteQuery(q);
     }
     let query: WebGLQuery | null = null;
     if (ext && this.gpuQueries.length < 4 && this.elapsed > this.updateStatsAt) { query = gl.createQuery(); if (query) gl.beginQuery(ext.TIME_ELAPSED_EXT, query); this.updateStatsAt = this.elapsed + .5; }
+    const renderStart = sampling ? performance.now() : 0;
     this.renderer.render(this.scene, this.camera);
+    const renderEnd = sampling ? performance.now() : 0;
     if (query && ext) { gl.endQuery(ext.TIME_ELAPSED_EXT); this.gpuQueries.push(query); }
+    if (import.meta.env.DEV && sampling && query && ext) {
+      if (!gl.getParameter(ext.GPU_DISJOINT_EXT)) this.frameSample.beginGpuQuery(time, query);
+      else this.frameSample.invalidateGpuQueries();
+    }
     const cpuMs = performance.now() - start;
     this.cpuMs = T.MathUtils.lerp(this.cpuMs, cpuMs, .04);
-    if (import.meta.env.DEV) this.frameSample.add(time, rawDt*1000, cpuMs);
+    if (import.meta.env.DEV && sampling) this.frameSample.add(time, rawDt*1000, cpuMs, {
+      simulation: cameraStart - start, camera: environmentStart - cameraStart,
+      environment: environmentEnd - environmentStart, renderSubmission: renderEnd - renderStart,
+    });
     if (this.elapsed > this.saveAt && this.mode === 'playing' && !this.player.noclip) { this.saveAt = this.elapsed + 5; try { localStorage.setItem('gulou-position-v1', JSON.stringify(this.player.position.toArray())); } catch { /* Storage may be disabled. */ } }
     this.onTick();
   }

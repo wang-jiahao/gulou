@@ -106,6 +106,19 @@ export class Atmosphere {
     this.heightMap.needsUpdate = true; this.heightReady = true;
   }
   setQuality(quality: string) { this.quality = quality; this.pointCount = quality === 'high' ? 6 : quality === 'low' ? 2 : 4;this.pointLights.forEach((l,i)=>l.visible=i<this.pointCount);this.rainMesh.geometry.setDrawRange(0, (quality === 'high' ? 5200 : quality === 'low' ? 1400 : 3000) * 2); }
+  async warmLightingVariants(compile: () => Promise<unknown>) {
+    const visibility = this.pointLights.map(light => light.visible);
+    try {
+      // Visible zero-intensity lights still change Three's shader light count.
+      // Warm both counts before entry without changing any lighting values.
+      for (const light of this.pointLights) light.visible = false;
+      await compile();
+      this.pointLights.forEach((light, i) => { light.visible = i < this.pointCount; });
+      await compile();
+    } finally {
+      this.pointLights.forEach((light, i) => { light.visible = visibility[i]; });
+    }
+  }
   update(dt: number, active: boolean, cameraPosition: T.Vector3) {
     this.clock += dt; this.state.update(dt, active);
     const angle = (this.state.hour - 6) / 24 * Math.PI * 2, elevation = Math.sin(angle);
@@ -138,7 +151,10 @@ export class Atmosphere {
       const nearest = [...this.lampPositions].sort((a, b) => a.distanceToSquared(cameraPosition) - b.distanceToSquared(cameraPosition));
       this.pointLights.forEach((light, i) => { if (nearest[i]) light.position.copy(nearest[i]); });
     }
-    for (const light of this.pointLights) light.intensity = this.lampPositions.length?this.night * 19:0;
+    this.pointLights.forEach((light, i) => {
+      light.intensity = this.lampPositions.length ? this.night * 19 : 0;
+      light.visible = i < this.pointCount && light.intensity > 0;
+    });
   }
   get snapshot() { return { ...{ hour: this.state.hour, autoTime: this.state.autoTime, cycleMinutes: this.state.cycleMinutes, weatherMode: this.state.weatherMode, rain: this.state.rain, wetness: this.state.wetness, weatherTransitions: this.state.weatherTransitions, nextWeatherIn: this.state.nextWeatherIn }, daylight: this.daylight, night: this.night, rainParticles: this.quality === 'high' ? 5200 : this.quality === 'low' ? 1400 : 3000, heightReady: this.heightReady }; }
 }
