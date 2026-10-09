@@ -129,5 +129,16 @@ export function createFountainMascots(mats:Materials,x:number,z:number){
     const badge=new T.Mesh(new T.CircleGeometry(.38,40),purple);badge.position.set(x-2.97,3.58,z-3.94);group.add(badge);cameraSolids.push(badge);
     const seal=new T.Mesh(new T.PlaneGeometry(.57,.57),new T.MeshStandardMaterial({map:emblem,transparent:true,alphaTest:.3,roughness:.8}));seal.position.set(x-2.97,3.58,z-3.928);group.add(seal);
   }
+  // The display faces north toward Hankou Gate. Rotate the complete installation
+  // around its existing row, preserving the reference's left-to-right order,
+  // rather than mirroring the artwork or moving the fountain/planting.
+  const pivotZ=z-3.8;
+  const turn=new T.Matrix4().makeTranslation(x,0,pivotZ)
+    .multiply(new T.Matrix4().makeRotationY(Math.PI))
+    .multiply(new T.Matrix4().makeTranslation(-x,0,-pivotZ));
+  // Fountain construction flattens this group: bake the turn into each child.
+  for(const child of group.children)child.applyMatrix4(turn);
+  for(const solid of b.solids){solid.x=2*x-solid.x;solid.z=2*pivotZ-solid.z;}
+  group.updateMatrixWorld(true);
   return{group,solids:b.solids,cameraSolids};
 }

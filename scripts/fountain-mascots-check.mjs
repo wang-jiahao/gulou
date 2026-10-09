@@ -15,6 +15,17 @@ export {createNanyuanFountain,nanyuanFountain} from './nanyuan-fountain.ts';
 `,resolveDir:resolve('src/world'),loader:'ts'},bundle:true,write:false,platform:'node',format:'esm'});
 const {T,createNanyuanFountain,nanyuanFountain:layout}=await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
 const data=createNanyuanFountain({textures:new Map([['stone-grain.webp',null],['lawn.webp',null]])});
+data.group.updateMatrixWorld(true);
+const face=data.group.children.find(mesh=>mesh.material?.name==='fountain-mascot-art');
+assert.ok(face,'mascot front artwork exists');
+const facing=new T.Vector3(0,0,1).transformDirection(face.matrixWorld);
+assert.ok(facing.z<-.999,'mascot artwork faces north toward Hankou Gate');
+for(const dx of [-4.35,-1.45,1.45,4.35]){
+ const ray=new T.Raycaster(new T.Vector3(layout.x+dx,1.8,layout.z-8),new T.Vector3(0,0,1),0,6);
+ assert.ok(ray.intersectObject(face,false).length,`artwork visible from the north: ${dx}`);
+ ray.set(new T.Vector3(layout.x+dx,1.8,layout.z),new T.Vector3(0,0,-1));
+ assert.equal(ray.intersectObject(face,false).length,0,`front artwork is not mirrored onto the back: ${dx}`);
+}
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
 const render={};let triangles=0;
 data.group.traverse(m=>{
@@ -38,7 +49,8 @@ if(process.argv.includes('--before')){
  for(const [material,digest]of Object.entries(before.render))assert.equal(render[material],digest,`preserved ${material}`);
  assert.equal(data.group.userData.mascots,4,'four mascot cutouts');
  const physics=await checkPhysics();
- await writeFile(`${dir}/fountain-after-${Date.now()}.json`,JSON.stringify({render,triangles,physics,scope:'Fountain fixture only. Full-scene visual QA and GPU performance are separate.'},null,2)+'\n',{flag:'wx'});
+ const output='docs/validation/v0.109';await mkdir(output,{recursive:true});
+ await writeFile(`${output}/fountain-after-${Date.now()}.json`,JSON.stringify({render,triangles,facing:facing.toArray(),physics,scope:'Fountain fixture only. Full-scene visual QA and GPU performance are separate.'},null,2)+'\n',{flag:'wx'});
  console.log(`PASS: original paving/planting/57 colliders preserved; finite geometry; ${physics.walks.length} walks / ${physics.rays.length} camera rays; ${triangles} triangles. Separate visual QA required.`);
 }
 
@@ -71,7 +83,8 @@ async function checkPhysics(){
   walk(`north/south exit ${side}`,[0,side*10],[0,side*18]);
  }
  walk('plaza centre',[-10,0],[10,0]);
- walk('mascot front',[-9,-2],[9,-2]);
+ walk('mascot back',[-9,-2],[9,-2]);
+ walk('north map arrival',[0,437.286-z],[0,-10]);
  for(const side of [-1,1])walk(`island side ${side}`,[side*7,0],[side*7,-11]);
  for(const dx of [-4.35,-1.45,1.45,4.35])walk(`mascot base ${dx}`,[dx,-1],[dx,-4.2],true);
  const objects=data.cameraSolids??data.group.children;for(const m of objects)m.updateMatrixWorld(true);

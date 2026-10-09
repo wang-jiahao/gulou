@@ -693,3 +693,8 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 ### v0.108 纪念品方位复核与有效预加载
 
 再次实看用户南大记忆门面图（references/phase33/nju-memory-user.png）和汉口路校园图（references/plan-hankou-crop.png），并在正常CUA中前往店前后转身检查汉口路校门：当前店面在汉口路南侧、正面朝北，邮政左/纪念品右。未复现用户所指反向，不改变建模方向；不能确认用户当时运行的版本。证据及加载测量口径见docs/loading-validation-2026-10-09.md。未新增第三方媒体资产。
+
+
+## v0.109 喷泉吉祥物朝向澄清
+
+用户明确“面向汉口路校门”指喷泉四个吉祥物，并非南大记忆商店。再次实看既有用户图phase96-user/fountain-mascots.png（约800px检查副本）；参考左至右为马、海豚与独立星、鹿角角色、虎，带银座、紫框和青春奋进。整个装置绕既有行列中心转180度，保留正面顺序和UV，朝北汉口门。碰撞与装饰同步；喷泉铺装绿化不变。传送移至北开口外。正常UI北侧正面与步行检查通过，原图不提交。v108商店核对不能作为此项完成证据。

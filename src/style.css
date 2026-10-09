@@ -29,7 +29,8 @@
 
 /* Project support stays outside the play HUD. */
 .project-links{display:flex;align-items:center;flex-wrap:wrap;gap:10px 20px;font-size:12px}
-.project-links a,.project-links button{color:inherit;text-decoration:none;background:none;border:0;padding:8px 0;font:inherit;cursor:pointer;border-bottom:1px solid currentColor}
+.project-links a,.project-links button{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;color:inherit;text-decoration:none;background:none;border:0;padding:8px 0;font:inherit;cursor:pointer;border-bottom:1px solid currentColor}
+.project-icon{width:17px;height:17px;flex:none}
 .project-links a:hover,.project-links button:hover{opacity:.75}
 .project-links :focus-visible{outline:2px solid currentColor;outline-offset:5px}
 #welcome>.project-links{position:absolute;left:8%;bottom:80px;color:#fff8e8}

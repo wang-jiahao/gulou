@@ -85,7 +85,7 @@ export const travelPlaces: TravelPlace[] = [
   { name: '汉口路校门', x: -91, z: 365, yaw: 0 },
   { name: '苏浙运动场', x: -193, z: -2, yaw: 0 },
   { name: '南园北门', x: -89, z: 392, yaw: Math.PI },
-  { name: '南园喷泉', x: -85.233, z: 476.2, yaw: 0 },
+  { name: '南园喷泉', x: -85.233, z: 437.286, yaw: Math.PI },
   { name: '南园宿舍区', x: -41, z: 526, yaw: 0 },
   { name: '广州路校门', x: -35, z: 715, yaw: 0 },
   photoSpot,
