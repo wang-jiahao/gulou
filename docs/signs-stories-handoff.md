@@ -132,3 +132,7 @@ root已将第三批以 `7778ff4` 合入主分支，并在主UI验证三篇正文
 新增独立纯函数脚本 `scripts/nearby-place-check.mjs`，无需浏览器、DOM、物理或服务。15组用例通过：真实学院落点复现旧错选并验证修正；两门与三门全部排列；近门高层排除；玩家相对楼层；±4m严格边界；水平最近的一致性；门优先；无门最近点与description保留；无合格门的fallback；无高度/有高度地点；各自探索范围；半径边界与空场；大纛坪特殊优先；相同距离稳定且冻结输入不变。报告使用唯一时间戳 `docs/validation/signs-stories/nearby-place-*.json`。
 
 运行：`NODE --experimental-strip-types scripts/nearby-place-check.mjs`，NODE为上文指定运行时。types、src lint与生产构建通过，日志 `nearby-types.log`、`nearby-lint.log`、`nearby-build.log`；构建保留既有大chunk提示。不重复与本改动无关的楼宇几何/全校路线检查。root合入后请用主UI回到工程管理学院落点核对I/E名称及两种按键正文，再核对无门地标和大纛坪的I介绍／E升旗优先；此处尚未宣称正常UI复验通过。
+
+## 主树正常UI整合回归
+
+三篇新介绍已在main7778ff4，最近门修复已在10cfe36。4173正常地图搜索/抵达、三篇正文/官方链接均通过；工管I/E均选本学院，I打开本院正文；大纛坪I/E提示与I专属介绍正常。工程管理当前位置HUD区域仍显示附近平台化楼，这是另一个区域判定，不当作入口名。南园喷泉命名到达点在介绍范围外，因此该处未出现I/E，不把它计作介绍覆盖通过。tab23/25已关，error[]；记录2个既有加载器弃用warn。截图docs/validation/v0.110-stories-ui；主树15组用例/types/lint/build均过，日志/tmp/gulou-nearby-*。全校逐点介绍覆盖仍未闭合。
