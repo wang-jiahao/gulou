@@ -1,6 +1,7 @@
 import { insidePolygon, type CampusMap, type MapFeature } from './campus-map.ts';
 
 export const extraPlaces = [
+  {name:'南京大学革命烈士纪念碑',x:-85.8,z:81.4,yaw:0,description:'教学楼北侧、南高路北侧绿地中的革命烈士纪念碑，碑面题写“革命烈士永垂不朽”。'},
   {name:'大纛坪',x:-239,z:111,yaw:Math.PI/2,description:'西南楼北侧的国旗广场。旗杆、基座与步行铺地参考官方全景和校园漫游视频。'},
   {name:'校史博物馆',x:-1.5,z:250.8,yaw:Math.PI,description:'原金陵大学图书馆的历史馆舍，与西侧现代图书馆相连。'},
   {name:'软件学院',x:-226.48745971929327,z:-141.7497396093627,yaw:-0.097099985759459,description:'软件学院鼓楼通讯地址为费彝民楼B座4—9层；入口在玻璃棚下，左侧石柱有竖排院名。'},
@@ -27,6 +28,7 @@ export function locationName(map:CampusMap,x:number,z:number,flying=false) {
   // extending the gate label into nearby dormitories or along Guangzhou Road.
   if(Math.abs(x-map.gates.guangzhou[0])<15&&z>map.gates.guangzhou[1]-13&&z<map.gates.guangzhou[1]+16)name='广州路门';
   else if(x>-258&&x<-220&&z>91&&z<129)name='大纛坪';
+  else if(x>-93&&x<-78&&z>63&&z<81.8)name='南京大学革命烈士纪念碑';
   else if(x>-30&&x<28&&z>249&&z<283)name='校史博物馆';
   else if(Math.hypot(x+226.48746,z+141.74974)<7)name='软件学院入口';
   else if(Math.abs(x)<4&&z>18&&z<86)name=z>81?'金大路 · 北大楼南台阶':'金大路';

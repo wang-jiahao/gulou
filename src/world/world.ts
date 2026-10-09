@@ -51,6 +51,7 @@ import {splitTeachingFeature} from './specific-buildings.ts';
 import type {CampusBicycle} from './bicycle.ts';
 import {extraPlaces} from './place-index.ts';
 import {createDadaoping} from './dadaoping.ts';
+import {createMartyrsMemorial} from './martyrs-memorial.ts';
 import { terrainHeight, terrainSurface, terraceHeight, eastTerraceHeight, createCourtyardSteps, createEastTeachingSteps } from './courtyard-terrain.ts';
 import { createSonglinGarden, songlinPathOpening } from './songlin-garden.ts';
 import {createNanyuanFountain} from './nanyuan-fountain.ts';
@@ -207,6 +208,7 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
   const southRoads = createSouthRoadDetails(map, mats,[songlinPathOpening]); root.add(southRoads.group); solids.push(...southRoads.solids);
   const garden = createSonglinGarden(mats); root.add(garden.group); solids.push(...garden.solids); fixedMeshes.push(...garden.fixedMeshes);cameraSolids.push(...garden.group.children);
   const dadaoping=createDadaoping(mats);root.add(dadaoping.group);solids.push(...dadaoping.solids);cameraSolids.push(...dadaoping.group.children);
+  const martyrs=createMartyrsMemorial(mats);root.add(martyrs.group);solids.push(...martyrs.solids);fixedMeshes.push(...martyrs.fixedMeshes);cameraSolids.push(...martyrs.cameraSolids);
   const directory = createCampusDirectory(map, mats); root.add(directory.group); solids.push(...directory.solids); cameraSolids.push(...directory.group.children);
   const fountain=createNanyuanFountain(mats);root.add(fountain.group);solids.push(...fountain.solids);cameraSolids.push(...fountain.cameraSolids);
   const gateFont = await new FontLoader().loadAsync(`${import.meta.env.BASE_URL}assets/fonts/gate-lettering.typeface.json`);
