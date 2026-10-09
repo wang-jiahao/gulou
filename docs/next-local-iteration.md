@@ -1,5 +1,9 @@
 # 最新断点：v0.109已验证；人物按最新要求整体重做
 
+用户最新已授权并行：3个活跃子agent life_facilities/activity_dining/signs_stories正在独立工作树处理31条中的建筑/介绍欠账；分工、工作树和浏览器协调见parallel-work-2026-10-09.md。先list_agents，不重复启动。root留人物及整合/性能。尚未合并任何子agent提交。
+
+root当前还有独立原型14待视觉检查：已在忽略目录应用官方CC0 mouth-corner-puller轻微表情、贴面眉形、女发前侧体积；build-male14/build-female14均通过，尚未正常UI验，不当达标。13版生成器/GLB/头发已另存*-thirteen。新增target在assets/source-models/character，未提交。需要复用4173，先和activity_dining协调浏览器2时段。
+
 main，v0.108=789c47a；v0.109=158a40e。四吉祥物（不是商店）朝北汉口门，北侧地图抵达；欢迎/设置导航仓库→作者→赞赏，三个图标。五日47条真实原文已取回本机忽略docs/validation/v0.109/user-requests-extracted.json；详细104项+16延续项见request-audit-2026-10-09.md。不要重复抓全历史。
 
 人物重做仍在独立原型，正式v0.109模型/生成器未替换。最新输出docs/validation/v0.110/student-{male,female}-prototype.glb，由同目录build-student-prototype.mjs生成；末次日志build-{male,female}13.log（两者通过）。新增裁边/实体领口工具，形变后统一UV接缝法线，连续发型取代悬空发束。正常UI定位并修正原型手掌低于骨盆误绑腿、外套衣摆误随大腿；最终全身/跑步/坐姿实看，但不代表完整动作验收。已加原创UV肤色/粗糙度贴图并消除男性太阳穴凸刺，脸部表情/眉眼、女性侧发薄片感、服装造型仍不达标，人物需求未完成。详见character-redesign-2026-10-09.md，不重做旧导航喷泉检查。
