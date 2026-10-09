@@ -33,6 +33,8 @@ import {buildWestHeritage} from './west-heritage.ts';
 import {buildNanyuanEightEntrance} from './nanyuan-eight-entrance.ts';
 import {buildTaoyuanThreeEntrance} from './taoyuan-three-entrance.ts';
 import {buildInternationalApartments} from './international-apartments.ts';
+import {addDormitorySidePlaque} from './dormitory-plaques.ts';
+import {dormitoryNames} from './building-profiles.ts';
 
 export const heroIds = ['88778620', '88778613', '88778615', '88778619'];
 export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, roads:MapPolygon[] = []) {
@@ -60,13 +62,14 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const windowGuard = new T.MeshStandardMaterial({name:'window-guard',color:0x87908b,roughness:.65,metalness:.35});
   const archShape=(w:number,h:number)=>{const s=new T.Shape();s.moveTo(-w/2,-h/2);s.lineTo(w/2,-h/2);s.lineTo(w/2,h/2-w/2);s.absarc(0,h/2-w/2,w/2,0,Math.PI,false);s.closePath();return s;};
   const paints = new Map<string,T.MeshStandardMaterial>();
-  const paint = (color:number,brick=false) => {
-    const key=`${color}-${brick}`;
-    if(!paints.has(key))paints.set(key,new T.MeshStandardMaterial({name:brick?'campus-masonry':'campus-plaster',color,map:mats.textures.get(brick?'historic-brick.webp':'stone-grain.webp'),roughness:.94}));
+  const paint = (color:number,brick=false,clean=false) => {
+    const key=`${color}-${brick}-${clean}`;
+    if(!paints.has(key))paints.set(key,new T.MeshStandardMaterial({name:brick?'campus-masonry':'campus-plaster',color,map:clean?null:mats.textures.get(brick?'historic-brick.webp':'stone-grain.webp'),roughness:.94}));
     return paints.get(key)!;
   };
   const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group}>();
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
+  const dormitorySidePlaques=[];
   const sufute=createSufuteFacade(),tian=createTianFacade(),tang=createTangFacade(),chemistry=createChemistryFacade();
   const courtyardClimbers:T.Group[]=[];
   let yifu:ReturnType<typeof buildYifuEntrance>|undefined;
@@ -94,7 +97,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     const specific=buildSpecific(f,mats,b,fixedMeshes,cameraSolids,doors,doorMaterials);if(specific){records.push(specific);if(specific.yifuIvy)courtyardClimbers.push(createYifuHallIvy(specific.yifuIvy,mats));continue;}
     const profile=getBuildingProfile(f),teaching=f.id==='teaching-priority',points=f.points,shape=planShape(f);
     const height=teaching?16.6:f.id==='plan-10'?yifuTower.height:profile.levels*3.25, floorHeight=height/profile.levels;
-    const wall=paint(profile.wall,profile.style==='historic'||profile.style==='villa'),defaultFrame=paint(profile.frame);
+    const wall=paint(profile.wall,profile.style==='historic'||profile.style==='villa',!!profile.dormitoryFacade),defaultFrame=paint(profile.frame,false,!!profile.dormitoryFacade);
     const xs=points.map(p=>p[0]),zs=points.map(p=>p[1]),cx=(Math.min(...xs)+Math.max(...xs))/2,cz=(Math.min(...zs)+Math.max(...zs))/2;
     const key=`${Math.floor(cx/100)}:${Math.floor(cz/100)}`;
     if(!detailCells.has(key))detailCells.set(key,{b:new Builder(),center:new T.Vector3((Math.floor(cx/100)+.5)*100,0,(Math.floor(cz/100)+.5)*100)});
@@ -140,6 +143,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       const {ri,edge,len,x:mx,z:mz,angle,nx,nz}=face,frame=defaultFrame;
       const threeFrontage=f.id==='plan-118'&&face===frontage;
       const eightFrontage=f.id==='plan-123'&&face===frontage;
+      const taoyuanFrontage=profile.dormitoryFacade==='taoyuan'&&face===frontage;
       // Positive local Z is always outdoors, including courtyard hole rings.
       const put=(target:Builder,u:number,y:number,v:number,w:number,h:number,d:number,mat:T.Material)=>{
         const x=mx+u*Math.cos(angle)+v*nx,z=mz-u*Math.sin(angle)+v*nz;
@@ -159,15 +163,22 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       if(f.id==='plan-17'&&!ri&&len>15&&(nx>.98||nz<-.98)){
         windows+=tian.face(b,detail,plaques,{len,x:mx,z:mz,angle,nx,nz},height);continue;
       }
-      put(b,0,.42,.025,len,.84,.12,plinth);
+      put(b,0,.42,.025,len,.84,.12,profile.dormitoryFacade==='nanyuan'?paint(profile.groundWall!,false,true):plinth);
       // A thin finish stays behind the existing reveals and glass, so the
       // darker storey cannot cover windows or alter the physical footprint.
-      if(profile.groundWall!==undefined)put(b,0,floorHeight*.525,.006,len,floorHeight*1.05,.018,paint(profile.groundWall));
+      if(profile.groundWall!==undefined)put(b,0,floorHeight*.525,.006,len,floorHeight*1.05,.018,paint(profile.groundWall,false,profile.dormitoryFacade==='nanyuan'));
       put(b,0,height-.12,.02,len,.22,.30,stone);
       put(b,0,height+.18,0,len,.30,.20,wall);
+      if(taoyuanFrontage){
+        // Repeat the pale blank end-wall panel visible at three, without
+        // copying its unique entrance or projecting balconies onto other plots.
+        put(b,0,height/2,.018,len*.46,height,.028,paint(0xc1c3ba,false,true));
+        for(let floor=1;floor<profile.levels;floor++)put(detail,0,floor*floorHeight,.044,len,.035,.035,paint(0x636d6b,false,true));
+      }
       if(profile.bands)for(let floor=1;floor<profile.levels;floor++){
         const y=floor*floorHeight+.1;
-        put(b,0,y,.04,len,.16,.22,stone);
+        const fine=profile.dormitoryFacade==='nanyuan';
+        put(b,0,y,fine?.025:.04,len,fine?.035:.16,fine?.04:.22,stone);
       }
       // The visible garden faces of Songlin have broad ground-floor glazing.
       // Keep the north entrance and all upper storeys on the existing profile.
@@ -193,8 +204,10 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
         const u=len*((j+1)/(bays+1)-.5),y=floorHeight*(floor+.60),w=Math.min(profile.windowWidth,len/(bays+1)*.76),h=Math.min(profile.windowHeight,floorHeight*.72);
         const g=glass[Math.floor(random()*glass.length)];
         if(threeFrontage)continue;
+        if(taoyuanFrontage&&Math.abs(u)-w/2<len*.23)continue;
         if(glazedGarden&&floor===0)continue;
         if(eightFrontage&&Math.abs(u)-w/2<3.15)continue;
+        if(profile.dormitoryFacade==='nanyuan'&&face===frontage&&floor===0&&Math.abs(u)-w/2<Math.min(3.8,len*.38)/2+.15)continue;
         // The photographed entry replaces only the central bays on the old
         // procedural frontage; consume the same RNG sample before skipping.
         if(f.id==='plan-80'&&!ri&&edge===0&&Math.abs(u)-w/2<6.5)continue;
@@ -209,11 +222,18 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
           put(detail,u+side*w/2,y,.12,.065,h+.1,.15,frame);
           if(!profile.arched||side<0)put(detail,u,y+side*h/2,.12,w+.12,.075,.15,frame);
         }
-        put(detail,u,y,.13,.052,h,.16,frame);
+        const pairedLower=profile.dormitoryFacade==='nanyuan';
+        put(detail,u,y-(pairedLower?h*.155:0),.13,.052,pairedLower?h*.69:h,.16,frame);
         put(detail,u,y+h*.19,.13,w,.048,.16,frame);
-        if(w>2.2)for(const side of[-1,1])put(detail,u+side*w*.26,y,.12,.04,h,.13,frame);
+        if(w>2.2&&!pairedLower)for(const side of[-1,1])put(detail,u+side*w*.26,y,.12,.04,h,.13,frame);
         put(detail,u,y-h/2-.08,.14,w+.28,.10,.40,stone);
         put(detail,u,y+h/2+.1,.09,w+.18,.10,.23,stone);
+        if(taoyuanFrontage&&u>0&&floor>0){
+          // A shallow red service screen follows the photographed family
+          // palette. It stays against the shell and creates no walkable deck.
+          put(detail,u,y-h/2-.46,.085,w+.12,.58,.08,frame);
+          for(let slat=0;slat<5;slat++)put(detail,u,y-h/2-.68+slat*.11,.135,w,.035,.03,paint(0xb69786,false,true));
+        }
         // Leave the central entry bay clear; only the confirmed ground-floor
         // treatment is applied, rather than inventing cages on every storey.
         if(profile.groundWindowGuards&&floor===0&&Math.abs(u)>2.6){
@@ -238,6 +258,20 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
           put(detail,u,y-h/2-.14,.38,w+.5,.14,.8,stone);
           put(detail,u,y-h/2+.42,.70,w+.5,.10,.10,frame);
           for(let q=-2;q<=2;q++)put(detail,u+q*w/5,y-h/2+.14,.70,.035,.55,.045,frame);
+        }
+      }
+      if(profile.dormitoryFacade==='nanyuan')for(let j=0;j<bays-1;j++){
+        const u=len*((j+1.5)/(bays+1)-.5),gap=len/(bays+1)-profile.windowWidth;
+        if(gap<.72)continue;
+        for(let floor=0;floor<profile.levels;floor++){
+          if(face===frontage&&floor===0&&Math.abs(u)<3.1)continue;
+          const y=floorHeight*(floor+.60);
+          for(const dy of[.55,.17]){
+            put(detail,u,y+dy,.05,.60,.30,.065,recess);
+            for(let slat=0;slat<4;slat++)put(detail,u,y+dy-.105+slat*.07,.10,.56,.035,.06,frame);
+          }
+          put(detail,u,y-.70,.05,.43,.43,.06,recess);
+          put(detail,u,y-.70,.09,.34,.34,.04,louvre);
         }
       }
       if(len>8)for(const u of[-len/2+.24,len/2-.24]){
@@ -320,19 +354,23 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
           const sign=new T.Mesh(new T.PlaneGeometry(5,.62),new T.MeshStandardMaterial({map:texture,roughness:.6,transparent:true,depthWrite:false}));const projection=.52;sign.position.set(e.x+e.nx*projection,3.65,e.z+e.nz*projection);sign.rotation.y=e.angle;plaques.add(sign);
         }
         if(profile.style==='dormitory'&&f.id!=='plan-123'&&f.id!=='plan-118'){
+          const family=profile.dormitoryFacade,nanyuan=family==='nanyuan';
           const numbers=['零','一','二','三','四','五','六','七','八','九','十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','二十一'];
-          const name=f.tags.name.replace(/\d+/g,n=>numbers[Number(n)]??n);
+          const name=family?`${nanyuan?'南园':'陶园'} ${dormitoryNames[f.id].number}舍`:f.tags.name.replace(/\d+/g,n=>numbers[Number(n)]??n);
           const c=document.createElement('canvas');c.width=768;c.height=192;const ctx=c.getContext('2d')!;
-          ctx.fillStyle='#294657';ctx.fillRect(0,0,c.width,c.height);ctx.strokeStyle='#c5c4ae';ctx.lineWidth=5;ctx.strokeRect(8,8,752,176);
-          ctx.fillStyle='#f3efdc';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 72px "Songti SC",serif';ctx.fillText(name,384,100);
+          ctx.fillStyle=family?(nanyuan?'#a9bab0':'#8c9790'):'#294657';ctx.fillRect(0,0,c.width,c.height);ctx.strokeStyle='#c5c4ae';ctx.lineWidth=5;ctx.strokeRect(8,8,752,176);
+          ctx.fillStyle=nanyuan?'#edf0df':'#f3efdc';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 72px "Songti SC",serif';ctx.fillText(name,384,100);
           const texture=new T.CanvasTexture(c);texture.colorSpace=T.SRGBColorSpace;
-          const plaque=new T.Mesh(new T.PlaneGeometry(3.4,.68),new T.MeshStandardMaterial({map:texture,roughness:.85}));plaque.name=name;
-          plaque.position.set(e.x+e.nx*.32,3.75,e.z+e.nz*.32);plaque.rotation.y=e.angle;plaques.add(plaque);
+          const plaque=new T.Mesh(new T.PlaneGeometry(family?w-.24:3.4,family?.36:.68),new T.MeshStandardMaterial({map:texture,roughness:.85}));plaque.name=name;
+          const v=family?1.54:.32;
+          plaque.position.set(e.x+e.nx*v,family?2.44:3.75,e.z+e.nz*v);plaque.rotation.y=e.angle;plaques.add(plaque);
           // Doorway transom and a roof over the bicycle-side entrance distinguish
           // the dormitory base from the repeated residential floors above it.
           put(0,2.44,.29,w-.32,.36,.06,glass[1]);
           for(const side of[-1,1])put(side*(w/2+.52),.22,.22,.65,.44,.65,plinth);
         }
+        const sidePlaque=addDormitorySidePlaque(plaques,f.id,faces,e,height);
+        if(sidePlaque)dormitorySidePlaques.push({id:f.id,...sidePlaque});
       }
     }
     records.push({id:f.id,name:f.tags.name,source:profile.source,height,windows,roof:profile.roof,dormitory:profile.style==='dormitory',frontage:frontView,...(entrance?{entrance}:{})});
@@ -344,6 +382,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.add(plaques);
   for(const mesh of group.children)if(mesh instanceof T.Mesh&&(glass.includes(mesh.material as T.MeshStandardMaterial)||mesh.material===gardenGlass)){mesh.receiveShadow=false;mesh.castShadow=false;}
   group.userData.buildings=records;
+  group.userData.dormitorySidePlaques=dormitorySidePlaques;
   group.userData.sufuteFacade=sufute.metadata;
   group.userData.tianFacade=tian.metadata;
   group.userData.tangFacade=tang.metadata;

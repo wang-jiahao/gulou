@@ -674,3 +674,10 @@ Ordinary and sectioned specific buildings now render the existing extrusion cap 
 实际查看用户照片 `references/phase96-user/taoyuan-3-entry.png`、`taoyuan-3-context.png`，校园图对应plan118；与独立陶南plan116区分。按可见面补灰色深缝与留白墙、金色“3陶园”、右侧实体阳台红栏、左平雨棚圆柱、关闭玻璃门、三级台阶及侧坡道。照片不足以证明整栋层数，保留原轮廓和估计六层；尺度、隐藏立面及字体近似。原图仅本地参考，不提交分发。
 
 原楼体与116/119/123对照楼保持，有限几何、18项行走、19项相机检查通过；types、src ESLint、build通过。最终正常UI入口及立面画面 `docs/validation/v0.105/taoyuan-{entrance,facade}-final.png` 已实看，console无error，验证标签页已关闭。局部fixture不含全场道具/异步树木，不代表GPU性能；保护 `taoyuan-before.json`。
+
+
+## v0.106 南园与陶园宿舍家族、侧面名牌
+
+依据2026-10-09用户明确的家族与侧牌指令，以及先前已查看的南园三舍附件；本轮再次实际查看用户照片 `references/phase96-user/taoyuan-3-context.png`、`nanyuan-8.png`（800像素缩览）。原三舍临时附件已由系统清理，沿用前轮记录的可见特征：干净米色、灰底、银色上亮窗/双下扇、双百叶与小方窗、底层窗栏和浅绿门楣；不加入照片污迹。20栋按校园图身份显式归类，不将荟萃楼、公寓、东苑/专家楼误归家族。陶园一二舍采用三舍家族的灰墙、浅留白、红棕窗框/贴墙服务屏；未凭家族信息复制三舍独有的投影阳台和偏置入口。陶3全部模型保留，南8仅加侧牌，原楼体/层数/入口朝向不变。侧牌按用户确认的侧墙类型布置，字体与尺寸/具体安装位置仍为近似，不宣称测绘还原。原图不提交分发。
+
+20栋变化、6栋完整对照、原壳/高度/入口/全部行走和相机碰撞、有限几何、侧牌与玻璃净空通过；types、src ESLint、build通过。四张正常UI核对图在 `docs/validation/v0.106/`，最终控制台无error，QA页已关闭；前两张南园画面早于只涉及牌背结构的等外观调整，陶园侧面图覆盖最终实现。局部检查不代表全场GPU性能。日志 `/tmp/gulou-v106/{dormitory-final3,types-final,lint-final,build-final}.log`，before未覆盖。

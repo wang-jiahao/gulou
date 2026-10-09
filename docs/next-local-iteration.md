@@ -1,13 +1,9 @@
-# 最新断点：需求核对与赞赏位置
+# 最新断点：v0.106 宿舍家族与侧牌已验证
 
-2026-10-09：README赞赏已移至绝对末尾；个人主页共享导航Sponsor已在独立仓库本地提交e193faf，未发布。五日29组需求核对见request-audit-2026-10-09.md，人物原话已找回，不再重复提取历史。游戏仍v0.105；下一步执行宿舍家族/侧牌修正，再人物与实测卡顿。保护v0.106/dormitory-before.json；运行dormitory-family-check.mjs时禁止--before。README修改仅文档检查，不冒充游戏验收。
+20栋宿舍更新、6栋对照保持；陶3完全不变，南8只加侧牌。原壳/高度/入口/全部行走和相机碰撞、有限几何、侧牌玻璃净空、types/src ESLint/build通过。正常UI实看南3正侧/陶2正侧四张，最终console[]，验证tab1已关闭。图在docs/validation/v0.106；日志/tmp/gulou-v106/{dormitory-final3,types-final,lint-final,build-final}.log。家族推广/侧牌位置尺寸近似，未复制陶3独有入口/阳台。只涉牌背结构调整后最终陶2侧面复核通过；南园外观未变。
 
-# 接续：v0.105 陶园三舍已验证，继续生活设施
+README/来源/metrics已刷新，准备本地提交；提交后以git log -1为准。保护docs/validation/v0.105/taoyuan-before.json、v0.106/dormitory-before.json，禁止--before。四个本地未跟踪脚本astronomy-check.mjs、dormitory-family-check.mjs、promotion-capture.mjs、promotion-shots.json不提交，原媒体/音乐不分发。
 
-v0.105.0：灰深缝/留白墙/金色3陶园、右红栏阳台、左雨棚圆柱/玻璃门/三级阶和侧坡道完成。原楼体保留，六层仍估计。18行走/19相机、原壳和116/119/123对照、有限几何、types/src ESLint/build已过。最终入口/立面PNG已实看，console[]，验证tab5已关闭。不要重复v105或前版研究/检查。日志 /tmp/gulou-v105-{entrance,types,lint,build}.log；局部fixture不含全场道具或GPU测量。保护 docs/validation/v0.105/taoyuan-before.json，禁止 --before。
-README/来源/metrics已刷新；本地提交3df1115，已跟踪工作树干净。恢复先 git status --short 和 git log -1；三个旧未跟踪脚本 astronomy-check.mjs、promotion-capture.mjs、promotion-shots.json保留不提交。
+下一步优先人物立体/帅气精修、纪念品面向汉口路门的正常UI诊断、卡顿实测与有效预加载。五日29组审计已在request-audit-2026-10-09.md，不重复提取历史。人物原话：人物精修一点吧，对标大型游戏里的角色的精致度，至少立体一点，帅一点。其余生活设施、活动中心南青格庐、食堂楼层/民族食堂用途、喷泉对面屏幕海报、苏浙捐建牌/教学楼后纪念碑正式名、有来源地点介绍和全场路线/交互/性能仍未完成，依current-request与审计逐项做。宿舍v106、陶3v105、南8/外教、喷泉、院系楼等已过项跳过。宣传片尚未录制，质量验收全部通过后用户已授权直接录约60秒本地片，录制能力尚待核实。
 
-下一步：邮政左外卖棚/美团柜/独立快递楼/教育超市109；教学楼后纪念碑正式名/导览牌/苏浙捐建牌；人物/其余宿舍/有来源介绍；活动中心宽度和南青格庐一层；食堂1/2/3及待核实的四层民族食堂；喷泉对面屏幕海报；最后全场路线/视觉/性能验收。以current-request为准，先看相关照片，不猜地点或尺寸。64分钟周期、软件学院/校徽墙、教学楼/南园教学楼、艺术/健忠法学院、南8/外教公寓、喷泉吉祥物、陶3已完成，跳过。
-
-宣传片尚未开录，录制能力仍待核实；用户授权全部待办与质量验收过关后直接录约60秒本地片。仅本地，不push/发布/启用Pages；原媒体/音乐和三旧脚本不提交。
-恢复：cd '/Users/zackaria/Desktop/gulou campus' && git status --short。Node=/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node。4173上次PID96826/session9485，先确认复用，不每版重启。浏览器仅CUA正常UI，browser2，无待关闭验证tab。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。
+恢复：cd '/Users/zackaria/Desktop/gulou campus' && git status --short。Node=/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node。4173本轮启动Vite dev session14121，先lsof确认复用，不重启；浏览器仅正常CUA UI/browser2。严格仅本地，不push/发布/Pages；作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。项目自动压缩阈值已按用户要求改240000，不能保证中转413不再出现。

@@ -11,9 +11,18 @@ export type FacadeProfile = {
   pilasterWidth?: number;
   acBesideWindows?: boolean;
   gardenGlazing?: boolean;
+  dormitoryFacade?: 'nanyuan' | 'taoyuan';
   arched?: boolean;
   portal?: 'stone' | 'glass' | 'columns';
   source: string; observations: string;
+};
+
+/** Campus-plan identities, not every feature with a dormitory kind. */
+export const dormitoryNames: Record<string, {family:'nanyuan'|'taoyuan'; number:string}> = {
+  ...Object.fromEntries(Object.entries({78:'18/19',82:'21',83:'20',88:'5',90:'1',92:'14',94:'2',95:'6',97:'13',99:'7',101:'3',102:'17',106:'4',115:'16',119:'15',122:'11',123:'8',127:'12'}).map(([id,number])=>[`plan-${id}`,{family:'nanyuan' as const,number}])),
+  'plan-110':{family:'taoyuan',number:'1'},
+  'plan-112':{family:'taoyuan',number:'2'},
+  'plan-118':{family:'taoyuan',number:'3'},
 };
 const historic: FacadeProfile = {style:'historic',levels:3,wall:0x99968a,frame:0x553d31,roof:'hip',bays:3.2,windowWidth:1.45,windowHeight:2.0,portal:'stone',source:'',observations:''};
 const modern: FacadeProfile = {style:'modern',levels:4,wall:0xc5c3b7,frame:0xacaeaa,roof:'flat',bays:3.4,windowWidth:1.9,windowHeight:1.8,portal:'glass',bands:true,source:'',observations:''};
@@ -107,7 +116,20 @@ export const buildingProfiles: Record<string, FacadeProfile> = {
 };
 
 export function getBuildingProfile(f: MapFeature): FacadeProfile {
-  if (buildingProfiles[f.id]) return buildingProfiles[f.id];
+  const known=buildingProfiles[f.id],identity=dormitoryNames[f.id];
+  // The photographed eight/three entrances keep their separately verified
+  // profiles. Family treatment never changes individual heights or footprints.
+  if(known&&identity&&f.id!=='plan-123'&&f.id!=='plan-118'){
+    const family=identity.family;
+    return {...known,dormitoryFacade:family,...(family==='nanyuan'?{
+      wall:0xd8d1b8,frame:0xb4bab7,groundWall:0x929a97,
+      windowWidth:2.35,windowHeight:1.85,bays:3.8,bands:true,
+      groundWindowGuards:true,ac:false,
+    }:{wall:0x858c8e,frame:0x824940,bands:false}),
+    source:`${known.source}; user dormitory-family correction 2026-10-09`,
+    observations:`${family==='nanyuan'?'clean beige plaster, grey base, broad silver transom sashes and paired service louvres':'Taoyuan three family: grey plaster and red-brown sashes'}; shared family appearance requested by user; individual elevations and dimensions approximate`};
+  }
+  if (known) return known;
   const base = f.kind === 'dormitory' ? dorm : f.kind === 'historic' ? historic : modern;
   const estimated = Number(f.tags['building:levels']);
   return {...base,levels:Number.isFinite(estimated)&&estimated>0?estimated:base.levels,source:'typology only; individual facade not verified',observations:'shared campus construction details; retain source-plan footprint'};
