@@ -300,7 +300,8 @@ async function boot() {
     el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!nearFlag && !game.player.riding && !nearBicycle && !onBench && !nearBuilding && !nearDirectory && !game.football.canKick && !basketball.held && !basketball.inReach);
     el('interact').querySelector('span')!.textContent = game.player.riding ? '下自行车' : basketball.held ? '投篮' : basketball.inReach ? '拿起篮球' : nearBicycle&&!game.player.seated ? '骑自行车' : nearFlag ? (flagState.state==='raising'?`升旗中 ${Math.round(flagState.progress*100)}% · 点击降旗`:flagState.state==='lowering'?'降旗中 · 点击升旗':flagState.state==='raised'?'降下国旗':'升起国旗') : game.football.canKick ? '踢球' : game.player.seated ? '起身' : onBench ? '坐一会儿' : nearDirectory ? '查看校园地图' : `认识${nearBuilding?.name??'校园'}`;
     el('movement-label').textContent=game.player.riding?`骑行 ${Math.round(game.player.speed*3.6)} km/h · 空格刹车 · E 下车`:'行走';
-    el('location-name').textContent = locationName(game.world.map,pos.x,pos.z,game.player.flying);
+    const nearEntrance=!game.player.riding&&!game.player.seated&&nearBuilding&&game.world.doors.some(door=>door===nearBuilding)?nearBuilding:undefined;
+    el('location-name').textContent = locationName(game.world.map,pos.x,pos.z,game.player.flying,nearEntrance);
     el('football-hud').hidden = Boolean(game.player.riding) || basketball.nearby || !game.football.nearby || game.mode !== 'playing'; el('football-score').textContent = String(game.football.goals);
     if (mapDialog.open) mapView.update(pos.x, pos.z, game.cameraRig.yaw);
     const a=game.atmosphere.state;el('clock-chip').textContent=`${a.clock} · ${a.weatherLabel}`;el('welcome-atmosphere').textContent=`${hasVisited?el('location-name').textContent:'北大楼'} · ${a.clock} · ${a.weatherLabel}`;

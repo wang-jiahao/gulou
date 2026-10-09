@@ -1,30 +1,27 @@
-# 最新短交接：v0.116 人物本轮收尾，性能/最后操作验收继续
+# 最新短交接：v0.117 导航与入口地名修正；持续操作、性能与分镜接续
 
-工作树 `/Users/zackaria/Desktop/gulou campus`，main；package0.116.0；Git以`git status`/`git log -1`为准。用户已允许同步**现有私有仓库**源码/必要资产，仍禁止公开/部署/Pages。Git作者 wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。4173/PID5451复用，未重启。
+主树 `/Users/zackaria/Desktop/gulou campus`，main；版本0.117.0，HEAD以Git为准（上版a4b7e24）。用户睡眠中，要求重要TODO收尾后再录；缺资料/确实次要可明确暂缓。现有**私有仓库同步已获授权**，仍不公开/部署/Pages；作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。4173/PID5451复用。仅CUA浏览器；不要shell Playwright/CDP。
 
-## 已过，不重复
-- v114六篇官方新故事（总65）及物理楼完整飞上→落屋顶→走下→坠落重生25实操已过，见progress；v113南园宿舍、吉祥物前植被、屏幕海报已过。
-- 北大楼→汉口门→南园北门→喷泉→宿舍→广州门：27点206.5游戏秒，203样本high/1610×1524完整Game正常步行，无额外传送/飞行/重生。`/tmp/gulou-continuous-v114-passed.json`。两条早期路线失误before保留，未改建筑隐藏碰撞。
-- 原生main UI五类35检查：自行车上下/移动/刹车，篮球持球60帧与出手抛物线，足球轻踢/加力/重置，晴雨昼夜，开始页原位继续。`/tmp/gulou-a03-main-ui114.json`。不含篮球命中得分，touch为needs-touch-device。
-- 西北门地图符号是公共街道口，7处设备静态碰撞曾占道；`access-controls.ts`仅该入口设备/碰撞/感应器向东退7m，地图标记与其他八入口不变。已看官方平面图与VR航拍；7m是模型净空适配，非实测。源图/修复证据 `/tmp/gulou-northwest-gate/`。
-- 实际Game800×600 high：金银街西北门双向连接5点12.684s、街道转入门禁再出9点12.501s过；`/tmp/gulou-jinyin-connector-v115.json`、`/tmp/gulou-northwest-gate-walk-v115.json`。离线真实工厂660通行+490行为0失败/0重叠（含公共街道净空/不误开回归）`/tmp/gulou-access-v115-regression.json`。
-- v115 types/lint/build/资源检查已跑（以/tmp/gulou-v115-*.log与退出码为准）；build既有大chunk提示。环境无npm，可直接node调用node_modules/typescript/bin/tsc、eslint/bin/eslint.js、vite/bin/vite.js。
+## 当前改动与已过
+- 西南楼目录落点从上层台阶移到楼梯脚外（frontage15.2），未改楼体/台阶/碰撞。主Game原生到达→W上阶→闭门停住→S返回9项及抵达7项通过。
+- 148有效目录id0..147全部原生到达检查通过：旧前93+新尾55（含修复后第94项），1036到达Boolean。不能把空占位或纪念品别名另加为149。合并审计`/tmp/gulou-v117-directory-audit.md`。
+- 11处E入口与HUD邻楼冲突已修正：地面且真实DoorRecord附近优先入口名；明确道路/区域、楼内与高空保持。11冲突+5保护共16处主UI过；nearby-place既有测试15→17过。
+- 原有地图键盘、两类座椅、男女三套换装79Boolean过；人物v116最终GLB/28动作、屋顶完整25项、65篇主要故事、三公共路与核心27点步行不再重做。A01人物本轮自检关闭，非用户最终审美认可。
+- 持续飞行30.02游戏秒/30.88真实秒，高1920×1080：原生F/Space爬55m、W南飞、松键空中暂停，通过。单张末帧不代表树冠全动态/性能过。
+- v117 types、项目eslint src、build、57资产与nearby17过；build既有大chunk提示。误用`eslint .`扫本地验证目录失败日志仅代表命令范围错误，正式`eslint src`已过。
 
-## 正在接续
-- 公共街道页 `/docs/validation/public-streets-v114/index.html` 完整金银街10点78.699秒已过（`/tmp/gulou-jinyin-whole-v115.json`）；南秀村16点69.872s与小粉桥15点81.316s可见800×600/high已过；新报告`/tmp/gulou-nanxiu-visible-v116.json`和`/tmp/gulou-xiaofenqiao-visible-v116.json`，不重复。；DOM `#route-status` / `#route-result`，完成即保存JSON。报告也缓存`gulou-public-street-last`。三旧报告画布0×0只作历史物理证据；新的三路可见检查均已过，不代表全局性能；稳定副本`/tmp/gulou-{jinyin-south,nanxiu,xiaofenqiao}-v114.json`。
-- 人物最终E已正式合入三GLB/五脚本，男D保留、女E六簇刘海。PBR男女正/侧后/全身走骑持物已看、主游戏女生切换恢复正常，console[]；正式28动作/62,348,896采样全过。manifest `/tmp/gulou-v114-integration/asset-manifest.json`，报告`/tmp/gulou-v116-final-poses/final-result.json`；before`/tmp/gulou-v116-before`。不采用中采样。A01本轮实现与美术自检已关闭，后续审美反馈可继续调整。
-- 当前浏览器在 `/docs/validation/a03-extra-v116/index.html` “主要四项串测”中9地点导航已过，mapKeyboard出现map-point-check-failed；尚未到座椅/换装。保存报告因fixture的failureDetail自引用而JSON序列化失败，浏览器console有准确错误；未判定游戏故障。life_facilities正在/tmp修安全序列化/DOM详细检查，下一步投补丁仅复跑mapKeyboard，勿重复9导航；harness来自`/tmp/gulou-a03-navigation-seat-outfit`。两表已更新三街非零画布。
-- 新原生high/1920×1080七点与27点路线共8有效组，7696连续帧，frame p50/p95=16.7/66.7ms；北大楼/广州门60FPS，汉口南/喷泉/宿舍24–34FPS。全报告`/tmp/gulou-native-high-v116.json`。运行GPU瓶颈仍未完成，延长加载无助，不降画质。
-- 实际GPU分类三点每秒分析一帧10/10：`/Users/zackaria/Downloads/gulou-render-cost-v115-1791577818698.json`；activity_dining正读数据准备唯一最有收益候选，勿重复。页面`/docs/validation/render-cost-v115/`已跑。测量保持全部draw/sort/shadows。深度预通道经审计无法严格保证不同shader深度一致，严格筛选0对象，放弃（`/tmp/gulou-v116-depth-audit/FINDINGS.md`）。
-- 缓存排序像素主RGB/双shadow0差，但固定ABBA性能随宿主时间漂移，GPU14.92→15.46→16.27→17.47ms；无稳定收益，**不采用**。`/tmp/gulou-opaque-cache-fixed-v115.json`。原safe每帧CPU9.6ms退化、直接center1008像素变化、旧shadow/子批次候选均不采用，不反复测试。
-- 相同源码工具重连前后曾14→60FPS，不能当代码优化。记录focus/visibility/renderSize；画布0×0与后台调度须和游戏瓶颈区分。用户锁屏，IAB可用；原生应用/独立浏览器不可用，A05暂待解锁。IAB极简fullscreen也约50ms退出，未冒充独立浏览器通过。
+证据已稳定复制到`/tmp/gulou-v117-evidence/`：southwest-stairs、directory-tail、entrance-hud、mobility-with-flight-pass（含旧失败，只采用最后flight passed）、canopy-rejected、north-timer-rejected。原始Downloads与全部before仍保留。
 
-## 宣传片
-第二版未录。用户最新要求重要TODO结束/明确暂缓后再录。`/docs/validation/promotion-20261010/index.html`：默认26×2s=52s，先生成接触表逐镜实看；北大楼仅I❤️NJU一次、飞先骑后、无人物/球类/球场。起镜稳定树冠保持风/CSM/原fade；museum2s切换2→0、图差35.57→4.90已验。新128BPM原创配乐`.local-media/promotion/v113-cut2/soundtrack.wav`当前模型不支持音频输入，不能声称试听；原片段尝试返回audio omitted。客观响度/解码已过，后续配乐需说明听感尚待用户。旧docs/media/gulou-preview.mp4仍旧版。
+## 正在做/未过
+- 持续骑行已过：原车位出口→x32.4道路内直骑/原生Space刹车+A掉头/下车，ride30.033游戏秒、实际移动25.239s/111.789m，12checks；全报告1625帧/30.898真实秒，p50/p9516.7/33.4ms。证据`/tmp/gulou-v117-evidence/bicycle-passed.json`，根已实看正常道路内骑行；旧抄草坪撞树fixture失败保留，不删树。A03剩触控设备和树冠动态观察，不重跑全部操作。
+- A02仍开放。树冠FrontSide主RGBA/双shadow像素零差，但两轮ABBA收益反向，未采用；南/北关闭GPU计时同样无稳定收益，未采用。固定北向同一主绘制量从38降12FPS，timer全关仍发生。OS历史powerd确认测试期间displayOff，锁屏事实不等于已证明慢化由宿主造成；不唤亮屏幕打扰用户。
+- 40s无新增GPUquery/截图的被动资源/分shadow/LOD诊断已跑：`/Users/zackaria/Downloads/gulou-passive-drift-v117-1791580440519.json`，OS只读伴随`/tmp/gulou-v117-drift-diagnostic/os-samples.jsonl`。分析已完成：慢化时无shader编译/新纹理/LOD/主及双shadow大变化；19次/帧骨骼纹理子上传稳定，59冠双buffer一次更新晚于首慢帧。没有可归因生产修复，结束盲优化、保留正常亮屏环境复测。`/tmp/gulou-v117-drift-diagnostic/PASSIVE-RESULT.md`。不可记性能已解决。
+- 独立浏览器全屏与真实触控仍受锁屏/设备限制；IAB极简页也退出全屏，不能当游戏失败或通过。
+
+## 分镜/音乐
+第二版**仍未录制**。当前CUA browser id1/tab46、inspectTab/directTab复用，URL`http://localhost:4173/docs/validation/promotion-20261010/index.html`。已生成首版接触表并保存在`/tmp/gulou-cut2-review/`，餐厅原镜头被近枝遮挡，已改低机位[-40,3.3,592]看[-62,5,580]待当前60帧实看。新增批量动态预览按钮只复用逐镜60帧、不自动approve/record；逐镜实筛再做最终录制；26×2s=52s，北大楼仅I❤️NJU一次，飞先骑后，无人物/球类/球场展示。原树冠稳定助手仅用于录制，保留风/CSM/距离fade。质量前置未关闭，不冒称成片。
+52s原创128BPM结尾候选`/tmp/gulou-cut2-music-endings/gulou-cut2-52s-ending.wav`：50.625秒最终D，51–52淡出。完整解码/零削波/真峰/响度过；原音轨未变。脚本`/tmp/gulou-cut2-music-ending.py`支持48–56s默认plan-only。**模型无音频输入，未试听**，不能声称音乐听感已确认。旧`docs/media/gulou-preview.mp4`保持首版。
 
 ## 恢复与保护
-先git status/list_agents。CUA当前IAB id1，tab46；browser/inspectTab/directTab复用。临时viewport800×600，完工reset。只通过CUA操纵浏览器，不能shell Playwright/CDP。保存报告直接读取**当前页面实际存在**的DOM；下载按钮若仅新增链接，勿等不存在的download。Vite可因改模块触发reload，跑路线冻结服务模块；若中断如实记录。长日志落盘、图每批1–2张约800px。全部before基线/原图视频/个人音乐不提交。
-
-Node `/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node`。六个本地scripts保持未跟踪：astronomy-check、dormitory-family-check、nanyuan-dormitory-entrance-check、nanyuan-reference-refresh-check、promotion-capture、promotion-shots.json。README赞赏绝对末尾；每版刷新metrics并本地提交/私有同步。240000阈值不能保证根治413或连接中断。
-
-本机媒体转码可用 `/tmp/gulou-media-tools/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1`（imageio-ffmpeg临时安装，项目依赖未改）。v116类型/lint/build/57资产检查已过，正常剩余UI串测正在跑；已完成v115提交2f7caaf并私有push成功，v116提交以Git为准。
+先git status/list_agents，不重复正在运行的页面。验证时冻结被服务模块防Vite重载；JSON只输出必要字段，图每批1–2张约800px。临时viewport800×600，完毕reset/关闭验证页。源图视频/个人音乐/全部before不提交；六本地scripts继续未跟踪（astronomy、dormitory-family、nanyuan-dormitory-entrance、nanyuan-reference-refresh、promotion-capture、promotion-shots）。README赞赏绝对末尾；v117文档/metrics已整合；待最后git提交/私有同步，不能擅加原始媒体。
+Node `/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node`；直接调用node_modules/{typescript/bin/tsc,eslint/bin/eslint.js,vite/bin/vite.js}，环境无npm。ffmpeg `/tmp/gulou-media-tools/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1`。240000压缩阈值不能保证消除413/接口中断。

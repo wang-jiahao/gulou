@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {findNearbyPlace} from '../src/world/nearby-place.ts';
+import {locationName} from '../src/world/place-index.ts';
+const campusMap=JSON.parse(await readFile('public/data/campus-layout.json','utf8'));
 
 // Pure selection tests: no DOM, rendering, physics, server or browser. The
 // first fixture records actual plan-42/45 doors and plan-45's normal arrival.
@@ -19,6 +21,9 @@ check('engineering arrival beats earlier platform entry',()=>{
  const oldAbout=doors.find(d=>Math.hypot(d.x-arrival.x,d.z-arrival.z)<7&&Math.abs(d.y-arrival.y)<5);
  assert.equal(oldAbout.name,'平台化楼','fixture must reproduce the reported old failure');
  for(const mode of modes)for(const order of[doors,[...doors].reverse()])assert.equal(select(order,[],mode,arrival).name,'工程管理学院');
+ const entrance=select(doors,[],'interact',arrival);
+ assert.equal(locationName(campusMap,arrival.x,arrival.z),'平台化楼附近','the old HUD favours the slightly nearer neighbouring wall');
+ assert.equal(locationName(campusMap,arrival.x,arrival.z,false,entrance),'工程管理学院入口附近');
 });
 check('two interactive doors are independent of array order',()=>{
  const near=door('最近门',1),far=door('较远门',3);
@@ -85,8 +90,22 @@ check('equal distances use floor closeness then name without mutating input',()=
  for(const mode of modes){assert.equal(select(Object.freeze([b,upper,a]),[],mode),a);assert.equal(select(Object.freeze([a,upper,b]),[],mode),a);}
 });
 
+check('HUD keeps the actual unverified entrance number',()=>{
+ const x=-495.3929138183594,z=-32.155113220214844;
+ assert.equal(locationName(campusMap,x,z),'未核名建筑（21）');
+ assert.equal(locationName(campusMap,x,z,false,{name:'北园建筑 027'}),'未核名建筑（27）入口附近');
+});
+check('entrance context preserves named roads, areas, flight and footprint interiors',()=>{
+ assert.equal(locationName(campusMap,-43.273,153.575,false,{name:'北园建筑 043'}),'两江路');
+ assert.equal(locationName(campusMap,-225.840,-148.398,false,{name:'费彝民楼群'}),'软件学院入口');
+ assert.equal(locationName(campusMap,-321.8337285,127.8024545,true,{name:'工程管理学院'}),'平台化楼附近上空');
+ const feature=(id,name,x)=>({id,tags:{name,plan_id:id},points:[[x,50],[x+2,50],[x+2,52],[x,52]]});
+ const map={...campusMap,features:[feature('a','所在楼',-501),feature('b','邻楼',-497)]};
+ assert.equal(locationName(map,-500,51,false,{name:'邻楼'}),'所在楼');
+});
+
 const source='src/world/nearby-place.ts',bytes=await readFile(source);
-const report={passed:true,count:cases.length,cases,source,sha256:createHash('sha256').update(bytes).digest('hex'),scope:'Pure proximity selection only; no collision, line-of-sight, browser or GPU validation.'};
+const report={passed:true,count:cases.length,cases,source,sha256:createHash('sha256').update(bytes).digest('hex'),hudSource:'src/world/place-index.ts',hudSha256:createHash('sha256').update(await readFile('src/world/place-index.ts')).digest('hex'),scope:'Pure proximity selection and nearby-door HUD labels; no collision, line-of-sight, browser or GPU validation.'};
 await mkdir('docs/validation/signs-stories',{recursive:true});
 await writeFile(`docs/validation/signs-stories/nearby-place-${Date.now()}.json`,JSON.stringify(report,null,2));
 console.log(JSON.stringify(report));

@@ -22,7 +22,7 @@ export function distanceToFeature(x:number,z:number,f:MapFeature) {
 }
 /** Resolve against the actual footprint, not a single point or a broad zone
  * that labels everything west of the courtyard as one landmark. */
-export function locationName(map:CampusMap,x:number,z:number,flying=false) {
+export function locationName(map:CampusMap,x:number,z:number,flying=false,entrance?:{name:string}) {
   let name='';
   // The gate has no building footprint. Cover its immediate approaches without
   // extending the gate label into nearby dormitories or along Guangzhou Road.
@@ -37,6 +37,12 @@ export function locationName(map:CampusMap,x:number,z:number,flying=false) {
   else {
     let distance=16;
     for(const f of map.features){const d=distanceToFeature(x,z,f);if(d<distance){distance=d;name=isKnownPlace(f.tags.name)?f.tags.name:`未核名建筑（${f.tags.plan_id??f.id}）`;}}
+    // Outside footprints, an actual nearby door identifies the entrance more
+    // precisely than a neighbouring wall. Keep named roads/areas and flight unchanged.
+    if(!flying&&entrance&&distance>0){
+      const feature=map.features.find(f=>f.tags.name===entrance.name);
+      if(feature)return isKnownPlace(entrance.name)?`${entrance.name}入口附近`:`未核名建筑（${feature.tags.plan_id??feature.id}）入口附近`;
+    }
     if(name&&distance>1)name+='附近';
   }
   name ||= z>365?'南园道路':z>343?'汉口路':'北园道路';
