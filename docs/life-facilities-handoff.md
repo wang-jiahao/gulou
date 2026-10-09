@@ -19,6 +19,12 @@
 - 每次CPU报告独占时间戳，日志在 `docs/validation/life-facilities/`，原before未触碰。旧 `parcel-check.mjs`为历史前后差分，固定断言旧7.2米两层模型，不用于这次重做验收；使用新的设施检查。
 - 浏览器：主任务安排统一代验4181，尚待结果。未宣称移动端、全校天气/步骑飞、GPU性能或美术完成。
 
+## 根任务正常UI代验补充
+
+2026-10-09，root在4181正常UI查看教育超市蓝牌、双门、中央展板和上层窗，横移后走上两阶，闭门不能穿；快递楼的一层白山墙、黑边、灰顶和三级台阶正常，走上阶到闭门；从纪念品店沿人行道向东走到邮政左侧，两组美团柜与银棚正常、公共路未堵。console error[]。19与35本轮照片精修可关闭，尺度和隐蔽面近似仍保留；69/70已建模并通过正常UI局部检查，精确排数和位置仍需同框全景。29不变。
+
+截图 `/tmp/gulou-life-{supermarket,steps,parcel,parcel-door,postal-arrival,postal-left,lockers}.png` 和对应 `-800.png` 均由root实际查看，不提交。原始文件可能为JPEG编码。此补充覆盖上文“待root回填”的状态；不代表移动端、全校路线、天气或GPU验收。新17秒视频是北门内侧，未提供邮政棚柜精确定位的新证据。
+
 ## 改动文件与恢复
 
 `src/world/education-store.ts`、`nanyuan-parcel.ts`、`postal-takeaway.ts`为专用模型；`life-facility-geometry.ts`提供正反朝向、文字、碰撞一致的几何帮助函数；`ordinary-buildings.ts`接实际分派；`parcel-entrance.ts`更新最新入口；`nju-memory.ts`接左侧棚柜；`world.ts`更新快递楼来源/一层字段；新增 `scripts/life-facilities-check.mjs`。

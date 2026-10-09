@@ -3,9 +3,22 @@ import {Builder} from './geometry.ts';
 import type {CampusMap,MapPolygon} from './campus-map.ts';
 import type {Materials} from './materials.ts';
 
-// The gl-1-02 noticeboards inform the form. This short section is fitted beside
-// the existing south wall, clear of the model's east-facing college entrance.
-const board = {name:'南园导览栏',x:-106,z:426.2,angle:0,width:9};
+// User 2026-10-09 north-gate video + official VR gl-1-02 all four faces.
+// These are fitted coordinates, not surveyed lengths. The obscured north joins
+// stay open; the west junction, plan85 entrance and Songlin path stay clear.
+const westX=(z:number)=>-96.6+(z-392)*.037;
+const eastX=(z:number)=>-77.8+(z-392)*.048;
+export const nanyuanNoticeboardRuns=[
+ {id:'west-north',side:'west',a:[westX(392),392],b:[westX(414.5),414.5]},
+ {id:'west-south',side:'west',a:[westX(421),421],b:[westX(424.8),424.8]},
+ {id:'east-north',side:'east',a:[eastX(392),392],b:[eastX(419.4),419.4]},
+ {id:'east-south',side:'east',a:[eastX(422.2),422.2],b:[eastX(436.6),436.6]},
+] as const;
+const boards=nanyuanNoticeboardRuns.map(run=>{
+ const dx=run.b[0]-run.a[0],dz=run.b[1]-run.a[1],width=Math.hypot(dx,dz),sign=run.side==='west'?1:-1;
+ return{...run,name:'南园导览栏',x:(run.a[0]+run.b[0])/2,z:(run.a[1]+run.b[1])/2,angle:Math.atan2(sign*dz,-sign*dx),width};
+});
+const board=boards[0];
 
 function poster(map: CampusMap, panel: number) {
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=512;
@@ -19,7 +32,7 @@ function poster(map: CampusMap, panel: number) {
     const polygon=(p:MapPolygon,color:string)=>{ctx.fillStyle=color;ctx.beginPath();for(const ring of[p.points,...p.holes??[]]){ring.forEach(([x,z],i)=>{const[a,b]=point(x,z);if(i)ctx.lineTo(a,b);else ctx.moveTo(a,b);});ctx.closePath();}ctx.fill('evenodd');};
     ctx.save();ctx.beginPath();ctx.rect(x0,y0,w,h);ctx.clip();ctx.fillStyle='#dcdcca';ctx.fillRect(x0,y0,w,h);
     map.roads.forEach(p=>polygon(p,'#f7f6ef'));map.lawns.forEach(p=>polygon(p,'#b6c79c'));map.features.filter(f=>f.tags.building).forEach(p=>polygon(p,'#6e8881'));
-    const[x,y]=point(board.x,board.z);ctx.fillStyle='#b24f35';ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill();ctx.font='bold 25px system-ui';ctx.fillText('当前位置',x+14,y);ctx.restore();
+    const[x,y]=point(-88.39,383.62);ctx.fillStyle='#b24f35';ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill();ctx.font='bold 25px system-ui';ctx.fillText('北门入口',x+14,y);ctx.restore();
     ctx.fillStyle='#294b45';ctx.font='bold 28px system-ui';ctx.fillText('北 ↑',55,101);
     ctx.font='bold 38px system-ui';ctx.fillText('向北',520,140);ctx.font='32px system-ui';ctx.fillText('汉口路校门',520,195);ctx.fillText('北园建筑与运动场',520,239);
     ctx.font='bold 38px system-ui';ctx.fillText('向南',520,325);ctx.font='32px system-ui';ctx.fillText('宿舍区 · 学生活动中心',520,380);ctx.fillText('广州路校门',520,424);
@@ -38,28 +51,58 @@ function poster(map: CampusMap, panel: number) {
 }
 
 export function createCampusDirectory(map: CampusMap,mats: Materials){
-  const b=new Builder(),panels:T.Mesh[]=[],cos=Math.cos(board.angle),sin=Math.sin(board.angle);
-  const point=(u:number,v:number)=>({x:board.x+u*cos+v*sin,z:board.z-u*sin+v*cos});
+  const b=new Builder();
   const masonry=new T.MeshStandardMaterial({name:'directory-brick',color:0x82877d,map:mats.textures.get('historic-brick.webp'),roughness:.95});
-  const frame=new T.MeshStandardMaterial({name:'directory-frame',color:0xa1aca4,metalness:.42,roughness:.5});
-  const roof=new T.MeshStandardMaterial({name:'directory-canopy',color:0xb8bcae,roughness:.82});
-  const glass=new T.MeshStandardMaterial({name:'directory-glass',color:0xc3d7d0,transparent:true,opacity:.07,depthWrite:false,roughness:.2,metalness:.2});
-  const box=(w:number,h:number,d:number,u:number,y:number,v:number,mat:T.Material,solid=false)=>{const p=point(u,v);b.box(w,h,d,p.x,y,p.z,mat,solid,board.angle);};
-  box(9,.70,.48,0,.35,0,masonry);box(9.1,.09,.56,0,.745,0,mats.stone);
-  box(9,.05,.06,0,.94,.28,frame);box(9,.05,.06,0,2.06,.28,frame);
-  for(const u of[-4.5,-1.5,1.5,4.5])box(.10,1.34,.42,u,1.42,0,frame);
-  box(9.45,.12,.98,0,2.22,.14,roof,true);box(9.43,.11,.055,0,2.19,.63,frame);
-  box(9,1.18,.06,0,1.5,-.15,masonry);
-  const base=point(0,0);b.solids.push({x:base.x,y:1.06,z:base.z,w:9,h:2.12,d:.48,angle:board.angle});
-  for(let i=0;i<3;i++){
-    const u=(i-1)*3;
-    for(const[material,offset]of[[poster(map,i),.252],[glass,.27]] as const){const p=point(u,offset),mesh=new T.Mesh(new T.PlaneGeometry(2.78,1.10),material);mesh.position.set(p.x,1.50,p.z);mesh.rotation.y=board.angle;mesh.receiveShadow=true;panels.push(mesh);}
-    box(.12,.04,.025,u+1.16,1.02,.30,frame);
+  const frame=new T.MeshStandardMaterial({name:'directory-frame',color:0x8e9b94,metalness:.42,roughness:.5});
+  const surround=new T.MeshStandardMaterial({name:'directory-stone-surround',color:0xb7bcac,roughness:.88});
+  const roof=new T.MeshStandardMaterial({name:'directory-canopy',color:0xc1c5b5,roughness:.82});
+  const glass=new T.MeshStandardMaterial({name:'directory-glass',color:0xc3d7d0,transparent:true,opacity:.075,depthWrite:false,roughness:.2,metalness:.2});
+  const guides=[0,1,2].map(panel=>poster(map,panel));
+  const paving=mats.path.clone();paving.name='directory-sidewalk';paving.polygonOffset=true;paving.polygonOffsetFactor=-2;paving.polygonOffsetUnits=-2;
+  const turf=mats.grass.clone();turf.name='directory-east-grass-strip';
+  let panelCount=0;
+  for(const current of boards){
+    const cos=Math.cos(current.angle),sin=Math.sin(current.angle);
+    const point=(u:number,v:number)=>({x:current.x+u*cos+v*sin,z:current.z-u*sin+v*cos});
+    const box=(w:number,h:number,d:number,u:number,y:number,v:number,mat:T.Material,solid=false)=>{const p=point(u,v);b.box(w,h,d,p.x,y,p.z,mat,solid,current.angle);};
+    const width=current.width,bays=Math.max(1,Math.round(width/3.5)),bay=width/bays;
+    box(width,.70,.62,0,.35,0,masonry);box(width+.10,.10,.71,0,.745,0,surround);
+    box(width,1.30,.16,0,1.39,-.22,masonry);
+    box(width,.20,.62,0,1.99,0,surround);box(width+.20,.14,.91,0,2.17,.10,roof,true);
+    box(width+.18,.045,.065,0,2.10,.59,frame);
+    // Continuous wall collision corresponds to the masonry/glazed display,
+    // rather than leaving walk-through spaces between decorative window frames.
+    const base=point(0,0);b.solids.push({x:base.x,y:1.045,z:base.z,w:width,h:2.09,d:.62,angle:current.angle});
+    for(let i=0;i<=bays;i++)box(.20,1.31,.61,-width/2+i*bay,1.37,0,surround);
+    for(let i=0;i<bays;i++){
+      const u=-width/2+(i+.5)*bay,w=bay-.35;
+      box(w+.10,.065,.095,u,.86,.323,frame);box(w+.10,.065,.095,u,1.87,.323,frame);
+      for(const side of[-1,1])box(.055,1.075,.095,u+side*(w+.045)/2,1.365,.323,frame);
+      for(const [material,offset]of [[guides[i%3],.331],[glass,.353]] as const){const p=point(u,offset);b.add(new T.PlaneGeometry(w,.96),material,p.x,1.365,p.z,new T.Euler(0,current.angle,0));}
+      // Paired glazed leaves with a small latch; original readable guide art.
+      box(.032,.96,.055,u,1.365,.366,frame);box(.10,.045,.032,u+.12,.98,.386,frame);panelCount++;
+    }
+    // Both edge routes remain walkable; eastern footage additionally shows
+    // a narrow path separated from the carriageway by grass and a low curb.
+    const pathWidth=current.side==='east'?1.72:1.30,pathV=current.side==='east'?1.30:1.03;
+    box(width,.036,pathWidth,0,.018,pathV,paving,true);
+    if(current.side==='east'){
+      box(width,.055,1.15,0,.0275,2.78,turf);
+      box(width,.12,.12,0,.06,3.43,surround,true);
+      box(width,.075,.10,0,.0375,2.20,surround,true);
+    }
   }
-  const group=b.finish('Nanyuan campus directory');group.add(...panels);group.userData.board={...board};group.userData.source='official VR gl-1-02 form; approximate short section by plan-85 south wall; original guide content';
+  const group=b.finish('Nanyuan campus directory');
+  group.userData.board={...board};group.userData.boards=boards;group.userData.panelCount=panelCount;
+  group.userData.source='User 2026-10-09 north-gate video and official VR gl-1-02 four faces; grey masonry, pale coping and glazed display walls; fitted approximate lengths; original guide content';
+  group.userData.openings={northJoin:'unverified; left open',westEntrance:[414.5,421],songlinPath:[419.4,422.2],westJunction:'wall ends at z424.8 before junction z430',fountain:'east wall ends at z436.6 before outer ring z440.543'};
   const nearby=(position:{x:number;y:number;z:number})=>{
-    const dx=position.x-board.x,dz=position.z-board.z,u=dx*cos-dz*sin,front=dx*sin+dz*cos;
-    return position.y<.8&&position.y>-.2&&Math.abs(u)<board.width/2+.2&&front>.4&&front<3.6?board:null;
+    if(position.y>=.8||position.y<=-.2)return null;
+    for(const current of boards){
+      const dx=position.x-current.x,dz=position.z-current.z,cos=Math.cos(current.angle),sin=Math.sin(current.angle),u=dx*cos-dz*sin,front=dx*sin+dz*cos;
+      if(Math.abs(u)<current.width/2-.15&&front>.4&&front<3.6)return current;
+    }
+    return null;
   };
-  return {group,solids:b.solids,board,nearby,arrival:{name:board.name,x:board.x+sin*2.8,z:board.z+cos*2.8,yaw:board.angle}};
+  return {group,solids:b.solids,board,nearby,arrival:{name:board.name,x:board.x+Math.sin(board.angle)*1.7,z:board.z+Math.cos(board.angle)*1.7,yaw:board.angle}};
 }
