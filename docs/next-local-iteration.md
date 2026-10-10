@@ -1,3 +1,13 @@
+# 最新：雨镜补正 cut6c（2026-10-11）
+
+- 最新成片`.local-media/promotion/v128-cut6-rain/gulou-cut6c-63.5s.mp4`，28镜63.5秒1080p30，旧cut6b及各版保留。只将雨镜1695–1784共90帧用当前2857410/v128场景补录，同from[4,4,231]→[8,4.5,233]、look[-1.5,7,257]、FOV58/near1/hour14；左上旧灰白大片叶面已消失。
+- root实看全部90帧编码左上树叶裁片、编码0/45/89全景及原生最大变化10/11、70/71；预览0/45/89只是低分辨率缩图，不冒称原生。完整1905帧视音频解码通过，1815非雨镜解码帧MD5逐项相同、音频编码包SHA256相同，雨声/音乐保持，听感未验。证据`/tmp/gulou-cut6-rain-refresh/{README.md,final-review.json,encoding-report.json}`；成片SHA256 `5deb72cc743a7ef6b7918d9ec20e5f023f154074ced7898b71c52759f486fb1a`。
+- master `docs/validation/promotion-cut6-20261011/shotlist.json`保留28selected/approved及所有机位，更新输出来源，雨镜改为reuseFromMovie指向cut6c56.5秒，避免再次复用旧灰叶素材。local recorder过滤两种reuse、补录按钮清除两种字段；语法检查过。临时单镜选择未覆盖master。这些录制文件不提交。
+- 原片`/Users/zackaria/Downloads/gulou-cut6-3s.ivf`，manifest `gulou-cut6-review (4).json`。恢复脚本`/tmp/gulou-cut6-rain-refresh/assemble-rain.py RAW MANIFEST`拒绝覆盖现有片，已完成不要直接重跑；后续明确单镜修改另存输出，保留旧片及音轨。IAB6 tab16已关，0亮度/静音/caffeinate75604/4173保持。
+- promo_review_fresh仍无encoded-agent-review.md，仅发送本次结果请保存已看范围，未再中断或新开代理。独立最终审片不冒称通过。生产未变，A02继续水平过渡以外的22.5°仰角换排、67.5°顶视切换、其余远楼闪烁与整体卡顿；高空浓雨雾远树白轮廓另待定位。下方“优先补雨镜”已完成，不重录全片。
+
+---
+
 # v0.128 树冠相邻视图平滑（2026-10-11）
 
 - 已采用水平图集切换16°平滑，先按alpha加权混色再走既有多采样覆盖/深度写入；只在过渡带双采样，带外原视图。没有锁植被或改几何/碰撞/LOD/裁剪/分辨率。22.5°仰角换排和67.5°顶视方向切换仍待，不称全部闪烁修复。
