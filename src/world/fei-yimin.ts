@@ -20,6 +20,9 @@ export function buildFeiYimin(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
  // shadow passes to avoid self-shadow stripes without weakening campus shadows.
  roof.shadowSide=T.BackSide;
  const glass=new T.MeshStandardMaterial({name:'fei-blue-grey-glass',color:0x768989,metalness:.18,roughness:.4});
+ // Preserve the reveal/glass order when millimetre gaps share a distant depth
+ // value. Constant units avoid a slope-dependent shift along oblique facades.
+ for(const [surface,units]of [[dark,-1],[glass,-2]]as const){surface.polygonOffset=true;surface.polygonOffsetFactor=0;surface.polygonOffsetUnits=units;}
  const canopy=new T.MeshStandardMaterial({name:'fei-court-glass-canopy',color:0xa0b7b6,transparent:true,opacity:.57,roughness:.32,side:T.DoubleSide,depthWrite:false});
  const parts:{name:string;points:number[][];bottom:number;height:number}[]=[];
  let windows=0;

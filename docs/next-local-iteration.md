@@ -1,6 +1,14 @@
-# 最新短交接：v0.120 与第四版宣传片（2026-10-10）
+# 最新短交接：v0.121 远景表层与第四版宣传片（2026-10-10）
 
-主树 `/Users/zackaria/Desktop/gulou campus`，main；生产v0.120.0，生产提交3d7d98b已私有同步；文档后续提交以Git为准。复用4173/PID5451，不启动第二服务，不操作或关闭用户Chrome。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。私有源码/必要资产同步已授权；未授权公开、部署或Pages。README赞赏绝对末尾。
+主树 `/Users/zackaria/Desktop/gulou campus`，main；生产v0.121.0；本轮提交/私有同步状态以Git为准，v120底座47854eb已同步。复用4173/PID5451，不启动第二服务，不操作或关闭用户Chrome。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。私有源码/必要资产同步已授权；未授权公开、部署或Pages。README赞赏绝对末尾。
+
+## v121新增，接续先看
+
+- 费楼窗衬-1/玻璃-2；唐楼石材表层-1/窗衬-1/玻璃-2的固定polygonOffsetUnits，factor0，共5材质。只改材质字段，不改几何/碰撞/裁剪或分辨率。16相同横移帧/分支实看减少远景杂斑；并非全楼、全校园闪烁已清除。
+- 候选/tmp/gulou-depth-bias-v120：A/C/A还原零像素差；near-correct/才是有效的8m/.65m实际玻璃/石材面近墙对照，旧根目录near图曾误选混合mesh中的普通面，不引用旧图。配对8周期256GPU样本0disjoint，C/A中位0.995（0.959..1.074）；相同1451draw/4154569tris。未证明提速，限定冻结渲染回归。
+- 生产验证/tmp/gulou-depth-bias-v121：实看生产16帧联系表和费楼原生前后，两处远立面crop与已验候选逐像素相同；页面docs/validation/depth-bias-v121/index.html断言真实5材质字段，以局部还原v120为A、实际生产为C。局部v120候选页已门禁，勿对当前源码重复套候选。types/lint/build/58资产通过，日志/tmp/gulou-v121-*。
+- 对数深度新试验已修独立等价PMREM和冻结场景，A/B/A回归及shader原样对照全0像素差。8配对周期GPU耗时2.08..2.36倍，中位2.235，明确拒绝生产采用。证据/tmp/gulou-depth-equal-v120/README.md；不重试旧无效logdepth，不忽略新成本证据。首次自定义sky缺common chunk已在本地probe修正，无生产shader改动。
+- A02仍首要：其它普通窗/远楼纹理或叠层、全场卡顿未关。长块40→14FPS漂移在冻结render-only同负载也出现；单次swap3.52GB观察不足以归因。下一轮应基于新的分层证据推进，避免再跑同样长块漂移A/B。
 
 ## 当前成片与本版结果
 
@@ -15,7 +23,7 @@
 ## 继续优先项
 
 1. A02普通游戏飞行闪烁与性能仍最优先。v119的100m细部组0.4游戏秒淡变已过，不重做。剩余远立面毫米级深度干涉已证实（不代表所有根因）：`/tmp/gulou-flight-depth-v119/README.md`。普通北向326帧冻结对照：受检远立面关接收阴影零像素差；near变化改变斑纹；费玻璃/衬层4.9mm，唐楼2.8mm，24bit主深度。
-2. 旧双renderer logdepth试验无效：候选没有独立等价PMREM且场景漂移。若继续须独立PMREM和冻结原生场景；雨ShaderMaterial缺logdepth chunks。reverse depth受CSMFrustum[-1,1]假设约束，不能盲开。普通窗polygonOffset没解决特殊费/唐，未采用。FOV收敛324次CSM刷新126.4ms不是已证主瓶颈。性能改动需同条件稳定收益，不降体验，不循环已拒方案。
+2. 旧双renderer logdepth试验无效：候选没有独立等价PMREM且场景漂移。后续v121接续试验已修独立PMREM/冻结，并因稳定约2.235倍GPU代价拒绝采用，详见顶部；不重跑。reverse depth受CSMFrustum[-1,1]假设约束，不能盲开。普通窗polygonOffset没解决特殊费/唐，未采用。FOV收敛324次CSM刷新126.4ms不是已证主瓶颈。性能改动需同条件稳定收益，不降体验，不循环已拒方案。
 3. 亮屏IAB旧36.5→16.2FPS仍复现卡顿；Chrome约29.5但少1draw/126664tris，不是严格同负载对照。不要归咎锁屏。用户现明确允许强制不熄屏，`caffeinate -di` PID75604有效；不重复启动，明确停工/恢复时kill此PID即可，没有修改持久设置。
 4. 南园一/二/三门口同朝向与侧牌；plan90/94/101原nearest-road导致朝向不一致，1/3牌已有可能在错面，不能重复添。
 5. 只做汉口新外卖柜；旧棚已拆，删棚体与碰撞。苏浙门左浅墙捐建牌：南京大学苏浙运动场 / 2002.5.20 / 香港苏浙同乡会捐建。已有 `references/user-review-20261010/`，不重复索要，实际看图/VR/地图，不猜坐标尺寸、不封公共路。
@@ -31,7 +39,7 @@
 
 ## 操作
 
-最新明确授权只开一个promo_review独立审片；旧三agent已完成，先查/复用，不新增重复agent。CUA IAB3；tab65完成后已关闭，用户Chrome未动。仅CUA操作浏览器，不用shell Playwright/CDP。
+最新明确授权只开一个promo_review独立审片；旧三agent已完成，先查/复用，不新增重复agent。CUA IAB3；tab65完成后已关闭，v121验证tab66已关闭，用户Chrome未动。仅CUA操作浏览器，不用shell Playwright/CDP。
 
 Node `/Users/zackaria/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node`；Python同dependencies/python/bin/python3（有PIL），系统python无PIL；OpenCV在.tools/python。ffmpeg `/tmp/gulou-media-tools/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1`。无npm onPATH，直接Node调tsc/eslint/vite/metrics。PNG媒体downloadMedia偶超时，保留已存图不无故重跑；DOM canvas.toDataURL不可用，录制页已加原生末帧下载按钮。
 

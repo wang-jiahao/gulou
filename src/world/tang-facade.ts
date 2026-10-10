@@ -16,6 +16,9 @@ export function createTangFacade(){
  ctx.strokeStyle='#b9bdb5';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,128);ctx.lineTo(0,0);ctx.lineTo(256,0);ctx.stroke();
  const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;texture.wrapS=texture.wrapT=T.RepeatWrapping;
  const panels=new T.MeshStandardMaterial({name:'tang-stone-panel-grid',map:texture,roughness:.91});
+ // The panel skin is only 2mm above its stone backing. Keep the visible layers
+ // ordered at flight distance without moving the geometry or clipping plane.
+ for(const [surface,units]of [[panels,-1],[reveal,-1],[glass,-2]]as const){surface.polygonOffset=true;surface.polygonOffsetFactor=0;surface.polygonOffsetUnits=units;}
  const faces:{role:string;frontage:number[];bays:number;windowRows:number}[]=[];
  const box=(b:Builder,e:Edge,u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material)=>b.box(w,h,d,e.x+u*e.nz+v*e.nx,y,e.z-u*e.nx+v*e.nz,m,false,e.angle);
  const plane=(b:Builder,e:Edge,u:number,y:number,v:number,w:number,h:number,m:T.Material)=>{
