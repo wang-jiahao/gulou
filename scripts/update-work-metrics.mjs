@@ -75,7 +75,7 @@ const rows = [
   ['来源记录', `${urls.size} 个不同 URL，见资料来源文档（不代表全部已用于建模；同站不同页面分别计）`],
 ];
 if (usage) rows.push(
-  ['已扫描对话范围', `${usage.sessions} 份任务日志 / ${n(usage.userMessages)} 条用户角色消息（过滤环境注入、心跳和接续摘要；不等于全项目对话轮数）`],
+  ['已扫描对话范围', `${usage.sessions} 份任务日志 / ${n(usage.userMessages)} 条人工需求消息（过滤环境注入、心跳和接续摘要；不等于全项目对话轮数）`],
   ['模型报告 token 用量', `${n(usage.total)} total；输入 ${n(usage.input)}（含缓存读取 ${n(usage.cachedInput)}），输出 ${n(usage.output)}；上述日志截至 ${usage.measuredAt} 的末次累计计数`],
 );
 rows.push(['实际花费', '未知；缺少中转账单和可核实的模型单价，不能由 token 数可靠推算金额']);

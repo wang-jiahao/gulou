@@ -1,6 +1,21 @@
-# 最新短交接：v0.119缓解立面整组跳变；全场性能仍首要
+# 最新短交接：建筑状态文档、作者口吻；贡献者身份方案准备中
 
-主树 `/Users/zackaria/Desktop/gulou campus`，main，0.119.0；提交以Git为准，本轮前HEAD55ba6fe。用户持续开发指令有效。私有源码/必要资产同步已授权；不部署/不启用Pages/不公开仓库。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。复用4173/PID5451。三旧子agent已完成，无重复委派；不要另开agent。
+主树 `/Users/zackaria/Desktop/gulou campus`，main，生产版本0.119.0；提交以Git为准。不要另开agent；3旧agent均完成。复用4173/PID5451，不动用户Chrome页。私有源码/必要资产同步已授权；不部署、不公开、不启用Pages。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。
+
+## 最新接续，优先读本段（2026-10-10）
+- README已按要求调整结构与作者口吻，删“感受它正在以多快的速度发展”，新增`docs/building-status.md`并在“一起共建”引用；建筑方法拆`docs/building-process.md`。状态清单区分局部精修、已有资料待改、缺资料/基础外观。对外文档移除“用户提供”等第三人称描述；地图改为 https://zcc.nju.edu.cn/cssy/dzdt/glxqdt/index.html 。赞赏仍绝对末尾。
+- 贡献者：main原141提交，140正确noreply，首提交9935ff0使用旧QQ邮箱；无Co-authored-by。用户问优选方案、希望尽量代办。拟仅重写旧身份，需先独立副本证明各提交tree/消息/日期保持；尚未授权执行远程历史替换，不得把普通push授权当force许可。远程只main；本机还有2子agent分支和3旧worktree，勿破坏。
+- README token表的原始要求仍未找到；用量只旧日志截至10-04，不能算全项目。Astra准确单价未确认，不能捏造账单。已读openai-docs skill，Google搜索遇验证页，不解验证码。后续从官方源或可核实提供商价格继续。
+- README视频嵌入仍待：ViMax实际使用GitHub user-attachments/assets URL（裸URL/HTML video），不是仓库blob MP4。不要再说GitHub全不支持视频。附件可见性与私有范围待核，尚未上传。README暂放旧截图，旧影片均保留。
+- 新片cut4仍未完成：`docs/validation/promotion-cut4-20261010/`，24镜51秒1530帧；删赛珍珠，简化地名，保留服务大厅/东西楼/博物馆好机位；改逸夫馆/教超/拉贝，加仅飞行/夜/雨。Yifu候选[-303,6,19]→[-305,6.4,22]被树严重遮挡，不可采用；需换另一侧。教超/拉贝/夜雨新机位未审。雨天museum目标要对照原好机位，不能沿用未经核对的手写值。
+- cut4四点分类图在`/tmp/gulou-cut4-20261010/`，suzhe-aerial/fei/yifu-hall/zhongshan，near.07/1与收阴影开关。near1可减细窗干涉，仅诊断，未采用；还须全帧检查裁剪/时序，不能把静图当无闪烁证据。录制页59无运行任务，关闭后重开既有URL即可。
+- 逸夫馆题字候选未验证/未提交：`src/world/yifu-hall-facade.ts`使用addBuildingLettering，`building-lettering.json`增加yifuHall。实看官方gl-4-13高清crop，4contours/heightRatio.21954，宽3.55m。`.tools/v120/trace-yifu.py`，`/tmp/gulou-cut4-20261010/yifu-contours.png`。待清晰正式画面、types/lint/build与来源记录，不得记为完成。
+- A02新增定位已完成，生产渲染未改：`/tmp/gulou-flight-depth-v119/README.md`为权威。普通北向飞行326帧，远立面带关闭接收阴影零像素差，近裁剪改变斑纹；Fei玻璃/衬层仅4.9mm，唐楼2.8mm深度差，24bit深度干涉已证实。非所有闪烁根因，非性能收益。
+- logdepth双renderer试验无效：候选未重建独立PMREM，环境变暗；期间还发生原生滑翔移动。没跑有效性能A/B，未采用。若重启须独立PMREM和固定暂停场景；雨自定义shader缺logdepth片段；reverse depth还受CSMFrustum[-1,1]假设约束，不能盲开。
+- 每帧FOV趋近造成326帧324次CSM刷新合计126.4ms，最后差约1e-12度；不能据此称主瓶颈。普通窗polygonOffset候选未解决Fei/Tang且近景遮挡未验，未采用。
+- CUA重置后IAB是3。截图data URL超200000字符会截断；read-only DOM href按150000分块返回、Node拼接后base64写盘。已恢复所有24诊断图，不重飞。
+
+后续仍先A02和本次新片反馈；南园同朝向/侧牌、汉口新柜与拆棚/碰撞、苏浙捐建牌、其它字体审计都已有资料待改。独立全屏未验，手机明确留给后续用户自验。旧验收范围和具体证据见下方历史段；与上文冲突以上文为准。
 
 ## v119最新结果，先读本段
 - 确认一种普通飞行闪烁来源：100m细部组在阈值处硬切，多栋窗框/空调同时出现，根看基线第6/7对。原版597帧11事件/8图对，`/tmp/gulou-flight-flicker-v118/baseline.json`。非所有闪烁根因、非整楼消失。

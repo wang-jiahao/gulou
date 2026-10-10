@@ -22,6 +22,8 @@ docs/*
 !docs/images/
 !docs/asset_sources.md
 !docs/deployment.md
+!docs/building-process.md
+!docs/building-status.md
 !docs/sources/
 docs/sources/*
 !docs/sources/makehuman-license.md
