@@ -10,6 +10,8 @@
 - 稳定证据 `/tmp/gulou-v117-evidence/`：southwest-stairs、directory-tail、entrance-hud、mobility-with-flight-pass（仅最后flight passed）、bicycle-passed、canopy-rejected、north-timer-rejected、passive-drift。
 
 ## 真正剩余
+最新环境核对（本机11:40）：当前控制台已不再暴露CGSSessionScreenIsLocked，不能继续据此声称仍锁屏，也不能把缺字段当作正常亮屏。最近明确powerd状态11:26为displayOff:1，11:40 UserIsActive/防止显示休眠断言均0，尚未确认亮屏。此次未打开验证页、未做性能测量；等明确亮屏/用户恢复后再测。
+
 1. **A02正常亮屏/独立浏览器性能**。锁屏同负载40秒从约38降12FPS，无同期shader/纹理/主及shadow绘制量/LOD大变；OS历史powerd确认displayOff。不能断言全是锁屏，也不能算游戏已优化。树冠FrontSide两轮零像素差但收益反向，南北timer关闭亦无稳定收益，均未采用。停止无归因候选，等正常环境再测，不唤醒用户。`/tmp/gulou-v117-drift-diagnostic/PASSIVE-RESULT.md`。
 2. **A03真实触控、A05独立全屏**设备条件待验。IAB极简原生页也约50ms退出全屏，非游戏失败/通过。无设备可明确暂挂，不虚报完成。
 3. **A07正式第二版**仍未录，旧`docs/media/gulou-preview.mp4`保持首版。下文预览已过，不能再从头重复审片；先处理A02正常环境，再正式录制/合片/最终解码。
