@@ -125,9 +125,12 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
       faces.push({ri,edge,len,x:mx,z:mz,angle,nx,nz});
     }
     const edges=faces.filter(face=>face.ri===0);
+      // Keep the confirmed 1/2/3 entrance family on the same side as Nanyuan 2.
+      // Retain each mapped facade angle instead of rotating the buildings.
+      const sharedNanyuanFront=['plan-90','plan-94','plan-101'].includes(f.id);
       // Choose a long exterior facade facing the nearest public route, rather
       // than putting a doorway onto an inner hole or a two-metre return wall.
-      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=f.id==='plan-3'?edges.find(chemistryFrontage):f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):f.id==='plan-44'?edges.find(southeastFrontage):candidates.sort((a,c)=>{
+      const candidates=edges.filter(e=>e.len>7),scores=new Map<typeof edges[number],number>();const frontage=sharedNanyuanFront?edges.find(e=>e.nz>.98&&e.len>30):f.id==='plan-3'?edges.find(chemistryFrontage):f.id==='plan-17'?edges.find(e=>e.nx>.98&&e.len>15):f.id==='plan-44'?edges.find(southeastFrontage):candidates.sort((a,c)=>{
         const score=(e:typeof a)=>{
           if(scores.has(e))return scores.get(e)!;
           let best=10000;

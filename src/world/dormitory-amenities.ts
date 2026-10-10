@@ -31,7 +31,19 @@ export function createDormitoryAmenities(map:CampusMap,residences:Residence[],ma
  const selected=['plan-94','plan-99','plan-101','plan-106','plan-112','plan-123'];
  for(const id of selected){
   const residence=residences.find(r=>r.id===id);if(!residence?.frontage)continue;
-  const[fx,fz,nx,nz]=residence.frontage,angle=Math.atan2(nx,nz);let placement:Placement|undefined;
+  let cycleFrontage=residence.frontage;
+  // Moving Nanyuan 3's doorway does not establish a new cycle-shelter site.
+  // Keep its existing north-side placement until that site is checked separately.
+  if(id==='plan-101'){
+   const feature=map.features.find(f=>f.id===id);
+   if(feature)for(let i=0;i<feature.points.length;i++){
+    const a=feature.points[i],b=feature.points[(i+1)%feature.points.length],len=Math.hypot(b[0]-a[0],b[1]-a[1]);if(len<30)continue;
+    const x=(a[0]+b[0])/2,z=(a[1]+b[1])/2;let nx=-(b[1]-a[1])/len,nz=(b[0]-a[0])/len;
+    if(insidePolygon(x+nx*.18,z+nz*.18,feature)){nx=-nx;nz=-nz;}
+    if(nz<-.98){cycleFrontage=[x,z,nx,nz];break;}
+   }
+  }
+  const[fx,fz,nx,nz]=cycleFrontage,angle=Math.atan2(nx,nz);let placement:Placement|undefined;
   for(const away of [2.8,4.5,7.0]){
    for(const offset of [9,-9,14,-14,19,-19,25,-25]){
     const x=fx+nx*away+nz*offset,z=fz+nz*away-nx*offset,ring=corners(x,z,angle,7.5,3.3);
