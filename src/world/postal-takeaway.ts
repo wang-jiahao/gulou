@@ -4,34 +4,54 @@ import type {CollisionMesh} from './collision-mesh.ts';
 import {southBoundaryRuns} from './south-boundary-layout.ts';
 import {facilityFront,facilityMaterial} from './life-facility-geometry.ts';
 
-// Boundary immediately left/east of China Post. The old photographs include
-// metal canopies, subsequently confirmed demolished on 2026-10-10.
-// Cabinet styling and placement still await alignment to the newer photographs.
+/** The marked street view places the lockers across from South Teaching,
+ * between the granite panels in front of Nanyuan 18/19, east of Zhongshan.
+ * Fit the photographed cabinet proportions to those existing fence bays;
+ * physical dimensions and small mural strokes are not surveyed. */
+export function hankouTakeawayFrontage(){
+ const points=southBoundaryRuns.find(r=>r.name==='south-north-east')!.points;
+ const i=points.findIndex(([x,z])=>x===-30.573&&z===376.013);
+ const at=(a:number[],c:number[],t:number)=>[a[0]+(c[0]-a[0])*t,a[1]+(c[1]-a[1])*t];
+ // Both neighbouring segments have four bays; the existing granite panels
+ // occupy their fourth bays. Use the intervening railing, not the gate return.
+ const a=at(points[i-1],points[i],.875),c=at(points[i],points[i+1],.875);
+ const span=Math.hypot(c[0]-a[0],c[1]-a[1]);
+ const e={x:(a[0]+c[0])/2,z:(a[1]+c[1])/2,nx:-(c[1]-a[1])/span,nz:(c[0]-a[0])/span,len:span-4.1,yaw:0};
+ e.yaw=Math.atan2(e.nx,e.nz);return e;
+}
 export function buildPostalTakeaway(b:Builder,meshes:CollisionMesh[],camera:T.Object3D[]){
- const points=southBoundaryRuns.find(r=>r.name==='south-west')!.points,[a,c]=points.slice(-2),len=Math.hypot(c[0]-a[0],c[1]-a[1]);
- const e={x:(a[0]+c[0])/2,z:(a[1]+c[1])/2,nx:-(c[1]-a[1])/len,nz:(c[0]-a[0])/len,len,yaw:0};e.yaw=Math.atan2(e.nx,e.nz);
- const {box,sign,point}=facilityFront(b,e,meshes,camera);
- const stone=facilityMaterial('postal-takeaway-stone',0xb5b7ab),joint=facilityMaterial('postal-takeaway-stone-joints',0x737c72),grey=facilityMaterial('postal-takeaway-locker-doors',0xd1d1c6),dark=facilityMaterial('postal-takeaway-locker-casing',0x343c3b),yellow=facilityMaterial('postal-takeaway-yellow-header',0xe2b94f);
- // A thin backing conceals the old railing visually. Its original closed
- // boundary collision is retained, so the facility creates no campus opening.
- box(0,1.575,.28,len,3.15,.16,stone,true);
- for(const u of[-len/2+.3,0,len/2-.3]){
-  box(u,1.59,.50,.60,3.18,.54,stone,true);
-  for(let y=.42;y<3.17;y+=.42)box(u,y,.777,.6,.018,.014,joint);
+ const e=hankouTakeawayFrontage(),{box,sign,point}=facilityFront(b,e,meshes,camera);
+ const white=facilityMaterial('postal-takeaway-white-casing',0xe1e2dc),joint=facilityMaterial('postal-takeaway-panel-joints',0xa0a69f),door=facilityMaterial('postal-takeaway-locker-doors',0xe8e8e1),edge=facilityMaterial('postal-takeaway-door-recess',0xb3bab3),purple=facilityMaterial('postal-takeaway-purple-label',0x705573),screen=facilityMaterial('postal-takeaway-screen',0x416d77);
+ // The continuous original boundary collider remains. This shallow cladding
+ // stays within the existing stone ends, with no new campus opening.
+ box(0,1.575,.28,e.len,3.15,.16,white,true);
+ for(let y=.48;y<3.15;y+=.42)box(0,y,.369,e.len,.012,.014,joint);
+ const columns=12,rows=7,w=4.8,pitch=w/columns,rowPitch=.35,baseY=.30;
+ const labels=document.createElement('canvas');labels.width=1024;labels.height=512;
+ const ctx=labels.getContext('2d')!;ctx.fillStyle='#465049';ctx.textAlign='left';ctx.textBaseline='top';ctx.font='20px sans-serif';let number=1;
+ for(let col=0;col<columns;col++)for(let row=0;row<rows;row++){
+  if(col===1&&row===1)continue;
+  ctx.fillText(String(number++),col*1024/columns+6,row*512/rows+5);
  }
- // One shared small label atlas for forty doors instead of forty textures.
- const labels=document.createElement('canvas');labels.width=512;labels.height=512;const ctx=labels.getContext('2d')!;ctx.fillStyle='#4c5550';ctx.textAlign='right';ctx.font='22px sans-serif';
- for(let row=0;row<4;row++)for(let col=0;col<5;col++)ctx.fillText(String(1+row*5+col),(col+1)*102.4-12,(3-row)*128+28);
- const map=new T.CanvasTexture(labels);map.colorSpace=T.SRGBColorSpace;const numbers=new T.MeshStandardMaterial({name:'postal-takeaway-shared-number-atlas',map,transparent:true,depthWrite:false,roughness:.8});
+ const map=new T.CanvasTexture(labels);map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;
+ const numbers=new T.MeshStandardMaterial({name:'postal-takeaway-shared-number-atlas',map,transparent:true,depthWrite:false,roughness:.8});
  const bays=[];
- for(const u of[-1.82,1.82]){
-  const w=2.77;box(u,1.47,.61,w,2.77,.74,dark,true);
-  for(let row=0;row<4;row++)for(let col=0;col<5;col++){
-   const du=u+(col-2)*.54,y=.43+row*.58;box(du,y,.999,.514,.553,.045,grey);
+ for(const u of[-3.15,3.15]){
+  box(u,1.50,.61,w+.08,2.83,.74,white,true);
+  for(let col=0;col<columns;col++)for(let row=0;row<rows;row++){
+   const x=u-w/2+(col+.5)*pitch,y=baseY+(rows-row-.5)*rowPitch;
+   box(x,y,.994,pitch-.016,rowPitch-.016,.034,edge);
+   box(x,y,1.014,pitch-.04,rowPitch-.038,.024,door);
+   if(col===1&&row===1){box(x,y,1.03,pitch*.63,rowPitch*.53,.025,purple);box(x,y,1.045,pitch*.49,rowPitch*.39,.012,screen);}
   }
-  const labelPoint=point(u,1.026);b.add(new T.PlaneGeometry(2.70,2.32),numbers,labelPoint.x,1.30,labelPoint.z,new T.Euler(0,e.yaw,0));
-  box(u,2.77,1.001,w,.32,.05,yellow);sign('美团外卖',u,2.77,1.032,1.98,.26,'#4d4b3f');
-  bays.push({u,width:w,columns:5,rows:4});
+  const p=point(u,1.033);b.add(new T.PlaneGeometry(w,rows*rowPitch),numbers,p.x,baseY+rows*rowPitch/2,p.z,new T.Euler(0,e.yaw,0));
+  for(let section=0;section<4;section++){
+   const x=u-w/2+(section+.5)*w/4;
+   box(x,2.84,1.004,w/4-.025,.21,.05,door);
+   sign('外卖柜',x-.17,2.84,1.035,.65,.17,'#50565a');
+   box(x+.41,2.84,1.035,.28,.18,.02,purple);
+  }
+  bays.push({u,width:w,columns,rows,doors:83,screen:{column:1,row:1}});
  }
- return{frontage:[e.x,e.z,e.nx,e.nz],banks:2,doors:40,canopies:0,publicSide:true,bays,source:'Hankou locker photographs 2026-10-07; canopy demolition confirmed 2026-10-10',approximate:'legacy cabinet count, styling, width and boundary offset; newer Hankou photographs available, alignment pending'};
+ return{frontage:[e.x,e.z,e.nx,e.nz],banks:2,doors:166,canopies:0,publicSide:true,bays,source:'Hankou cabinet photograph and marked street view 2026-10-10; existing mapped fence bays east of Zhongshan',approximate:'cabinet dimensions fitted to fence; small header identifiers and continuous architectural mural strokes remain to align'};
 }

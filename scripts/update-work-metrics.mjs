@@ -51,24 +51,28 @@ const n = x => x.toLocaleString('en-US');
 const mb = x => `${(x / 1048576).toFixed(2)} MiB`;
 const dollars = x => `$${x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const measured = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Shanghai' });
+const day = value => new Date(value).toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+const started = day(usage?.from ?? git('log', '--reverse', '--format=%aI').split('\n')[0]);
+const today = day(new Date());
+const elapsedDays = Math.round((Date.parse(today) - Date.parse(started)) / 86400000);
 const rows = [
-  ['版本与提交', `${versions.size} 个版本号 · 当前 v${version} · ${n(Number(git('rev-list', '--count', 'HEAD')))} 次 Git 提交`],
-  ['代码与工具', `游戏源代码 ${n(code.lines)} 行 / ${code.files} 个文件 / ${mb(code.bytes)}；开发与验证工具 ${n(tooling.lines)} 行 / ${tooling.files} 个文件`],
-  ['游戏静态资源', `${assets.files} 个文件 · ${mb(assets.bytes)}`],
-  ['参考资料', `${n(images.length)} 张图片 · ${videos.length} 个视频 · ${urls.size} 个来源链接`],
+  ['版本与提交', `${versions.size} 个版本号 · 当前 v${version} · ${n(Number(git('rev-list', '--count', 'HEAD')))} 次提交`],
+  ['代码与工具', `${n(code.lines + tooling.lines)} 行 · ${code.files + tooling.files} 个文件（游戏 ${n(code.lines)} 行，工具 ${n(tooling.lines)} 行）`],
+  ['素材与参考', `游戏资源 ${assets.files} 个 / ${mb(assets.bytes)}；参考图 ${n(images.length)} 张、视频 ${videos.length} 个、来源 ${urls.size} 处`],
 ];
 let bill = '';
 if (usage?.schema === 2) {
-  rows.push(['需求交流', `${n(usage.userMessages)} 条人工需求消息 · ${usage.sessions - usage.agentSessions} 个主任务`],
-    ['AI 协作', `${usage.agentSessions} 个子任务 · ${n(usage.requests)} 次有用量记录的模型调用`],
-    ['累计 token', `${n(usage.total)}（输入 ${n(usage.input)} / 输出 ${n(usage.output)}）`]);
+  rows.push(['需求与协作', `${n(usage.userMessages)} 条需求 · ${usage.sessions - usage.agentSessions} 个主任务 / ${usage.agentSessions} 个子任务 · ${n(usage.requests)} 次模型调用`]);
   const chargeRows = [['普通输入', 'uncachedInput'], ['缓存读取', 'cachedInput'], ['缓存写入', 'cacheWriteInput'], ['输出（含推理）', 'output']];
-  bill = `\n### Token 费用\n\n按 [GPT 6 Astra 官方 Standard 价格](${astraPricing.source})折算，合计 **${dollars(usage.estimatedUsd)}**。\n\n| 类别 | Token 数 | 折算费用（美元） |\n| --- | ---: | ---: |\n${chargeRows.map(([label, key]) => `| ${label} | ${n(usage[key])} | ${dollars(usage.costs.short[key] + usage.costs.long[key])} |`).join('\n')}\n\n用量覆盖 ${usage.from.slice(0, 10)} 至 ${usage.measuredAt.slice(0, 10)} 的本项目本地日志。上表为官方标准价折算，不包含中转折扣、税费或外部工具费用。\n`;
+  bill = `\n累计 **${n(usage.total)} token**，按 [GPT 6 Astra 官方 Standard 价格](${astraPricing.source})折算 **${dollars(usage.estimatedUsd)}**。\n\n| 类别 | Token 数 | 折算费用（美元） |\n| --- | ---: | ---: |\n${chargeRows.map(([label, key]) => `| ${label} | ${n(usage[key])} | ${dollars(usage.costs.short[key] + usage.costs.long[key])} |`).join('\n')}\n`;
 }
-const block = `<!-- work-metrics:start -->\n## 开发工作量\n\n更新于 ${measured}（北京时间）。\n\n| 指标 | 数量 |\n| --- | --- |\n${rows.map(r => `| ${r.join(' | ')} |`).join('\n')}\n${bill}\n图片数包含全景切面、裁切及视频帧，不等于独立照片或逐张阅览数；代码行数包含空行与注释。完整口径、单价与去重方法见[工作量与费用明细](docs/work-metrics.md)。\n\n<!-- work-metrics:end -->`;
+const block = `<!-- work-metrics:start -->\n## 开发投入\n\n| 项目 | 统计 |\n| --- | --- |\n${rows.map(r => `| ${r.join(' | ')} |`).join('\n')}\n${bill}\n[统计与费用明细](docs/work-metrics.md) · 更新于 ${measured.slice(0, 10)}。\n\n<!-- work-metrics:end -->`;
 let readme = await readFile('README.md', 'utf8');
 if (!readme.includes('<!-- work-metrics:start -->')) throw new Error('README metrics marker missing.');
 readme = readme.replace(/<!-- work-metrics:start -->[\s\S]*?<!-- work-metrics:end -->/, block);
+const duration = `<!-- development-duration:start -->从 ${started} 开始，截至 ${today} 已持续开发 **${elapsedDays} 天**。<!-- development-duration:end -->`;
+if (!readme.includes('<!-- development-duration:start -->')) throw new Error('README development-duration marker missing.');
+readme = readme.replace(/<!-- development-duration:start -->[\s\S]*?<!-- development-duration:end -->/, duration);
 await writeFile('README.md', readme);
 if (usage?.schema === 2) {
   const rateRows = Object.entries(astraPricing.short).map(([key, price]) => `| ${{uncachedInput:'普通输入',cachedInput:'缓存读取',cacheWriteInput:'缓存写入',output:'输出（含推理）'}[key]} | ${dollars(price)} | ${dollars(astraPricing.long[key])} |`);

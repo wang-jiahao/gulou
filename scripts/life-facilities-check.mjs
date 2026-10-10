@@ -15,7 +15,7 @@ let triangles=0;data.group.traverse(o=>{if(!o.isMesh)return;const g=o.geometry,p
 const store=data.records.find(r=>r.id==='plan-109'),parcel=data.records.find(r=>r.id==='plan-100'),memory=data.records.find(r=>r.id==='plan-76');
 assert.equal(store.storeys,2);assert.equal(parcel.storeys,1);assert.equal(parcel.parcelEntrance.steps,3);assert.equal(memory.takeaway.banks,2);assert.equal(memory.takeaway.canopies,0);assert.equal(data.doors.filter(d=>d.name==='教育超市').length,2);
 await RAPIER.init();const world=new RAPIER.World({x:0,y:-9.81,z:0});
-for(const r of data.records)world.createCollider(RAPIER.ColliderDesc.cuboid(24,.1,20).setTranslation(r.frontage[0]+5*r.frontage[2],-.1,r.frontage[1]+5*r.frontage[3]));
+for(const r of [...data.records,memory.takeaway])world.createCollider(RAPIER.ColliderDesc.cuboid(24,.1,20).setTranslation(r.frontage[0]+5*r.frontage[2],-.1,r.frontage[1]+5*r.frontage[3]));
 for(const m of data.meshes)world.createCollider(RAPIER.ColliderDesc.trimesh(m.vertices,m.indices));
 for(const s of data.boundary.solids){const yaw=s.angle??0;world.createCollider(RAPIER.ColliderDesc.cuboid(s.w/2,s.h/2,s.d/2).setTranslation(s.x,s.y,s.z).setRotation({x:0,y:Math.sin(yaw/2),z:0,w:Math.cos(yaw/2)}));}world.step();
 const point=(front,u,v,y=.91)=>({x:front[0]+u*front[3]+v*front[2],y,z:front[1]-u*front[2]+v*front[3]});
@@ -32,12 +32,13 @@ for(const [record,entries,entryY]of [[store,[-6.4,6.4],.32],[parcel,[0],.48]]){
  for(const direction of[-1,1])walk(`${record.id} front lane ${direction}`,point(record.frontage,-7*direction,3),point(record.frontage,7*direction,3));
 }
 const front=memory.takeaway.frontage;
-for(const direction of[-1,1])walk(`postal public-side pavement ${direction}`,point(front,-5*direction,2.35),point(front,5*direction,2.35));
-for(const u of[-1.82,1.82])walk(`postal cabinet approach ${u}`,point(front,u,4),point(front,u,1.43));
+for(const direction of[-1,1])walk(`postal public-side pavement ${direction}`,point(front,-9*direction,2.35),point(front,9*direction,2.35));
+walk('postal fence remains closed between cabinets',point(front,0,4),point(front,0,-1),.91,true);
+for(const {u} of memory.takeaway.bays)walk(`postal cabinet approach ${u}`,point(front,u,4),point(front,u,1.43));
 for(const [record,u]of [[store,-6.4],[store,6.4],[parcel,0]]){
  const f=record.frontage,o=point(f,u,3,1.8),hit=world.castRay(new RAPIER.Ray(o,{x:-f[2],y:0,z:-f[3]}),4,true);assert.ok(hit);rays.push({name:record.id,u,surface:3-hit.timeOfImpact});assert.ok(3-hit.timeOfImpact>.17&&3-hit.timeOfImpact<.32);
 }
-for(const u of[-1.82,1.82]){const hit=world.castRay(new RAPIER.Ray(point(front,u,3,1.7),{x:-front[2],y:0,z:-front[3]}),4,true);assert.ok(hit);rays.push({name:'locker front',u,surface:3-hit.timeOfImpact});assert.ok(Math.abs(3-hit.timeOfImpact-.98)<.03);}
+for(const {u} of memory.takeaway.bays){const hit=world.castRay(new RAPIER.Ray(point(front,u,3,1.7),{x:-front[2],y:0,z:-front[3]}),4,true);assert.ok(hit);rays.push({name:'locker front',u,surface:3-hit.timeOfImpact});assert.ok(Math.abs(3-hit.timeOfImpact-.98)<.03);}
 // All three buildings and added facilities stay west of the north/south public
 // streets. Sweep both directions against the fixture, including retained fence.
 for(const [name,ends]of [['小粉桥',[[123,460],[124.1,474]]],['金银街',[[-379.413,-117.376],[-383.808,-91.037]]],['汉口路店前人行道',[[-151,375],[-85,375]]]]){

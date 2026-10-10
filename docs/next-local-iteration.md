@@ -1,3 +1,16 @@
+# 最新短交接：v0.123 柜体与文档完成，cut5继续（2026-10-10）
+
+主树main，v0.123.0；提交／私有同步以Git为准。复用4173/PID5451、caffeinate -di PID75604；不打断用户Chrome。作者与隐私授权同下，赞赏末尾。
+
+- 柜体新址中心[-36.91375,376.30525]朝北，南教学楼对面、中山楼东侧、南18/19前；2白柜12×7共166格，屏幕跳号。小字与连续花纹未还原。源postal-takeaway.ts，原始图references/user-review-20261010/hankou-lockers-location-game.png。旧址/新址8射线、18通行/5射线/6路扫掠过；新址图/tmp/gulou-hankou-v123/street-correct.png，detail.png；错误机位street.png勿用。测试页docs/validation/hankou-lockers-v123/?validation=1；tab71已关。
+- README改为开发投入、展开置于参考前，4行工作量+分项费用；开头自动从usage.from按北京时间计算开发天数（当前10天）。更新脚本同步。
+- 用户Chrome曾误留program-sort-v122实验页，现已正常根入口。近期4实验页和新柜页默认重定向/，需?validation=1才能进入测试；不要把用户页当作验证页。
+- A02 program-first排序候选已拒：8周期GPU比1.0144，CPU .9967无稳定收益，/tmp/gulou-program-sort-v122/README.md。generic window bias局部准备失败baseline假设不符，未采用。
+- 最新cut5要求：删逸夫馆换大礼堂；删逸夫管理科学楼换南园八舍/陶园三舍，宿舍与餐厅顺序对调；加入东南楼、西南楼、南大记忆、外卖柜；泳馆机位右移并对齐吕志和游泳馆字形；教学楼4横幅特别白色第2幅按新照对齐；教超下方南大教超广告删除。夜晚→高空第三人称飞行→雨天结尾，人物可见、熟悉校园大范围俯瞰，实看连续帧再称无明显闪烁。用户接受熟悉地标→教学文化→校园生活→环境体验的顺序。第四版保留，第五版未完成。
+- 新照已存references/user-review-20261010/teaching-banners-{close,front}-20261010.png。promo_review已复用接新机位建议，不新开agent。src/world/education-store.ts有去广告改动，未并入柜体版本，下一轮需视觉验证。
+
+---
+
 # 最新短交接：v0.122 汉口拆棚与A02续查（2026-10-10）
 
 主树 `/Users/zackaria/Desktop/gulou campus`，main；生产v0.122.0；本轮提交/私有同步状态以Git为准，v120底座47854eb已同步。复用4173/PID5451，不启动第二服务，不操作或关闭用户Chrome。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。私有源码/必要资产同步已授权；未授权公开、部署或Pages。README赞赏绝对末尾。
