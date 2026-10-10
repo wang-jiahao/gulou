@@ -1,3 +1,13 @@
+# 最新短交接：v0.126 树冠冗余背面绘制消除（2026-10-11）
+
+- 生产仅canopy-cover.ts的相机朝向平面树冠加forceSinglePass:true，保留DoubleSide、渐隐/透明度、几何、LOD、阴影和裁剪。主画面1451→1393draw（少58次无可见表面的背面提交），提交三角形4154569→4154145，未删模型面。
+- 同renderer冻结1080p/.07..1200，两轮各8ABBA/256GPU/0disjoint，CPU周期比中位.8762/.8889，第二轮约7.6–8ms→6.75–7.3ms，16周期均改善。GPU1.0016/1.0014，无明显GPU收益；只称渲染提交CPU下降约11%，不称全游戏FPS提高，A02仍开放。首轮取图有重叠，第二轮无浏览器操作为主证据。
+- A/C/A及修正后的21机位RGB差全0；16小位移飞行与两处无遮挡近地树冠实看。第3近地43机位有廊遮挡，雨状态未推进不算雨天视觉验收。旧比较画布未clearRect造成叠色的multi-view-invalid-compositing.json作废；以multi-view.json为准。生产73树冠材质断言及A/C/A零差、实际生产图已看，types/lint/build/58assets过。证据/tmp/gulou-canopy-pass-v125/README.md和v126；恢复docs/validation/canopy-pass-v126/?validation=1。tab4已关，用户Chrome未动。
+- 新阶段诊断/tmp/gulou-render-passes-v125：Three renderer.info在阴影后重置，旧1451/4154569是主画面而非全pass；物理全pass2423draw/7413844tris。透明DoubleSide两遍解释回调差94draw/2104tris，已精确对账。4周期总GPU17.72–17.89ms，阴影4.32–4.40ms约24.4%，仅冻结本视角归因，不解释40→14FPS漂移。树叶/屋脊几何量大不是其GPU成本已证。
+- 第五片61秒已交不重录，promo_review仍未回报，已再要求保存已有实看范围；南园1/2/3朝向侧牌、苏浙捐建牌、其它字体审计及独立全屏仍待。手机后续用户自验。README/主页/隐私/作者/排除项保持，下方旧待办以最新已完成项覆盖。4173/PID5451、caffeinate75604复用。Git提交/私有同步以实际Git为准。
+
+---
+
 # 最新短交接：v0.125 普通远窗深度杂斑缓解（2026-10-11）
 
 - 生产v125，仅ordinary-buildings.ts的窗衬-1/三玻璃-2固定depth units，factor0。不动几何碰撞/近裁剪/清晰度。候选原同名匹配13（含门/透明地标），现按factory父组和材质特性精确选四不透明材质，避免误伤。v124未跑成的generic probe已由本轮完成，不再从旧失败开始。

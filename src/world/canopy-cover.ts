@@ -10,7 +10,9 @@ export function loadCanopyCoverAssets(){
  * leaves. A camera-facing crown preserves the source silhouette at flight range.
  * It is ready with the sector and fades in before sparse leaf LODs take over. */
 export function createCanopyCover(trees:TreeSpot[],light:{value:number},transforms:T.Matrix4[],assets:CrownAssets){
- const fade={value:0},material=new T.MeshBasicMaterial({name:'continuous distant canopy',map:assets.map,alphaTest:.06,transparent:true,depthWrite:false,side:T.DoubleSide,toneMapped:false});
+ // These flat crowns face the camera; a separate transparent backface pass
+ // repeats vertex submission without adding any visible surface.
+ const fade={value:0},material=new T.MeshBasicMaterial({name:'continuous distant canopy',map:assets.map,alphaTest:.06,transparent:true,depthWrite:false,side:T.DoubleSide,forceSinglePass:true,toneMapped:false});
  material.onBeforeCompile=shader=>{
   shader.uniforms.uCrownFade=fade;shader.uniforms.uFoliageLight=light;
   shader.vertexShader='attribute float instanceView;\n'+shader.vertexShader;
