@@ -82,7 +82,7 @@ export function paintCollegePortraitPanel(canvas:HTMLCanvasElement,id:CollegeId,
  ctx.fillStyle='#323337';let y=194*u;
  for(const paragraph of lines){for(const line of paragraph){ctx.fillText(line,textX,y);y+=lineHeight;}y+=17*u;}
  ctx.fillStyle='#716b62';ctx.font=`${14*u}px ${fontFamily}`;
- const credit=!hasPortrait?'图像：肖像待补':id==='jianxiong'?'图像：AIP Emilio Segrè Visual Archives, Segrè Collection · CC BY 4.0 · 裁切/灰度':'图像：历史照片 · 公共领域（PD-China）· 裁切/灰度';
+ const credit=!hasPortrait?'图像：肖像待补':id==='anbang'?'图像：用户提供 · 保留原图及水印 · 公开使用许可未确认':id==='jianxiong'?'图像：AIP Emilio Segrè Visual Archives, Segrè Collection · CC BY 4.0 · 裁切/灰度':'图像：历史照片 · 公共领域（PD-China）· 裁切/灰度';
  ctx.fillText(`生平与冠名依据：南京大学新生学院 | ${credit}`,29*u,h-18*u);
  return{width:w,height:h,aspect:w/h,portrait,hasPortrait,text:{x:textX,width:textWidth,fontSize,lineHeight,bodyBottom,lines},footerY:h-18*u};
 }

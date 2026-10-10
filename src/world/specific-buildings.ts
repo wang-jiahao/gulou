@@ -136,7 +136,7 @@ export function buildSpecific(f:MapFeature,mats:Materials,b:Builder,meshes:Colli
    put(0,3.66,1.15,10.5,.32,2.65,pale);
    for(const u of[-3.9,3.9])put(u,1.95,1.13,.34,3.1,.40,pale);
   }
-  if(teaching){const result=teachingFacade(b,meshes,cameraSolids,doors,f.tags.name,e.x,e.z,e.angle);lettering=result.lettering;facade=result.facade;windows+=9;}
+  if(teaching){const result=teachingFacade(b,meshes,cameraSolids,doors,f.tags.name,e.x,e.z,e.angle,mats.textures.get('nju-emblem.png'));lettering=result.lettering;facade=result.facade;windows+=9;}
   if(south){
    // gl-2-53-r: west-entry gold characters stand above a narrow dark canopy,
    // with slim supports against jointed pale stone. Dimensions are approximate.

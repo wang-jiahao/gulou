@@ -16,4 +16,8 @@ See docs/asset_sources.md for the asset inventory and public/credits.html for th
 
 ## 七书院冠名人物肖像
 
-六张384×512 WebP衍生图的逐项出处、裁切与许可说明见 [肖像来源说明](public/assets/portraits/colleges/LICENSES.md)。历史照片保留来源所列PD-China等地域性依据，吴健雄图按CC BY 4.0署名；不将地域性标签等同全球许可。戴安邦目前没有分发肖像，展板明确标识待补。原始下载未纳入游戏资产。
+六张384×512 WebP衍生图的逐项出处、裁切与许可说明见 [肖像来源说明](public/assets/portraits/colleges/LICENSES.md)。历史照片保留来源所列PD-China等地域性依据，吴健雄图按CC BY 4.0署名；不将地域性标签等同全球许可。戴安邦使用用户新提供的肖像，单列如下，不归入六张已列许可图像。原始下载未纳入游戏资产。
+
+### 戴安邦肖像补充（2026-10-10）
+
+`public/assets/portraits/colleges/anbang.webp`源于用户提供的历史肖像，完整保留原图及百度百科水印，增加留边适配展板；未重新生成面容。摄影者、原始出版与公开使用许可未确认，不属于上述公共领域许可声明。详细记录见`public/assets/portraits/colleges/LICENSES.md`；原始参考不分发。

@@ -15,6 +15,10 @@ For each derivative we cropped, converted to grayscale, resized and encoded as W
 
 Public-domain labels above report the specific source's stated basis; PD-China is a territorial copyright-expiration statement, not a claim of worldwide clearance. Retain this file with the derivative assets. The AIP credit and CC BY 4.0 notice also appear in Wu Jianxiong's panel footer.
 
-No Dai Anbang portrait is distributed: the [official NJU biography](https://xsxy.nju.edu.cn/xygk/syjs/20201129/i170996.html) supplies an identified reference photograph but no explicit reuse license. The data records this missing portrait separately from his verified biography.
+The [official NJU biography](https://xsxy.nju.edu.cn/xygk/syjs/20201129/i170996.html) identifies Dai Anbang but supplies no explicit image reuse license. A user-supplied portrait is now included for local review, with its unconfirmed public-use license recorded separately below.
 
 Biographies are concise original paraphrases of [NJU Freshman College's official seven-college list](https://xsxy.nju.edu.cn/xygk/xyjj/index.html) and the individual college pages linked in `src/world/college-stories.ts`. The panel layout is new approximate artwork; neither physical panel count nor wall sequence is asserted by these assets.
+
+## 戴安邦 · anbang.webp
+
+用户于2026-10-10提供的历史照片，含百度百科水印；完整保留图像及水印，仅留边适配3:4展板并转换WebP。摄影者、原始出版及公开使用许可未确认；不标为公共领域或开放许可。原始参考不入仓库。

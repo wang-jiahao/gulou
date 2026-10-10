@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {Builder} from './geometry.ts';
+import {addBuildingLettering} from './building-lettering.ts';
 import {insidePolygon,planShape,type MapFeature} from './campus-map.ts';
 import {splitBuildingRoof} from './building-roof.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
@@ -37,7 +38,8 @@ export function buildNjuMemory(f:MapFeature,b:Builder,meshes:CollisionMesh[],cam
  // Positive u is street-view right (west): post office left, gift shop right.
  const shop=6.3,shopWidth=15.0,postal=-8.0,postalWidth=11.3;
  box(shop,3.86,.17,shopWidth,1.53,.38,fascia);box(postal,3.86,.17,postalWidth,1.53,.38,post);
- text('南 大 记 忆',shop,3.92,.373,10.3,1.24,'#e4ce91',true);
+ const titlePoint=point(shop,.386);
+ const lettering=addBuildingLettering(b,'njuMemory',titlePoint[0],3.23,titlePoint[1],5.35,e.yaw,gold);
  text('中国邮政',postal,4.06,.373,7.5,.86,'#e4c66a');text('CHINA POST',postal,3.42,.373,6.4,.38,'#e4c66a');
  box(shop,1.54,.065,shopWidth,3.06,.10,fascia);box(postal,1.54,.065,postalWidth,3.06,.10,trim);
  const opening=(u:number,w:number,door=false)=>{
@@ -61,5 +63,5 @@ export function buildNjuMemory(f:MapFeature,b:Builder,meshes:CollisionMesh[],cam
  box(shop,.048,.88,3.1,.016,.93,dark);
  const[x,z]=point(shop,.39);doors.push({name:f.tags.name,x,y:0,z,yaw:e.yaw,width:3.15});
  const takeaway=buildPostalTakeaway(b,meshes,camera);
- return{takeaway,id:f.id,name:f.tags.name,source:'user storefront; NJU Logistics 2016-05-19 Hankou Road 9 postal neighbour; NJU Alumni 2020 photograph; dimensions approximate',height:7.54,windows,roof:'low flat coping; concealed roof approximate',dormitory:false,frontage:[e.x,e.z,e.nx,e.nz],storeys:2,streetAccessible:true};
+ return{takeaway,lettering,id:f.id,name:f.tags.name,source:'user storefront; NJU Logistics 2016-05-19 Hankou Road 9 postal neighbour; NJU Alumni 2020 photograph; dimensions approximate',height:7.54,windows,roof:'low flat coping; concealed roof approximate',dormitory:false,frontage:[e.x,e.z,e.nx,e.nz],storeys:2,streetAccessible:true};
 }

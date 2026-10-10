@@ -23,7 +23,7 @@ export const collegeStories:Record<CollegeId,CollegeStory>={
   source:official('170995'),portrait:publicDomain('youxun','吳有訓.jpg','原载杨家骆编《民国名人图鉴》，辞典馆，1937年。')},
  anbang:{college:'安邦书院',person:'戴安邦',role:'无机化学家 · 化学教育家',
   paragraphs:['长期在南京大学任教，参与创立中国化学会、创办期刊《化学》，并创建南京大学配位化学国家重点实验室。','倡导“全面科学教育”，重视科学知识、思维方法、精神与品德的共同培养。安邦书院以他的名字命名。'],
-  source:official('170996'),portrait:null},
+  source:official('170996'),portrait:{asset:'assets/portraits/colleges/anbang.webp',source:'用户提供的戴安邦历史肖像，2026-10-10',credit:'原图含百度百科水印；摄影者与原始出版来源未确认。',license:'用户提供参考，未确认公开使用许可',licenseUrl:'',changes:'保留完整原图与水印，以留边适配展板；未生成或重绘面容。'}},
  yuxiu:{college:'毓琇书院',person:'顾毓琇',role:'电机工程学家 · 教育家 · 诗人',
   paragraphs:['1928年毕业于麻省理工学院，是该校第一位获得科学博士学位的中国人，在电机工程、自动控制及文学艺术领域均有建树。','曾任南京大学前身国立中央大学校长，倡导文、理、工平衡发展，重视宽阔的知识面。毓琇书院以他的名字命名。'],
   source:official('170997'),portrait:publicDomain('yuxiu','顧毓琇.jpg','原载《制宪国民大会实录》，国民大会秘书处编，1946年。')},
