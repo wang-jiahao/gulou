@@ -1,3 +1,13 @@
+# 最新短交接：v0.125 普通远窗深度杂斑缓解（2026-10-11）
+
+- 生产v125，仅ordinary-buildings.ts的窗衬-1/三玻璃-2固定depth units，factor0。不动几何碰撞/近裁剪/清晰度。候选原同名匹配13（含门/透明地标），现按factory父组和材质特性精确选四不透明材质，避免误伤。v124未跑成的generic probe已由本轮完成，不再从旧失败开始。
+- 相同冻结1080p/.07..1200视角A/C/A恢复零差；16同横移帧/分支实看远窗更规整、杂斑减少。三实际玻璃面8m/.65m在近景细节开启后实看，共12原生图；以/tmp/gulou-window-bias-v124/near-visible为准。首轮圆整像素未命中已改真实三角中心；旧未切近细节图不作最终近景验收。
+- 8ABBA周期256GPU/0disjoint、1451draw/4154569tris一致；GPU C/A中位.9973897，CPU中位.996667双向波动，无稳定提速，限定局部无回归。普通性能A02及其它层面闪烁仍开放。
+- 生产图四材质字段断言过、A/C/A零差，生产C与已验candidate远窗crop零差；types/lint/build/58assets通过。证据/tmp/gulou-window-bias-v124/README.md及/tmp/gulou-window-bias-v125，恢复页面docs/validation/window-bias-v125/index.html?validation=1，只用代理页；tab2/3均关，用户Chrome未动。主树提交/私有同步以Git为准。
+- 第五版61秒已交且不重录，主页17c219a仅本地，原片/听感/后续待办同下。复用4173/PID5451与caffeinate75604。禁止公开/部署/Pages，作者/排除项/赞赏末尾同下。
+
+---
+
 # 最新短交接：v0.124 与第五版宣传片完成（2026-10-11）
 
 主树main，生产v0.124.0，提交/私有同步以Git为准。复用4173/PID5451；caffeinate -di PID75604仍有效。不得操作用户Chrome、公开/部署游戏或启用Pages。作者仍指定noreply；赞赏末尾。

@@ -61,6 +61,9 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   const plinth = new T.MeshStandardMaterial({name:'campus-plinth',color:0x74776f,map:mats.textures.get('stone-grain.webp'),roughness:.96});
   const recess = new T.MeshStandardMaterial({name:'window-reveal',color:0x303a37,roughness:.95});
   const glass = [0x4d6362,0x5d706d,0x3d5357].map((color,i)=>new T.MeshStandardMaterial({name:i===1?'window-glass-warm':'window-glass-cool',color,roughness:.32,metalness:.32,envMapIntensity:.7}));
+  // Preserve the 1cm reveal/glass separation when distant depth values quantize.
+  // A fixed depth-unit bias leaves near-wall geometry and window frames intact.
+  for(const [surface,units]of [[recess,-1],...glass.map(g=>[g,-2]as const)]as const){surface.polygonOffset=true;surface.polygonOffsetFactor=0;surface.polygonOffsetUnits=units;}
   const gardenGlass = new T.MeshStandardMaterial({name:'songlin-garden-glazing',color:0x769ba3,roughness:.34,metalness:.22,envMapIntensity:1.1});
   const utility = new T.MeshStandardMaterial({name:'utility-casing',color:0xbdbfb1,roughness:.85});
   const louvre = new T.MeshStandardMaterial({name:'utility-grille',color:0x727a73,roughness:.78});
