@@ -1,11 +1,11 @@
 # 最新短交接：v0.120 与第四版宣传片（2026-10-10）
 
-主树 `/Users/zackaria/Desktop/gulou campus`，main；生产v0.120.0，提交以Git为准。复用4173/PID5451，不启动第二服务，不操作或关闭用户Chrome。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。私有源码/必要资产同步已授权；未授权公开、部署或Pages。README赞赏绝对末尾。
+主树 `/Users/zackaria/Desktop/gulou campus`，main；生产v0.120.0，生产提交3d7d98b已私有同步；文档后续提交以Git为准。复用4173/PID5451，不启动第二服务，不操作或关闭用户Chrome。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。私有源码/必要资产同步已授权；未授权公开、部署或Pages。README赞赏绝对末尾。
 
 ## 当前成片与本版结果
 
 - 第四版已输出 `.local-media/promotion/v120-cut4-motion/gulou-cut4-51s.mp4`：24镜51秒、1920×1080、30fps、1530帧、130324922bytes。原始 `~/Downloads/gulou-cut4-51s.ivf`；三旧版均保留。简单地名、去赛珍珠、无首尾卡；保留原认可机位，改逸夫馆/教超/拉贝，费楼留顶，追加仅飞行/夜晚/雨天。
-- 修改9镜630帧1080p连续预览，飞行90帧联系表实看；夜景曝光2.2另90帧、中山平台修正后60帧复验。正式录制24镜cameraDelta全0，0error/2旧弃用warn。完整1530帧视音频解码通过；根已看15保留镜的45编码后首中末图，promo_review正对9重点做最后成片检查。
+- 修改9镜630帧1080p连续预览，飞行90帧联系表实看；夜景曝光2.2另90帧、中山平台修正后60帧复验。正式录制24镜cameraDelta全0，0error/2旧弃用warn。完整1530帧视音频解码通过；根已看全部24编码中帧及15保留镜的首尾，另核原生费楼裁片及夜景编码亮度，final-review.json已记为可交审看。promo_review已完成9镜原生构图/闪烁重点与飞90帧审片，9重点编码后补看仍可继续，但不阻塞本片交付。
 - 权威证据 `/tmp/gulou-cut4-20261010/`：encoding-report.json、recording-manifest.json、review-final/、encoded-frames/（72张800×450关键帧）、encoded-preserved-0..4.jpg、promo-review-agent.md。忽略的计划/录制器在 `docs/validation/promotion-cut4-20261010/`。此轮用户明确允许先录；不能恢复旧A02禁录门禁。不要重跑全片；需调整时先改单镜。
 - 拍摄near1提高主深度精度；夜景曝光×2.2、开场植被朝向保持均仅录制页策略。不是普通游戏性能修复。新音乐仍为128BPM，51秒结尾保留主和弦攻击，仅拉长尾音并淡出；无削波、末采样归零，模型听感未验。`finish.py`已执行成功，默认不覆盖现有成片，重编码要另存路径。
 - 逸夫馆题字已按官方VR金字重建“逸夫館”轮廓、孔洞、字距和比例；根与子agent均看实际题字crop和生产原生图。照片轮廓及3.55m宽为近似。`src/world/yifu-hall-facade.ts`、building-lettering.json；原图/提取工具不提交。
