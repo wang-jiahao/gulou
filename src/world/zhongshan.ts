@@ -45,9 +45,11 @@ export function buildZhongshan(f:MapFeature,b:Builder,meshes:CollisionMesh[],cam
  }
  const e=edges[3],point=(u:number,v:number)=>[e.x+u*e.nz+v*e.nx,e.z-u*e.nx+v*e.nz];
  const boxes:{kind:string;u:number;y:number;v:number;w:number;h:number;d:number}[]=[];
- const box=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material,kind?:string)=>{const [x,z]=point(u,v);b.box(w,h,d,x,y,z,m,false,e.yaw);if(kind){solid(new T.BoxGeometry(w,h,d),x,y,z,e.yaw);boxes.push({kind,u,y,v,w,h,d});}};
+ const box=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material,kind?:string,visualTopInset=0)=>{const [x,z]=point(u,v);b.box(w,h-visualTopInset,d,x,y-visualTopInset/2,z,m,false,e.yaw);if(kind){solid(new T.BoxGeometry(w,h,d),x,y,z,e.yaw);boxes.push({kind,u,y,v,w,h,d});}};
  const landing=1.22;
- box(0,landing/2,1.12,4.62,landing,2.24,base,'landing');
+ // Leave space for the stone cap: overlapping top faces flicker as the camera moves.
+ // Keep the original full-height collision volume below the accessible landing.
+ box(0,landing/2,1.12,4.62,landing,2.24,base,'landing',.11);
  box(0,landing-.055,1.14,4.72,.11,2.34,stone);
  for(let i=0;i<7;i++){const h=(7-i)*landing/8;box(0,h/2,2.47+i*.32,4.75+i*.11,h,.34,stone,'step');}
  const arch=(width:number,bottom:number,top:number)=>{const s=new T.Shape();s.moveTo(-width/2,bottom);s.lineTo(width/2,bottom);s.lineTo(width/2,top-width/2);s.absarc(0,top-width/2,width/2,0,Math.PI,false);s.closePath();return s;};

@@ -52,15 +52,10 @@ const mb = x => `${(x / 1048576).toFixed(2)} MiB`;
 const dollars = x => `$${x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const measured = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Shanghai' });
 const rows = [
-  ['版本迭代', `${versions.size} 个版本号 · 当前 v${version}`],
-  ['Git 提交', `${n(Number(git('rev-list', '--count', 'HEAD')))} 次`],
-  ['游戏源代码', `${n(code.lines)} 行 · ${code.files} 个文件 · ${mb(code.bytes)}`],
-  ['开发与验证工具', `${n(tooling.lines)} 行 · ${tooling.files} 个文件`],
-  ['场景与轮廓数据', `${generated.files} 个 JSON · ${mb(generated.bytes)}`],
+  ['版本与提交', `${versions.size} 个版本号 · 当前 v${version} · ${n(Number(git('rev-list', '--count', 'HEAD')))} 次 Git 提交`],
+  ['代码与工具', `游戏源代码 ${n(code.lines)} 行 / ${code.files} 个文件 / ${mb(code.bytes)}；开发与验证工具 ${n(tooling.lines)} 行 / ${tooling.files} 个文件`],
   ['游戏静态资源', `${assets.files} 个文件 · ${mb(assets.bytes)}`],
-  ['参考图片', `${n(images.length)} 个本地文件`],
-  ['参考视频', `${videos.length} 个本地文件`],
-  ['资料来源', `${urls.size} 个不同链接`],
+  ['参考资料', `${n(images.length)} 张图片 · ${videos.length} 个视频 · ${urls.size} 个来源链接`],
 ];
 let bill = '';
 if (usage?.schema === 2) {

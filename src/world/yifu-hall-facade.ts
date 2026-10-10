@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {Builder} from './geometry.ts';
+import {addBuildingLettering} from './building-lettering.ts';
 import {yifuHallSideInset} from './yifu-hall-side-entrance.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
 import type {DoorRecord} from './building-entrances.ts';
@@ -97,11 +98,9 @@ export function buildYifuHallFacade(b:Builder,meshes:CollisionMesh[],camera:T.Ob
  for(let step=0;step<4;step++){
   const h=(4-step)*.15;put(0,h/2,1.47+step*.34,12,h,.34,m.pale,true);
  }
- const canvas=document.createElement('canvas');canvas.width=768;canvas.height=160;
- const ctx=canvas.getContext('2d')!;ctx.clearRect(0,0,768,160);ctx.fillStyle='#ae8a3e';
- ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='100px "Kaiti SC","STKaiti",serif';ctx.fillText('逸 夫 館',384,85,730);
- const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
- const gold=new T.MeshStandardMaterial({name:'yifu-hall-gold-lettering',map:texture,transparent:true,alphaTest:.12,roughness:.65,metalness:.2});
- const[sx,sz]=point(0,.23);b.add(new T.PlaneGeometry(3.55,.74),gold,sx,3.78,sz,new T.Euler(0,e.angle,0));
+ const gold=new T.MeshStandardMaterial({name:'yifu-hall-gold-lettering',color:0xcda537,roughness:.46,metalness:.45});
+ // The photographed strokes occupy this width; a spaced font on a much wider
+ // transparent canvas made the old sign look less than half its intended size.
+ const[sx,sz]=point(0,.23);addBuildingLettering(b,'yifuHall',sx,3.38,sz,3.55,e.angle,gold);
  return{source:'NJU official VR scene_gl-4-13-f/l/r; dimensions approximate',upperWindows:3,groundOpenings:3,entryHeight:.6,stairWidth:12,risers:4,lettering:'逸夫館',letteringWidth:3.55,projectingVestibule:false,recessDepth:recess.depth,porchClearHeight:recess.ceiling-recess.floor,solidPiers:4};
 }
