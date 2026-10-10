@@ -1,10 +1,11 @@
 import * as T from 'three';
 import {Builder} from './geometry.ts';
+import {drawPhotoSign} from './photo-signs.ts';
 import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
 
 /** Four hanging banners and the open photo frame in the user's 2026 welcome
  * photographs. Proportions are fitted to the existing facade, not surveyed. */
-export function addTeachingWelcome(b:Builder,meshes:CollisionMesh[],camera:T.Object3D[],x:number,z:number,yaw:number,emblem?:T.Texture){
+export function addTeachingWelcome(b:Builder,meshes:CollisionMesh[],camera:T.Object3D[],x:number,z:number,yaw:number){
  const point=(u:number,y:number,v:number)=>new T.Vector3(x+u*Math.cos(yaw)+v*Math.sin(yaw),y,z-u*Math.sin(yaw)+v*Math.cos(yaw));
  const purple=new T.MeshStandardMaterial({name:'teaching-welcome-purple',color:0x352257,roughness:.88});
  const pale=new T.MeshStandardMaterial({name:'teaching-welcome-numerals',color:0xc7b5d5,roughness:.78});
@@ -17,22 +18,26 @@ export function addTeachingWelcome(b:Builder,meshes:CollisionMesh[],camera:T.Obj
   const canvas=document.createElement('canvas');canvas.width=256;canvas.height=1536;const c=canvas.getContext('2d')!;
   c.fillStyle=['#634083','#f1f1ed','#ddbd54','#664190'][i];c.fillRect(0,0,256,1536);
   c.textAlign='center';c.textBaseline='middle';
-  if(i===0||i===3){
-   c.save();c.translate(128,790);c.rotate(Math.PI/2);c.fillStyle=i===0?'#e2cee8':'#eee5cc';c.font=`italic bold ${i===0?155:110}px Arial,sans-serif`;c.fillText(i===0?'2026   NJU':'HELLO New NJUers!',0,0,1190);c.restore();
+  if(i===0){
+   c.save();c.translate(128,0);c.rotate(Math.PI/2);c.fillStyle='#e2cee8';c.font='italic bold 178px Arial,sans-serif';
+   c.fillText('2026',390,0,570);c.fillText('NJU',1010,0,530);c.restore();
   }else if(i===1){
-   if(emblem?.image){c.fillStyle='#87336a';c.fillRect(59,225,138,151);c.drawImage(emblem.image,61,225,134,151);}
-   c.fillStyle='#872e62';c.font='88px "Kaiti SC","STKaiti",serif';[...'南京大学'].forEach((ch,j)=>c.fillText(ch,157,630+j*120));
-   c.save();c.translate(69,863);c.rotate(Math.PI/2);c.font='34px Georgia,serif';c.fillText('NANJING UNIVERSITY',0,0,620);c.restore();
+   c.fillStyle='#963d75';drawPhotoSign(c,'teachingUniversity',256,1536);
+   c.save();c.translate(74,720);c.rotate(Math.PI/2);c.font='34px Georgia,serif';c.fillText('NANJING UNIVERSITY',0,0,400);c.restore();
+  }else if(i===2){
+   c.fillStyle='#fff5d9';drawPhotoSign(c,'teachingHelloWhite',256,1536);
+   c.fillStyle='#633785';drawPhotoSign(c,'teachingHelloPurple',256,1536);
+   c.save();c.translate(99,268);c.rotate(-.28);c.fillStyle='#fff5d9';c.beginPath();c.roundRect(-39,-30,78,60,12);c.fill();c.fillStyle='#ddbd54';c.font='italic bold 44px Arial,sans-serif';c.fillText('Hi!',0,0);c.restore();
   }else{
-   c.fillStyle='#fff5d9';c.font='italic bold 86px Arial,sans-serif';c.fillText('Hi!',112,426);
-   [...'你好新同学!'].forEach((ch,j)=>{c.fillStyle=j===2?'#633785':'#fff5d9';c.font='bold 91px "Kaiti SC","STKaiti",serif';c.fillText(ch,129+(j%2?8:-8),578+j*116);});
+   c.save();c.translate(128,0);c.rotate(Math.PI/2);c.textAlign='left';c.font='italic bold 122px Arial,sans-serif';
+   c.fillStyle='#efcb57';c.fillText('HELLO',258,0);c.fillStyle='#eee5ed';c.fillText('New',697,0);c.fillStyle='#efcb57';c.fillText('NJU',972,0);c.fillStyle='#eee5ed';c.fillText('ers!',1195,0);c.restore();
   }
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;texture.anisotropy=8;
   const material=new T.MeshStandardMaterial({name:`teaching-welcome-banner-${i}`,map:texture,side:T.DoubleSide,roughness:.96});
-  const geometry=new T.PlaneGeometry(2.05,9.03,4,18),positions=geometry.attributes.position;
+  const geometry=new T.PlaneGeometry(1.25,9.03,4,18),positions=geometry.attributes.position;
   for(let j=0;j<positions.count;j++)positions.setZ(j,.025*Math.sin(positions.getX(j)*5+i)+.018*Math.sin(positions.getY(j)*2));
-  geometry.computeVertexNormals();const p=point((i-1.5)*2.77,10.93,1.15);b.add(geometry,material,p.x,p.y,p.z,new T.Euler(0,yaw,0));
-  box((i-1.5)*2.77,15.46,1.15,2.16,.04,.055,purple);
+  geometry.computeVertexNormals();const p=point((i-1.5)*1.76,10.93,1.15);b.add(geometry,material,p.x,p.y,p.z,new T.Euler(0,yaw,0));
+  box((i-1.5)*1.76,15.46,1.15,1.36,.04,.055,purple);
  }
  // Frame posts and the numerals flank a 2.96m clear central approach. No solid
  // box fills the aperture or the original steps/doorway behind it.

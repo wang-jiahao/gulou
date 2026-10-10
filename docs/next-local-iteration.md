@@ -1,3 +1,20 @@
+# 最新短交接：v0.124 与第五版宣传片完成（2026-10-11）
+
+主树main，生产v0.124.0，提交/私有同步以Git为准。复用4173/PID5451；caffeinate -di PID75604仍有效。不得操作用户Chrome、公开/部署游戏或启用Pages。作者仍指定noreply；赞赏末尾。
+
+- 第五版已交：`.local-media/promotion/v124-cut5-motion/gulou-cut5-61s.mp4`，29镜61s/1830帧1080p30。只补录11镜690帧，复用18已审cut4片段。旧四版保留。顺序熟悉地标→教学文化→宿舍/餐厅/生活→体育→小蓝鲸→夜晚→高空第三人称飞行→雨天。删除逸夫馆/管理科学楼/赛珍珠，加入大礼堂、东西南楼、南8/陶3、南大记忆、新址柜；泳馆机位右移。飞行人物/滑翔翼可见，角色约175–178m俯瞰大半校园；near4仅影片策略。普通A02未关，听感未验。
+- 实看11新镜首轮690帧输出联系表，6镜迭代390帧与大礼堂最后60帧；飞90帧全联系表及最大变化58/59已看。编码后11新镜首/中/尾33张已看，完整1830帧视音频解码通过。maxCameraDelta=0.0000225m，无error/2既有warn。证据`/tmp/gulou-cut5-20261010/{encoding-report,recording-manifest,final-review,timeline}.json`，review1/2/3与encoded-new-0..5.jpg。独立promo_review本轮尚未回报，不冒称独立cut5审完，勿新开重复agent。
+- 录制页曾无原片恢复成初始状态，原因未定；从Downloads/gulou-cut5-review.json恢复29/29已审计划，成功只补录11镜，raw为Downloads/gulou-cut5-23s.ivf，最终记录Downloads/gulou-cut5-review (1).json。tab72已关。新CUA inventory IAB6，主页验证tab1已关；不要硬套旧IAB3。已成片不重录整套。
+- 重编码恢复：runtime Python `/tmp/gulou-cut5-20261010/assemble.py RAW`；目前segments及成片已存在，脚本会拒绝覆盖，先基于timeline修改单段或新输出目录。初始`.tools/v124/prepare-cut5.py`勿再跑，会覆盖人工机位。最终本地计划`docs/validation/promotion-cut5-20261010/shotlist.json`已29/29approved。
+- v124生产：教学楼4条幅按近照收窄/改字距，白幅徽/中文轮廓、黄幅/紫色新提取重建，Latin与Hi位置校正；泳馆竖排金字按官方VR轮廓替代系统字（斜拍小图仍近似、小署名未读）；删除教育超市下方自拟广告。photo-signs.{ts,json}为派生轮廓必要资产，不含原照。3建筑物理/相机/门逐字节相等（26/12/6碰撞），教学10通行、生活18通行/5射线/6公共路过；types/lint/build/58资产通过。`/tmp/gulou-lettering-v124/`与`.tools/v124/geometry-check.mjs`。不要跑旧sports-halls-check（使用shell Playwright）。
+- README按发布快照两处写11天（Astra段和开发投入时间与迭代行），删单独起止日期段及标题·Gulou，加未来游戏链接。metrics脚本已同步不恢复旧自动天数。宣传词已给，包含网站/仓库、千余图像资料、11天与GPT6Astra。
+- 个人主页另仓库`/Users/zackaria/Desktop/github io/wang-jiahao.github.io`：原已含Sponsor，此轮加Gulou外链导航、Education后简短介绍、2026.10 News。桌面1280与窄屏390无横溢出，图全加载；桌面新段实看。本地Liquid真实模板预览，完整Jekyll插件构建未跑。证据/tmp/gulou-homepage-v124/{top,project}.png。独立本地提交；尚未推送/发布，随用户发布时同步。预览恢复：GEM_HOME=/tmp/gulou-homepage-preview-gems GEM_PATH=同路径 ruby .tools/v124/homepage-preview.rb；复用4173的docs/validation/homepage-v124/。原有Sponsor不重复添加。
+- v123汉口新址[-36.91375,376.30525]朝北；南教学楼对面、中山东/南18/19前，2白柜166格已验；连续花纹/小标仍待。v122棚/碰撞已删，别恢复旧门口位置。错误实验面板已从用户Chrome撤下，验证页默认门禁。
+- A02继续普通飞行闪烁/性能：v119细部淡变、v120中山共面、v121费/唐5材质偏移已验不重做。logdepth2.235倍GPU、depth-first排序CPU2.175倍、program-firstGPU1.0144/CPU.9967均拒绝，不重复。generic window候选baseline假设不符未比较。下步要新证据，同条件稳定收益才采用，不降体验、不归咎锁屏。
+- 仍待南园1/2/3共同门朝向/侧牌、苏浙门左捐建牌、其它已传照片字形审计、独立浏览器全屏；手机留用户未来网页自验。旧人物/65故事/148目录/道路/屋顶/主要UI/持续步骑飞验收不重复。参考已有，不猜坐标尺度，不封公共路。
+
+---
+
 # 最新短交接：v0.123 柜体与文档完成，cut5继续（2026-10-10）
 
 主树main，v0.123.0；提交／私有同步以Git为准。复用4173/PID5451、caffeinate -di PID75604；不打断用户Chrome。作者与隐私授权同下，赞赏末尾。

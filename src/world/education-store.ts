@@ -50,10 +50,9 @@ export function buildEducationStore(f:MapFeature,b:Builder,meshes:CollisionMesh[
   for(const y of[.46,1.1,1.78,2.43]){box(u,y,.26,3.72,.065,.1,trim);for(let j=0;j<8;j++)box(u-1.58+j*.45,y+.17,.25,.22,.30,.045,j%3?shelf:trim);}
  }
  box(0,1.95,.22,5.1,2.33,.2,frame);
- // Original screen design, avoiding the dated promotional prices in the photo.
- sign('南大教超',0,2.12,.327,4.84,1.9,'#f9e8ca','#633961');
- sign('校园生活 · 便利相伴',0,1.47,.335,4.35,.35,'#eee2cc');
+ // The display stays unlettered; the invented lower advertisement was removed.
+ box(0,2.12,.327,4.84,1.9,.012,dark);
  for(let step=1;step<=2;step++){const h=step*.16;box(0,h/2,1.35-(step-1)*.42,w+.2,h,.84,paving,true);}
  box(0,.16,.46,w+.2,.32,.88,paving,true);
- return{id:f.id,name:f.tags.name,source:'User education-store.png 2026-10-07 and campus map plan109; east shopfront, scale/hidden faces approximate',height:8.16,storeys:2,windows,roof:'flat coping and low rooftop railing',dormitory:false,frontage:[front.x,front.z,front.nx,front.nz],educationStore:{lettering,doors:2,entryY,steps:2,fascia:'dark blue 南大教超 / 鼓楼店',centralScreen:true}};
+ return{id:f.id,name:f.tags.name,source:'User education-store.png 2026-10-07 and campus map plan109; east shopfront, scale/hidden faces approximate',height:8.16,storeys:2,windows,roof:'flat coping and low rooftop railing',dormitory:false,frontage:[front.x,front.z,front.nx,front.nz],educationStore:{lettering,doors:2,entryY,steps:2,fascia:'dark blue 教育超市 / 鼓楼店',centralScreen:true}};
 }

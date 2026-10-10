@@ -51,12 +51,10 @@ const n = x => x.toLocaleString('en-US');
 const mb = x => `${(x / 1048576).toFixed(2)} MiB`;
 const dollars = x => `$${x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const measured = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Shanghai' });
-const day = value => new Date(value).toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
-const started = day(usage?.from ?? git('log', '--reverse', '--format=%aI').split('\n')[0]);
-const today = day(new Date());
-const elapsedDays = Math.round((Date.parse(today) - Date.parse(started)) / 86400000);
+// Release snapshot requested for the planned publication, not a live day counter.
+const releaseDays = 11;
 const rows = [
-  ['版本与提交', `${versions.size} 个版本号 · 当前 v${version} · ${n(Number(git('rev-list', '--count', 'HEAD')))} 次提交`],
+  ['时间与迭代', `${releaseDays} 天 · ${versions.size} 个版本号 · 当前 v${version} · ${n(Number(git('rev-list', '--count', 'HEAD')))} 次提交`],
   ['代码与工具', `${n(code.lines + tooling.lines)} 行 · ${code.files + tooling.files} 个文件（游戏 ${n(code.lines)} 行，工具 ${n(tooling.lines)} 行）`],
   ['素材与参考', `游戏资源 ${assets.files} 个 / ${mb(assets.bytes)}；参考图 ${n(images.length)} 张、视频 ${videos.length} 个、来源 ${urls.size} 处`],
 ];
@@ -70,9 +68,6 @@ const block = `<!-- work-metrics:start -->\n## 开发投入\n\n| 项目 | 统计
 let readme = await readFile('README.md', 'utf8');
 if (!readme.includes('<!-- work-metrics:start -->')) throw new Error('README metrics marker missing.');
 readme = readme.replace(/<!-- work-metrics:start -->[\s\S]*?<!-- work-metrics:end -->/, block);
-const duration = `<!-- development-duration:start -->从 ${started} 开始，截至 ${today} 已持续开发 **${elapsedDays} 天**。<!-- development-duration:end -->`;
-if (!readme.includes('<!-- development-duration:start -->')) throw new Error('README development-duration marker missing.');
-readme = readme.replace(/<!-- development-duration:start -->[\s\S]*?<!-- development-duration:end -->/, duration);
 await writeFile('README.md', readme);
 if (usage?.schema === 2) {
   const rateRows = Object.entries(astraPricing.short).map(([key, price]) => `| ${{uncachedInput:'普通输入',cachedInput:'缓存读取',cacheWriteInput:'缓存写入',output:'输出（含推理）'}[key]} | ${dollars(price)} | ${dollars(astraPricing.long[key])} |`);

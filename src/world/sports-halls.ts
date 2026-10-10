@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {drawPhotoSign} from './photo-signs.ts';
 import {Builder} from './geometry.ts';
 import {insidePolygon,planShape,type MapFeature} from './campus-map.ts';
 import {splitBuildingRoof} from './building-roof.ts';
@@ -125,12 +126,12 @@ export function buildSportsHall(f:MapFeature,b:Builder,meshes:CollisionMesh[],ca
   plane(strip,'sport-pictograms',0,3.96,.31,7.85,.53);
   const letters=document.createElement('canvas');letters.width=256;letters.height=1536;
   const lc=letters.getContext('2d')!;lc.fillStyle='#c4a347';lc.font='200px "Kaiti SC","STKaiti",serif';lc.textAlign='center';lc.textBaseline='middle';
-  [...'吕志和游泳馆'].forEach((ch,i)=>lc.fillText(ch,128,130+i*252,224));
+  drawPhotoSign(lc,'swimmingName',256,1536);
   plane(letters,'swimming-gold-letters',e.len/2-3.2,5.92,.39,.90,4.85,true);
  }else{
   // Three independent glyphs on a transparent plane, no rectangular plaque.
   ctx.fillStyle='#c4a347';ctx.font='188px "Kaiti SC","STKaiti",serif';ctx.textAlign='center';ctx.textBaseline='middle';[...'体育馆'].forEach((ch,i)=>ctx.fillText(ch,360+i*410,139,255));
   plane(canvas,'gym-gold-letters',0,3.98,.38,4.3,.73,true);
  }
- return{id:f.id,name:f.tags.name,source:'official VR gl-3-03 f/l/r and gl-3 aerial; dimensions, hidden elevations and sign glyphs approximate',height:swim?17.1:7.3,storeys:swim?3:1,windows,roof:swim?'two shallow metal roofs':'flat',dormitory:false,frontage:[e.x,e.z,e.nx,e.nz],boxes,masses,sign:{text:title,method:'reference wording; system-font approximation'},...(swim?{inscription:{text:'吕志和游泳馆',position:'right end of front facade, below upper windows',source:'official VR gl-3-03-r',method:'verified wording; system Kai font, approximate scale'}}:{})};
+ return{id:f.id,name:f.tags.name,source:'official VR gl-3-03 f/l/r and gl-3 aerial; dimensions, hidden elevations and sign glyphs approximate',height:swim?17.1:7.3,storeys:swim?3:1,windows,roof:swim?'two shallow metal roofs':'flat',dormitory:false,frontage:[e.x,e.z,e.nx,e.nz],boxes,masses,sign:{text:title,method:'reference wording; system-font approximation'},...(swim?{inscription:{text:'吕志和游泳馆',position:'right end of front facade, below upper windows',source:'official VR gl-3-03-r',method:'official VR photo glyph silhouettes, approximate oblique projection and scale'}}:{})};
 }

@@ -20,7 +20,7 @@ export function teachingBrick(){
 
 /** Front matched to the user's photograph and official gl-2-10-f. All dimensions
  * are approximate. The walkable portico projects beyond the closed solid core. */
-export function teachingFacade(b:Builder,meshes:CollisionMesh[],cameraSolids:T.Object3D[],doors:DoorRecord[],name:string,x:number,z:number,yaw:number,emblemTexture?:T.Texture){
+export function teachingFacade(b:Builder,meshes:CollisionMesh[],cameraSolids:T.Object3D[],doors:DoorRecord[],name:string,x:number,z:number,yaw:number){
  const mat=(name:string,color:number,roughness=.86,metalness=0)=>new T.MeshStandardMaterial({name:`teaching-${name}`,color,roughness,metalness});
  const stone=mat('pale-stone',0xd0d0c5),edge=mat('stone-edge',0xb6b8ae),inset=mat('inset-stone',0xc2c4bb),joint=mat('stone-joint',0x92988e);
  const frame=mat('green-grey-frame',0x606e68,.60),recess=mat('window-recess',0x3d4843),glass=mat('glazing',0x7b9497,.30,.16),doorGlass=mat('door-glazing',0x344c43,.40,.15),silver=mat('silver-lettering',0xffffff,.55,.08);
@@ -151,6 +151,6 @@ export function teachingFacade(b:Builder,meshes:CollisionMesh[],cameraSolids:T.O
  const cm=silver.clone();cm.name='teaching-crown-motto';cm.map=ct;cm.alphaTest=.4;
  const cp=point(0,19.48,.24);b.add(new T.PlaneGeometry(12.1,1.13),cm,cp.x,cp.y,cp.z,new T.Euler(0,yaw,0));
  const letterPoint=point(0,6.02,4.03),lettering=addBuildingLettering(b,'teaching',letterPoint.x,letterPoint.y,letterPoint.z,9.50,yaw,mat('gold-sign',0xe3bd60,.52,.25));
- const welcome=addTeachingWelcome(b,meshes,cameraSolids,x,z,yaw,emblemTexture);
+ const welcome=addTeachingWelcome(b,meshes,cameraSolids,x,z,yaw);
  return{lettering,facade:{welcome,source:'user photograph phase96 teaching-zhenggang + official VR gl-2-10-f; dimensions, calligraphy and emblem approximate',columns:columns.map(u=>({u,v:3.02,width:.95,base:1.2,top:5.52})),boxes,arches,windows:9,doorBays:3,porticoDepth:3.88,platformHeight:1.2,crownInscription:motto,crownWordingSource:'https://scit.nju.edu.cn/36/eb/c10985a210667/pagem.htm'}};
 }
