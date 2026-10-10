@@ -1,18 +1,17 @@
 import * as T from 'three';
 import {Builder} from './geometry.ts';
-import {collisionMesh,type CollisionMesh} from './collision-mesh.ts';
+import type {CollisionMesh} from './collision-mesh.ts';
 import {southBoundaryRuns} from './south-boundary-layout.ts';
 import {facilityFront,facilityMaterial} from './life-facility-geometry.ts';
 
-// The user points to the boundary immediately left/east of China Post.
-// Near photograph establishes grey doors, yellow headers, stone piers and
-// metal canopies. Number of banks, dimensions and exact offset approximate.
+// Boundary immediately left/east of China Post. The old photographs include
+// metal canopies, subsequently confirmed demolished on 2026-10-10.
+// Cabinet styling and placement still await alignment to the newer photographs.
 export function buildPostalTakeaway(b:Builder,meshes:CollisionMesh[],camera:T.Object3D[]){
  const points=southBoundaryRuns.find(r=>r.name==='south-west')!.points,[a,c]=points.slice(-2),len=Math.hypot(c[0]-a[0],c[1]-a[1]);
  const e={x:(a[0]+c[0])/2,z:(a[1]+c[1])/2,nx:-(c[1]-a[1])/len,nz:(c[0]-a[0])/len,len,yaw:0};e.yaw=Math.atan2(e.nx,e.nz);
- const {box,sign,beam,point}=facilityFront(b,e,meshes,camera);
- const stone=facilityMaterial('postal-takeaway-stone',0xb5b7ab),joint=facilityMaterial('postal-takeaway-stone-joints',0x737c72),grey=facilityMaterial('postal-takeaway-locker-doors',0xd1d1c6),dark=facilityMaterial('postal-takeaway-locker-casing',0x343c3b),yellow=facilityMaterial('postal-takeaway-yellow-header',0xe2b94f),metal=facilityMaterial('postal-takeaway-canopy-steel',0x858f8a),canopy=facilityMaterial('postal-takeaway-canopy',0xb7beb7);
- metal.metalness=.5;metal.roughness=.45;
+ const {box,sign,point}=facilityFront(b,e,meshes,camera);
+ const stone=facilityMaterial('postal-takeaway-stone',0xb5b7ab),joint=facilityMaterial('postal-takeaway-stone-joints',0x737c72),grey=facilityMaterial('postal-takeaway-locker-doors',0xd1d1c6),dark=facilityMaterial('postal-takeaway-locker-casing',0x343c3b),yellow=facilityMaterial('postal-takeaway-yellow-header',0xe2b94f);
  // A thin backing conceals the old railing visually. Its original closed
  // boundary collision is retained, so the facility creates no campus opening.
  box(0,1.575,.28,len,3.15,.16,stone,true);
@@ -32,12 +31,7 @@ export function buildPostalTakeaway(b:Builder,meshes:CollisionMesh[],camera:T.Ob
   }
   const labelPoint=point(u,1.026);b.add(new T.PlaneGeometry(2.70,2.32),numbers,labelPoint.x,1.30,labelPoint.z,new T.Euler(0,e.yaw,0));
   box(u,2.77,1.001,w,.32,.05,yellow);sign('美团外卖',u,2.77,1.032,1.98,.26,'#4d4b3f');
-  // Shallow steel roof and diagonal rear brackets, as in the supplied photograph.
-  const p=point(u,.66),g=new T.BoxGeometry(w+.32,.10,1.65);g.rotateX(.075);g.rotateY(e.yaw);g.translate(p.x,3.42,p.z);const proxy=new T.Mesh(g.clone());
-  // Keep roof physics/camera aligned with the visible slope.
-  meshes.push(collisionMesh(proxy));camera.push(proxy);b.add(g,canopy);box(u,3.46,1.49,w+.36,.13,.10,metal);
-  for(const du of[-w/2+.12,w/2-.12]){beam([u+du,2.92,.24],[u+du,3.43,1.37],.045,metal);beam([u+du,3.35,.15],[u+du,3.46,1.43],.045,metal);}
   bays.push({u,width:w,columns:5,rows:4});
  }
- return{frontage:[e.x,e.z,e.nx,e.nz],banks:2,doors:40,canopies:2,publicSide:true,bays,source:'User post-shelter-game.png placement and meituan-lockers.png appearance 2026-10-07',approximate:'bank count, width and exact boundary offset; overview joining China Post and lockers still needed'};
+ return{frontage:[e.x,e.z,e.nx,e.nz],banks:2,doors:40,canopies:0,publicSide:true,bays,source:'Hankou locker photographs 2026-10-07; canopy demolition confirmed 2026-10-10',approximate:'legacy cabinet count, styling, width and boundary offset; newer Hankou photographs available, alignment pending'};
 }

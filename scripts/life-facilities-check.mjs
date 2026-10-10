@@ -13,7 +13,7 @@ const map=JSON.parse(await readFile('public/data/campus-layout.json','utf8'));ma
 const data=fixture(map,{textures:new Map([['stone-grain.webp',new T.Texture()],['nju-emblem.png',new T.Texture()]])});
 let triangles=0;data.group.traverse(o=>{if(!o.isMesh)return;const g=o.geometry,p=g.getAttribute('position');assert.ok([...p.array].every(Number.isFinite),o.name);assert.ok([...g.getAttribute('normal').array].every(Number.isFinite),o.name);const index=g.index.array;for(const i of index)assert.ok(i<p.count);triangles+=index.length/3;});
 const store=data.records.find(r=>r.id==='plan-109'),parcel=data.records.find(r=>r.id==='plan-100'),memory=data.records.find(r=>r.id==='plan-76');
-assert.equal(store.storeys,2);assert.equal(parcel.storeys,1);assert.equal(parcel.parcelEntrance.steps,3);assert.equal(memory.takeaway.banks,2);assert.equal(memory.takeaway.canopies,2);assert.equal(data.doors.filter(d=>d.name==='教育超市').length,2);
+assert.equal(store.storeys,2);assert.equal(parcel.storeys,1);assert.equal(parcel.parcelEntrance.steps,3);assert.equal(memory.takeaway.banks,2);assert.equal(memory.takeaway.canopies,0);assert.equal(data.doors.filter(d=>d.name==='教育超市').length,2);
 await RAPIER.init();const world=new RAPIER.World({x:0,y:-9.81,z:0});
 for(const r of data.records)world.createCollider(RAPIER.ColliderDesc.cuboid(24,.1,20).setTranslation(r.frontage[0]+5*r.frontage[2],-.1,r.frontage[1]+5*r.frontage[3]));
 for(const m of data.meshes)world.createCollider(RAPIER.ColliderDesc.trimesh(m.vertices,m.indices));

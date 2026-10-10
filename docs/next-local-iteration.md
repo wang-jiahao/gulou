@@ -1,6 +1,14 @@
-# 最新短交接：v0.121 远景表层与第四版宣传片（2026-10-10）
+# 最新短交接：v0.122 汉口拆棚与A02续查（2026-10-10）
 
-主树 `/Users/zackaria/Desktop/gulou campus`，main；生产v0.121.0；本轮提交/私有同步状态以Git为准，v120底座47854eb已同步。复用4173/PID5451，不启动第二服务，不操作或关闭用户Chrome。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。私有源码/必要资产同步已授权；未授权公开、部署或Pages。README赞赏绝对末尾。
+主树 `/Users/zackaria/Desktop/gulou campus`，main；生产v0.122.0；本轮提交/私有同步状态以Git为准，v120底座47854eb已同步。复用4173/PID5451，不启动第二服务，不操作或关闭用户Chrome。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。私有源码/必要资产同步已授权；未授权公开、部署或Pages。README赞赏绝对末尾。
+
+## v122新增，接续先看
+
+- 汉口两处旧外卖棚屋面/钢梁/斜撑已删除，连同2个碰撞及2个相机代理；柜体与围墙其余7材质几何、6保留代理完全一致。只完成拆棚，白色新柜外观/编号/花纹及位置仍待；南园餐厅蓝棚不动。
+- 真实工厂几何/物理/相机对照和两处屋面射线过，生活设施17通行/5射线/6公共路过，types/lint/build/58资产过。主Game高1920×1080before/after实看，0error；`/tmp/gulou-canopy-removal-v122/{geometry.json,before.png,after.png,before-after.jpg}`。局部工具`.tools/v122/canopy-check.mjs`（需原before副本）与`docs/validation/canopy-removal-v122/index.html`；CUA tab68已关。downloadMedia超时后已用DOM生成的data链接分150k读取保存，未重跑场景。
+- 不透明近到远排序新试验已拒绝：相同冻结飞行场景8周期ABBA/256帧，GPU17.46→17.17ms、周期比中位.984；CPU7.5→13.9ms、周期比中位2.175，program切换432→996。透明排序未变，A/B/A回A零差；A/B仍有微小未分类图差。小GPU收益不能抵消CPU开销，不采用，也不再跑地面计时。`/tmp/gulou-opaque-sort-v121/README.md`。
+- 实景待办探索未算完成：南1/3现north、南2south，二舍西侧牌实景已看，但最终共同朝向尚未确认；勿凭多数朝向猜。照片/VR缩图在/tmp/gulou-nanyuan-alignment-v121。汉口新图上半部为12列7行白柜，第二列第2格屏幕，编号/线画未实现；下两处不是本次任务，不能照搬。/tmp/hankou-locker-top.jpg。
+- 苏浙牌照片已看，浅框红石/金字/双徽，确切三行已记录。`.tools/v122/trace-suzhe.py`及`/tmp/gulou-suzhe-plaque-v121/lettering.json`仅未采用提取实验，校徽细线遗漏，不能合入。rectified.jpg可参考；仍需核准门/台与左右墙关系再落位，不猜绝对尺寸。无苏浙生产改动。
 
 ## v121新增，接续先看
 
@@ -26,7 +34,7 @@
 2. 旧双renderer logdepth试验无效：候选没有独立等价PMREM且场景漂移。后续v121接续试验已修独立PMREM/冻结，并因稳定约2.235倍GPU代价拒绝采用，详见顶部；不重跑。reverse depth受CSMFrustum[-1,1]假设约束，不能盲开。普通窗polygonOffset没解决特殊费/唐，未采用。FOV收敛324次CSM刷新126.4ms不是已证主瓶颈。性能改动需同条件稳定收益，不降体验，不循环已拒方案。
 3. 亮屏IAB旧36.5→16.2FPS仍复现卡顿；Chrome约29.5但少1draw/126664tris，不是严格同负载对照。不要归咎锁屏。用户现明确允许强制不熄屏，`caffeinate -di` PID75604有效；不重复启动，明确停工/恢复时kill此PID即可，没有修改持久设置。
 4. 南园一/二/三门口同朝向与侧牌；plan90/94/101原nearest-road导致朝向不一致，1/3牌已有可能在错面，不能重复添。
-5. 只做汉口新外卖柜；旧棚已拆，删棚体与碰撞。苏浙门左浅墙捐建牌：南京大学苏浙运动场 / 2002.5.20 / 香港苏浙同乡会捐建。已有 `references/user-review-20261010/`，不重复索要，实际看图/VR/地图，不猜坐标尺寸、不封公共路。
+5. 只做汉口新外卖柜；旧棚及碰撞已于v122删除；新柜外观/位置仍待。苏浙门左浅墙捐建牌：南京大学苏浙运动场 / 2002.5.20 / 香港苏浙同乡会捐建。已有 `references/user-review-20261010/`，不重复索要，实际看图/VR/地图，不猜坐标尺寸、不封公共路。
 6. 其它照片字体审计待；教超/南大记忆v118、逸夫馆v120已做本轮修正。费彝民、田家炳、校医院等按现有资料审；范围见docs/building-status.md。独立浏览器全屏未验；手机明确留后续用户网页自验，不阻塞、不假称通过。
 
 ## 已完成，不重复
