@@ -4,8 +4,10 @@
 
 ## 最新接续，优先读本段（2026-10-10）
 - README已按要求调整结构与作者口吻，删“感受它正在以多快的速度发展”，新增`docs/building-status.md`并在“一起共建”引用；建筑方法拆`docs/building-process.md`。状态清单区分局部精修、已有资料待改、缺资料/基础外观。对外文档移除“用户提供”等第三人称描述；地图改为 https://zcc.nju.edu.cn/cssy/dzdt/glxqdt/index.html 。赞赏仍绝对末尾。
-- 贡献者：main原141提交，140正确noreply，首提交9935ff0使用旧QQ邮箱；无Co-authored-by。用户问优选方案、希望尽量代办。拟仅重写旧身份，需先独立副本证明各提交tree/消息/日期保持；尚未授权执行远程历史替换，不得把普通push授权当force许可。远程只main；本机还有2子agent分支和3旧worktree，勿破坏。
-- README token表的原始要求仍未找到；用量只旧日志截至10-04，不能算全项目。Astra准确单价未确认，不能捏造账单。已读openai-docs skill，Google搜索遇验证页，不解验证码。后续从官方源或可核实提供商价格继续。
+- 贡献者历史已经用户明确批准并执行：远程/main与本地/main均1ea70c8；142次统一noreply，142个tree/消息/日期保持，未提交diff/索引/6未跟踪文件哈希均一致。结果`.tools/contributor-identity-20261010/execution-result.json`，备份bundle保留；GitHub统计待缓存刷新，不再重复请求授权或强推旧候选。旧子agent分支只作旧快照，未来工作应从新main接续，不能将旧根合并回来。
+- 工作量原话已找到：当前任务JSONL5948行（10-04T11:24:02Z）要求照片/视频/资料、对话轮数、token/费用及每版更新，6272行补代码行数/规模/版本数。摘录在`/tmp/gulou-work-metrics-user-matches.json`。
+- 费用已实读官方https://developers.openai.com/api/docs/pricing：Astra Standard每百万短上下文输入10/读1/写12.5/输出50USD；>272000输入则20/2/25/75。输出含推理，读/写/普通输入互斥。14独立任务（11主+3子）15日志去重，最新快照1457666927token、5197.9725895USD（以metrics最后结果为准）。旧4439万快照已替换，README简化、明细拆docs/work-metrics.md。新work-usage.mjs和metrics默认自动重扫同项目日志，原始内容不提交；合成去重/长短阈值/分区/继承计数与独立Decimal核算通过。
+- 用户催进度并明确允许强制不熄屏：已运行`/usr/bin/caffeinate -di` PID75604，防熄屏/防闲置睡眠assertion都为1；只维持当前开发，结束或要求恢复时kill该PID。没有修改系统持久设置。
 - README视频嵌入仍待：ViMax实际使用GitHub user-attachments/assets URL（裸URL/HTML video），不是仓库blob MP4。不要再说GitHub全不支持视频。附件可见性与私有范围待核，尚未上传。README暂放旧截图，旧影片均保留。
 - 新片cut4仍未完成：`docs/validation/promotion-cut4-20261010/`，24镜51秒1530帧；删赛珍珠，简化地名，保留服务大厅/东西楼/博物馆好机位；改逸夫馆/教超/拉贝，加仅飞行/夜/雨。Yifu候选[-303,6,19]→[-305,6.4,22]被树严重遮挡，不可采用；需换另一侧。教超/拉贝/夜雨新机位未审。雨天museum目标要对照原好机位，不能沿用未经核对的手写值。
 - cut4四点分类图在`/tmp/gulou-cut4-20261010/`，suzhe-aerial/fei/yifu-hall/zhongshan，near.07/1与收阴影开关。near1可减细窗干涉，仅诊断，未采用；还须全帧检查裁剪/时序，不能把静图当无闪烁证据。录制页59无运行任务，关闭后重开既有URL即可。

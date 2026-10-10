@@ -24,6 +24,7 @@ docs/*
 !docs/deployment.md
 !docs/building-process.md
 !docs/building-status.md
+!docs/work-metrics.md
 !docs/sources/
 docs/sources/*
 !docs/sources/makehuman-license.md
