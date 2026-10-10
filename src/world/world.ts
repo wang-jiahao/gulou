@@ -97,7 +97,7 @@ export type CampusWorld = Awaited<ReturnType<typeof createWorld>>;
 export async function createWorld(scene: T.Scene, mats: Materials, quality = 'medium') {
   const bicycles:CampusBicycle[]=[];
   const root = new T.Group(); root.name = 'core-campus'; scene.add(root);
-  const solids: Solid[] = [], cameraSolids: T.Object3D[] = [], fixedMeshes: CollisionMesh[] = [], lampPositions:T.Vector3[]=[], vegetationUpdates: ((position: T.Vector3, quality: string, flying: boolean, camera?:T.Vector3) => void)[] = [];
+  const solids: Solid[] = [], cameraSolids: T.Object3D[] = [], fixedMeshes: CollisionMesh[] = [], lampPositions:T.Vector3[]=[], vegetationUpdates: ((position: T.Vector3, quality: string, flying: boolean, camera?:T.Vector3, dt?:number) => void)[] = [];
   const mapResponse = await fetch(`${import.meta.env.BASE_URL}data/campus-layout.json`);
   if (!mapResponse.ok) throw new Error('校园地图加载失败');
   const map: CampusMap = await mapResponse.json();
@@ -403,6 +403,6 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     sectors++;
     return moreSolids;
   }
-  const updateVegetation = (position: T.Vector3, quality: string, flying: boolean, camera=position) => vegetationUpdates.forEach(update => update(position, quality, flying,camera));
+  const updateVegetation = (position: T.Vector3, quality: string, flying: boolean, camera=position,dt?:number) => vegetationUpdates.forEach(update => update(position, quality, flying,camera,dt));
   return { root, map, doors:ordinary.doors, bicycles, dadaoping, access, directory, garden, sports, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
 }

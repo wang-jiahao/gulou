@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {createFacadeVisibility} from './facade-visibility.ts';
 import { splitBuildingRoof } from './building-roof.ts';
 import { Builder, curvedRoof, rng } from './geometry.ts';
 import type { Materials } from './materials.ts';
@@ -71,7 +72,7 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
     if(!paints.has(key))paints.set(key,new T.MeshStandardMaterial({name:brick?'campus-masonry':'campus-plaster',color,map:clean?null:mats.textures.get(brick?'historic-brick.webp':'stone-grain.webp'),roughness:.94}));
     return paints.get(key)!;
   };
-  const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group}>();
+  const detailCells = new Map<string,{b:Builder;center:T.Vector3;group?:T.Group;setVisible?:ReturnType<typeof createFacadeVisibility>}>();
   const plaques=new T.Group();plaques.name='Nanyuan dormitory entrances and number plates';
   const dormitorySidePlaques=[];
   const nanyuanEntrances:ReturnType<typeof buildNanyuanDormitoryEntrance>[]=[];
@@ -417,13 +418,13 @@ export function buildOrdinaryBuildings(features: MapFeature[], mats: Materials, 
   group.userData.southeastEntrance=southeastEntry;
   group.userData.chemistryFacade=chemistry.metadata;
   if(yifu){const{local,...metadata}=yifu;void local;group.userData.yifuEntrance=metadata;group.userData.yifuTower=yifuUpper;}
-  for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
+  for(const cell of detailCells.values()){cell.group=cell.b.finish('nearby facade details');cell.group.visible=false;cell.setVisible=createFacadeVisibility(cell.group);for(const mesh of cell.group.children)mesh.castShadow=false;group.add(cell.group);}
   let detailShadows=false;
-  const updateVisibility=(position:T.Vector3,quality:string,flying:boolean)=>{
+  const updateVisibility=(position:T.Vector3,quality:string,flying:boolean,_camera?:T.Vector3,dt?:number)=>{
     const shadows=quality==='high'&&!flying;
     if(shadows!==detailShadows){for(const cell of detailCells.values())for(const mesh of cell.group!.children)mesh.castShadow=shadows;detailShadows=shadows;}
     const range=flying?(quality==='high'?125:85):quality==='high'?200:quality==='low'?85:115;
-    for(const cell of detailCells.values())cell.group!.visible=position.distanceTo(cell.center)<range;
+    for(const cell of detailCells.values())cell.setVisible!(position.distanceTo(cell.center)<range,dt);
   };
   return {group,fixedMeshes,cameraSolids,updateVisibility,records,doors};
 }

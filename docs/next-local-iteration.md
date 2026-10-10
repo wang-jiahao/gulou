@@ -1,8 +1,17 @@
-# 最新短交接：v0.118已完成；继续优先普通飞行闪烁/性能
+# 最新短交接：v0.119缓解立面整组跳变；全场性能仍首要
 
-主树 `/Users/zackaria/Desktop/gulou campus`，main，0.118.0；提交以Git为准，本轮前HEAD09c0b10。用户持续开发指令有效。私有源码/必要资产同步已授权；不部署/不启用Pages/不公开仓库。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。复用4173/PID5451。三旧子agent已完成，无重复委派；不要另开agent。
+主树 `/Users/zackaria/Desktop/gulou campus`，main，0.119.0；提交以Git为准，本轮前HEAD55ba6fe。用户持续开发指令有效。私有源码/必要资产同步已授权；不部署/不启用Pages/不公开仓库。作者wang-jiahao <144306077+wang-jiahao@users.noreply.github.com>。复用4173/PID5451。三旧子agent已完成，无重复委派；不要另开agent。
 
-## 本轮完成与实际验证
+## v119最新结果，先读本段
+- 确认一种普通飞行闪烁来源：100m细部组在阈值处硬切，多栋窗框/空调同时出现，根看基线第6/7对。原版597帧11事件/8图对，`/tmp/gulou-flight-flicker-v118/baseline.json`。非所有闪烁根因、非整楼消失。
+- 生产`facade-visibility.ts`将切换改为0.4游戏秒淡变，结束还原原不透明材质；原距离/几何/阴影规则保持，Game原生dt经world传入。静帧或旧调用没dt则直接设置状态，既有录制器不变。材质hook/基础opacity均保留；过渡反向与终点微小余量恢复已专项检查。
+- 生产普通Game638帧＋10过渡图实看通过，0page error；`production-v119/report.json`及contact-0/1.jpg。只关闭“立面组瞬间跳变”这一缓解，不说全校零闪烁。
+- 本地同页/同路线预热+A/B/B/A、无捕图读回：A55.29/B54.25/B60.00/A53.67FPS，加权tris约1.480m、差<0.1%。B第二轮提速不能稳定归因，不宣称FPS收益；该路线不是此前北向5.4m tris压力画面。透明变体多2program，首次编译成本未独立量化。A02继续开放，优先剩余深度/阴影闪烁、真实卡顿。
+- Node `.tools/v119/facade-check.mjs`专项、types/lint/build/58资产过，既有chunk提示。README刷新至119，赞赏末尾。所有tab54–57均关闭；IAB在工具重置后ID变成3（2变mcpapps），需要恢复时看真实inventory/已知URL，不硬套旧2。
+- 本轮采集、候选和对照均为忽略的本地工具：`docs/validation/flight-flicker-v118/`与`flight-flicker-candidate-v118/`、`flight-fade-benchmark-v118/`要求旧118基线，当前生产已改，不可直接重跑得到有效A/B。生产复验页`/docs/validation/flight-flicker-production-v119/index.html`使用当前代码、无渲染覆盖；先看已有证据不要无故重跑。
+- 初次ABBA在预热第1帧因fixture连续pause/resume中断，已修为不间断批次并完成5run；失败保存benchmark-first-interrupted.json，不作为游戏失败。图片data URL的downloadMedia曾超时；使用read-only DOM href→base64保存已恢复全部图片，无重飞。
+
+## v118已完成与实际验证
 - 教育超市倾斜主字形及居中、副标、左右入口/出口；南大記憶繁体书法轮廓，移除小印章残影。实际看照片与正式场景，尺寸/轮廓仍近似。
 - 教学楼四条幅及开放2026框/数字；三门与楼梯保持，中央净宽2.96m。真实Rapier10进出路径、26碰撞体和有限几何过。
 - 戴安邦用户新图已进展板，留边/完整水印，7头像28版式过；公开许可未确认，展板页脚与许可文档均如实说明。
@@ -17,7 +26,7 @@
 - 权威证据`/tmp/gulou-cut3-20261010/{encoding-report.json,recording-manifest.json,batch-preview.json,review-approved.json,encoded-sheet-0.jpg,encoded-sheet-1.jpg}`。Raw Downloads/gulou-cut3-44s.ivf；导出gulou-cut3-review (4).json。tab52已关闭。
 
 ## 下一步顺序与未完成
-1. **A02普通游戏飞行建筑闪烁/性能最优先**，本轮没有生产修复。用户允许合理减轻不良体验；先捕获分清整组硬切、深度条纹、阴影爬动，再验证同条件稳定收益，不降画质掩盖。`/tmp/gulou-v117-flight-flicker-handoff.md`。ordinary-buildings.ts细节3D距离硬开关飞行high125m/其它85m，无淡变或滞回；飞行关细节阴影，near.07/far1200。均为待验证假设，不能凭代码认定根因。
+1. **A02普通游戏飞行闪烁/性能继续最优先**。v119已缓解整组细部硬切（上段证据）；继续区分远楼表面深度条纹与阴影爬动。near.07/far1200、浅墙叠层、飞行FOV渐变每帧触发CSM更新仍是未证实假设。显示范围仍飞行high125m/其它85m，飞行细部投影原规则未改。旧`/tmp/gulou-v117-flight-flicker-handoff.md`已注明被本轮结果更新，不再重复调查已证实硬切。性能候选需同条件稳定收益，不降画质掩盖。
 2. 亮屏IAB40s36.50→16.15FPS，整体25.48/p9566.7ms，draw固定；Chrome40s29.51FPS，四段30/29.3/29.5/29.25，少1draw/126664tris，非严格同负载A/B。原始Chrome Downloads/gulou-passive-drift-v117-1791606958455.json，IAB1791606003640.json；`/tmp/gulou-v117-daylight-20261010/`。不要归咎锁屏；同负载38→12旧漂移也保留。树冠更新/南北timer等已拒无稳定收益候选不重复。
 3. **南园一二三舍门口同朝向+侧牌对齐**。旧plan90一北、94二南、101三北，nearest-road决定front导致不一致；1/3牌已生成但可能在错误面，不盲目再添。
 4. **只做汉口路外卖柜**：新图已明确位置/外观；外卖棚已拆，删除棚体与碰撞，不再索要相同资料。**苏浙牌**：南京大学苏浙运动场 / 2002.5.20 / 香港苏浙同乡会捐建；深红瓷砖牌位于铁丝门左浅墙、后方玻璃低楼，核对西门看台位置后实现，不能猜坐标。

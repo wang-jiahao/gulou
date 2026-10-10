@@ -219,7 +219,7 @@ export class Game {
     const environmentStart = sampling ? performance.now() : 0;
     this.atmosphere.update(dt,this.mode==='playing',this.camera.position);
     if(this.foliageLight)this.foliageLight.value=this.atmosphere.daylight;
-    this.world.updateVegetation(this.player.position, this.quality, this.player.flying,this.camera.position);
+    this.world.updateVegetation(this.player.position, this.quality, this.player.flying,this.camera.position,dt);
     this.world.access.update(dt,this.player.position,this.mode==='playing',{flying:this.player.flying,riding:Boolean(this.player.riding)});
     this.world.dadaoping.update(dt,this.mode==='playing');
     this.csm!.lightDirection.copy(this.atmosphere.sunDirection).negate();this.csm!.lights.forEach(light=>{light.intensity=this.atmosphere.sunIntensity;light.color.copy(this.atmosphere.lightColor);});
