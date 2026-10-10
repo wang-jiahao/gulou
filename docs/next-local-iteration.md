@@ -1,4 +1,14 @@
-# 最新短交接：v127 与第六版（2026-10-11）
+# 最新追加：第六版泳馆单镜修正 cut6b（2026-10-11）
+
+- 最新成片 `.local-media/promotion/v127-cut6-motion/gulou-cut6b-63.5s.mp4`；原cut6及旧五版均保留。仍28镜63.5s1080p30，只补泳馆2秒60帧；生产源码仍7174186/v127。
+- 泳馆前树不动，相机改from[-143,5,-56]、to[-141.5,5.2,-55]、target[-110,6,-73]/FOV59，利用视差露出题字，主体仍为正立面。candidate1/2仍遮字未采用；candidate3原生首末与36/37、44/45最大变化已看，编码0/30/59全景和全部60题字裁片已看，末字不再藏在冠后。
+- 完整1905帧视音频解码过；除了1200–1259，其余1845解码帧MD5逐帧相同，音频编码包SHA256相同，保留原雨声及音乐，听感未验。证据 `/tmp/gulou-cut6-pool-reframe/{README.md,final-review.json,encoding-report.json}`。
+- 原生补片Downloads/gulou-cut6-2s.ivf；assemble-pool.py拒覆盖已有输出，改单镜时另目录组合，不重录全套。master shotlist已同步pool机位，仍28镜approved；临时录制时取消7镜选择未写回。
+- promo_review_fresh长期未交编码报告，已中断并复用原代理要求基于已看内容收束；先取encoded-agent-review.md实际结论，不假称独立通过。A02和其它待办同下。IAB6 tab10已关，0亮度/静音及caffeinate75604保持。
+
+---
+
+# v127 与第六版（2026-10-11）
 
 - **保持0亮度和静音**。已按明确授权将0.0625设0，6秒1080p30导出／解码180帧及首末图通过。第六版后续645原始帧及1905帧合成解码也在0亮度完成；不要唤屏。caffeinate -di PID75604继续；不重复启动、不操作用户Chrome。零亮度证据 `/tmp/gulou-zero-brightness-20261011/README.md`；只有失败才恢复0.0625。
 - v127源码 **7174186 已私有同步**：树冠alphaToCoverage/depthWrite替代半透明重影，alphaTest.28/color1.1；far-only树近处仍保留覆盖冠，near模型原35–52m渐变保持。礼堂门前、西南长阶误种树按实景清除，其他随机序列不变；餐厅蓝墙重叠面修复（核心26.6→26.44、删2包裹石边）。
