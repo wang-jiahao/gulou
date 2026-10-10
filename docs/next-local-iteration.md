@@ -1,3 +1,12 @@
+# v127 最新：独立全屏与树冠图集定位（2026-10-11）
+
+- Safari独立浏览器已实测网页全屏：HUD进入、恢复W行走、浏览器退出后暂停提示、设置内全屏进入/退出及继续均过，截图/AX在`/tmp/gulou-safari-fullscreen-v127/README.md`。不是绿钮窗口全屏。Escape合成按键受指针锁影响，单独Esc退出尚未验；不要据此前无效AX点击称全屏失败。Safari游戏标签与测试窗口已关；后出现空起始窗未再动，用户Chrome未动，0亮度/静音保持。
+- A02新增可归因证据：普通飞行渲染机位40m横移/161采样发现33次屏内树冠图集跳换。最大事件7→4，固定after相机/矩阵/光照只改一个实例图集，30,928像素变化，还原零差；原生同裁片看清冠形突变。`/tmp/gulou-canopy-atlas-v127/README.md`。只定位树冠切换，不是楼体深度/全场卡顿结论，未改生产。诊断用相机作植被观察点，不冒称真实完整飞行测试。
+- 下一步可针对相邻图集连续过渡验证；67.5°顶视up向量切换另查。不得把影片锁植被搬到普通游戏；需过渡图与同条件CPU/GPU证据再采用。IAB6 tab12已关；JSON正常下载，PNG downloadMedia超时后直接保存DOM data链接，未重复场景。guarded恢复页`docs/validation/canopy-atlas-v127/?validation=1`，v127限定。
+- 生产仍7174186/v127，cut6b未重录。promo_review_fresh本轮仅催收已有编码结论未再中断，仍无encoded-agent-review.md；独立最终审片不记通过。旧静态矩阵等拒绝候选见下，不重试。
+
+---
+
 # 最新追加：v127 静态矩阵候选不采用（2026-10-11）
 
 - 1869个spatialCell网格在摆放完成后复用local matrix，保留父组/world更新。A/C/A零像素差；8ABBA/0disjoint，CPU周期比中位.9892但.9485–1.0597双向变化，GPU.9972，没有稳定收益，未改生产、不继续扫参。`/tmp/gulou-static-matrix-v127/README.md`。
