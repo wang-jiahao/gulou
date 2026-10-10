@@ -53,7 +53,7 @@ import type {CampusBicycle} from './bicycle.ts';
 import {extraPlaces} from './place-index.ts';
 import {createDadaoping} from './dadaoping.ts';
 import {createMartyrsMemorial} from './martyrs-memorial.ts';
-import { terrainHeight, terrainSurface, terraceHeight, eastTerraceHeight, createCourtyardSteps, createEastTeachingSteps } from './courtyard-terrain.ts';
+import { terrainHeight, terrainSurface, terrainCurb, terraceHeight, eastTerraceHeight, createCourtyardSteps, createEastTeachingSteps } from './courtyard-terrain.ts';
 import { createSonglinGarden, songlinPathOpening } from './songlin-garden.ts';
 import {createNanyuanFountain} from './nanyuan-fountain.ts';
 export { bounds } from './campus-map.ts';
@@ -176,7 +176,9 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       if (length < 1 || x < -163 || x > 85 || z < -27 || z > 350) continue;
       if (Math.abs(x) < 39 && z > 14 && z < 84) continue;
       for(const [[cx,cz],[dx,dz]] of trimAvenueCurb([ax,az],[bx,bz],[...avenue.outlines,physicsCourt.outline])) {
-        b.box(.16,.12,Math.hypot(dx-cx,dz-cz),(cx+dx)/2,.07+terrainHeight((cx+dx)/2,(cz+dz)/2),(cz+dz)/2,mats.stone,false,Math.atan2(dx-cx,dz-cz));
+        // Long rigid curb boxes floated across the auditorium-side grade.
+        if(Math.min(cx,dx)<-39&&Math.max(cx,dx)>-43&&Math.min(cz,dz)<85.85&&Math.max(cz,dz)>76) b.add(terrainCurb([cx,cz],[dx,dz]),mats.stone);
+        else b.box(.16,.12,Math.hypot(dx-cx,dz-cz),(cx+dx)/2,.07+terrainHeight((cx+dx)/2,(cz+dz)/2),(cz+dz)/2,mats.stone,false,Math.atan2(dx-cx,dz-cz));
       }
     }
   }
@@ -348,7 +350,17 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     // the seeded avenue/woodland planting elsewhere on campus.
     for (let i=farTrees.length-1;i>=0;i--) if (insidePolygon(farTrees[i].x,farTrees[i].z,sportsPaving.surface)) farTrees.splice(i,1);
     for (let i=farTrees.length-1;i>=0;i--) if (yifuCourtyard.outlines.some(p=>insidePolygon(farTrees[i].x,farTrees[i].z,p))) farTrees.splice(i,1);
-    const keepOutsidePhysics=(tree:TreeSpot)=>!insidePolygon(tree.x,tree.z,physicsCourt.outline);
+    // Photographed entrances are paved and clear: the auditorium porch (gl-2-08)
+    // and the law-school stair/terrace (law-entry.png). Filter after sampling
+    // so removing these misplaced procedural trees preserves all other trees.
+    const lawDoor=ordinary.doors.find(d=>d.name==='西南楼（法学院）')!;
+    const keepOutsidePhysics=(tree:TreeSpot)=>{
+      if(insidePolygon(tree.x,tree.z,physicsCourt.outline))return false;
+      if(tree.x>-35.9&&tree.x<-17.3&&Math.abs(tree.z-98.9)<10.1)return false;
+      const dx=tree.x-lawDoor.x,dz=tree.z-lawDoor.z,nx=Math.sin(lawDoor.yaw),nz=Math.cos(lawDoor.yaw);
+      const across=dx*nz-dz*nx,outward=dx*nx+dz*nz;
+      return !(Math.abs(across)<10.1&&outward>-.4&&outward<14.8);
+    };
     farTrees.forEach(tree=>{tree.baseY=courtyardHeight(tree.x,tree.z);});
     root.add(createSouthTreeDetails(farTrees.filter(keepOutsidePhysics), map, mats));
     const far = await createModelTrees(farTrees.filter(t => !map.features.some(f => f.tags.leisure === 'track' && insideRing(t.x, t.z, f.points))), 'far', mats.leaves,keepOutsidePhysics); root.add(far.group); moreSolids.push(...far.solids); vegetationUpdates.push(far.updateVisibility);

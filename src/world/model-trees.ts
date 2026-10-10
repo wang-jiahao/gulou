@@ -166,9 +166,10 @@ export async function createModelTrees(spots: TreeSpot[], lod: 'near' | 'far', f
     for (const cell of cells.values()) {
       const distance = cell.center.distanceTo(position);
       cell.group.visible = distance < range;
-      // Finish crown coverage before the first sparse LOD can be selected.
-      // The short overlap also avoids a long region of screen-door speckling.
-      cell.cover!.fade.value=T.MathUtils.smoothstep(distance,35,52);cell.cover!.mesh.visible=distance>35;if(cell.group.visible&&distance>35)cell.cover!.update(camera);
+      // Far-only trees have sparse leaves even beside the camera: their crown
+      // coverage must not disappear at a cell boundary. Full near models still
+      // fade into coverage before selecting a sparse LOD.
+      cell.cover!.fade.value=lod==='far'?1:T.MathUtils.smoothstep(distance,35,52);cell.cover!.mesh.visible=lod==='far'||distance>35;if(cell.group.visible&&cell.cover!.mesh.visible)cell.cover!.update(camera);
       const limits = lod === 'near' ? [near, middle] : [middle];
       let next = cell.active;
       while (next < limits.length && distance > limits[next] + 8) next++;

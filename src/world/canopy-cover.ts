@@ -10,9 +10,10 @@ export function loadCanopyCoverAssets(){
  * leaves. A camera-facing crown preserves the source silhouette at flight range.
  * It is ready with the sector and fades in before sparse leaf LODs take over. */
 export function createCanopyCover(trees:TreeSpot[],light:{value:number},transforms:T.Matrix4[],assets:CrownAssets){
- // These flat crowns face the camera; a separate transparent backface pass
- // repeats vertex submission without adding any visible surface.
- const fade={value:0},material=new T.MeshBasicMaterial({name:'continuous distant canopy',map:assets.map,alphaTest:.06,transparent:true,depthWrite:false,side:T.DoubleSide,forceSinglePass:true,toneMapped:false});
+ // Multisample coverage keeps leaf edges soft without blending a ghost crown
+ // over the model behind it. Write depth so overlapping crowns occlude correctly.
+ // Apply distance fade after the texture cutout, preserving gradual coverage.
+ const fade={value:0},material=new T.MeshBasicMaterial({name:'continuous distant canopy',map:assets.map,color:new T.Color(1.1,1.1,1.1),alphaTest:.28,transparent:false,alphaToCoverage:true,depthWrite:true,side:T.DoubleSide,forceSinglePass:true,toneMapped:false});
  material.onBeforeCompile=shader=>{
   shader.uniforms.uCrownFade=fade;shader.uniforms.uFoliageLight=light;
   shader.vertexShader='attribute float instanceView;\n'+shader.vertexShader;
@@ -21,7 +22,7 @@ export function createCanopyCover(trees:TreeSpot[],light:{value:number},transfor
   shader.fragmentShader=shader.fragmentShader.replace('#include <alphatest_fragment>','#include <alphatest_fragment>\ndiffuseColor.a*=uCrownFade;');
   shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\ndiffuseColor.rgb*=.18+.82*uFoliageLight;');
  };
- material.customProgramCacheKey=()=> 'gulou-crown-impostor-v3';
+ material.customProgramCacheKey=()=> 'gulou-crown-impostor-v4';
  const geometry=new T.PlaneGeometry(1,1),views=new T.InstancedBufferAttribute(new Float32Array(trees.length),1);geometry.setAttribute('instanceView',views);
  const mesh=new T.InstancedMesh(geometry,material,trees.length),dummy=new T.Object3D(),delta=new T.Vector3(),lastCamera=new T.Vector3(NaN,NaN,NaN);
  const info=transforms.map(matrix=>{const position=assets.center.clone().applyMatrix4(matrix),scale=new T.Vector3().setFromMatrixScale(matrix);return{position,width:assets.extent*(scale.x+scale.z)/2,height:assets.extent*scale.y,yaw:Math.atan2(matrix.elements[8],matrix.elements[10])};});

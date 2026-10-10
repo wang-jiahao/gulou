@@ -44,12 +44,51 @@ export function terrainSurface(polygon: MapPolygon, offset: number, cutout?: Pla
       }
       polygons = split;
     }
-    for (const ring of polygons) for (let j = 1; j < ring.length - 1; j++) for (const [x,z] of [ring[0],ring[j],ring[j+1]]) {
+    // At the southwest terrace corner both grade axes vary. Coarse, separately
+    // triangulated grass and road surfaces can cross by centimetres. Refine
+    // this shared grade patch before lifting, retaining the same height field.
+    const refined: number[][][] = [];
+    for (const polygon of polygons) {
+      if (!polygon.every(([x,z]) => x >= -43-1e-6 && x <= -39+1e-6 && z >= 82-1e-6 && z <= 85.85+1e-6)) { refined.push(polygon); continue; }
+      let fragments = [polygon];
+      for (const [axis,start,end] of [[0,-43,-39],[1,82,85.85]]) for (let value=start+.4; value<end-1e-6; value+=.4) {
+        const next: number[][][] = [];
+        for (const ring of fragments) {
+          if (ring.every(p=>p[axis]<=value) || ring.every(p=>p[axis]>=value)) { next.push(ring); continue; }
+          for (const side of [-1,1]) {
+            const clipped: number[][] = [];
+            for (let j=0;j<ring.length;j++) {
+              const a=ring[j],b=ring[(j+1)%ring.length],ain=side*(a[axis]-value)>=0,bin=side*(b[axis]-value)>=0;
+              if (ain) clipped.push(a);
+              if (ain!==bin) { const t=(value-a[axis])/(b[axis]-a[axis]);clipped.push([a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])]); }
+            }
+            if (clipped.length>=3) next.push(clipped);
+          }
+        }
+        fragments=next;
+      }
+      refined.push(...fragments);
+    }
+    for (const ring of refined) for (let j = 1; j < ring.length - 1; j++) for (const [x,z] of [ring[0],ring[j],ring[j+1]]) {
       output.push(x, terrainHeight(x,z) + offset, z); uv.push(x/3.6,-z/3.6);
     }
   }
   source.dispose();
   const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(output,3)); g.setAttribute('uv',new T.Float32BufferAttribute(uv,2)); g.computeVertexNormals(); return g;
+}
+
+/** A visual curb follows the same local grade as the road, including its width. */
+export function terrainCurb(a:number[],b:number[]) {
+  const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),nx=-dz/length*.08,nz=dx/length*.08;
+  const vertices:number[]=[];
+  const count=Math.ceil(length/.4);
+  for(let i=0;i<count;i++) {
+    const t=i/count,u=(i+1)/count,x=a[0]+dx*t,z=a[1]+dz*t,xx=a[0]+dx*u,zz=a[1]+dz*u;
+    const ring=[[x+nx,z+nz],[xx+nx,zz+nz],[xx-nx,zz-nz],[x-nx,z-nz]];
+    const p=ring.flatMap(([px,pz])=>[[px,terrainHeight(px,pz)+.01,pz],[px,terrainHeight(px,pz)+.13,pz]]);
+    for(const face of [[1,3,5,7],[0,6,4,2],[0,2,3,1],[2,4,5,3],[4,6,7,5],[6,0,1,7]])for(const j of [0,1,2,0,2,3])vertices.push(...p[face[j]]);
+  }
+  const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geometry.computeVertexNormals();return geometry;
 }
 
 export function createEastTeachingSteps(mats:Materials){

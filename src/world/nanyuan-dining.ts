@@ -119,9 +119,10 @@ export function buildNanyuanDining(f:MapFeature,b:Builder,meshes:CollisionMesh[]
  // and full-height round columns. These are actual openings in both meshes.
  // Keep the upper deck, with the two lower vestibules clear underneath.
  eastBox(0,galleryFloor-.18,-galleryDepth/2,36,.36,galleryDepth,stone,'east-landing');
- eastBox(0,.645,-galleryDepth/2,26.6,1.29,galleryDepth,stone,'east-landing-core');
+ // The blue retaining walls already close the core edges. End the core
+ // inside their thickness, avoiding coincident stone/blue side faces.
+ eastBox(0,.645,-galleryDepth/2,26.44,1.29,galleryDepth,stone,'east-landing-core');
  eastBox(0,.645,-3.6,36,1.29,3.2,stone,'east-landing-rear');
- for(const s of[-17.95,17.95])eastBox(s,.645,-1,.1,1.29,2,stone,'east-landing-edge');
  for(const level of [...galleryLevels,height]){
   eastBox(0,level-.18,-galleryDepth/2,36,.36,galleryDepth,wall,'east-gallery-slab');
   if(level===height)continue;
