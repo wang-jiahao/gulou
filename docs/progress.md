@@ -1,12 +1,14 @@
 # v136 真实钢琴采样配乐（2026-10-11）
 
+正式上线确认：源码1013c70、主页77a17dc；Pages成功，24个变化文件（含16MP3）的线上SHA全部一致。实际进入校园，资源清单观察到全部16个同源MP3请求，设置显示默认曲目与“暂停”，暂停→播放→暂停操作正常，无控制台error。证据/tmp/gulou-release-20261011/live-assets-v136.json及/tmp/gulou-sampled-piano-v136/{pages-run.json,online-observed-assets.json,online-settings.png}。最初Pages未完成时的旧文件/404报告留在live-assets-v136-before-deploy.json，不是最终验收。IAB3代理tabs41–43已关。
+
 按用户提供的HTML的采样演奏思路改进默认配乐。16个VSCO 2 / tonejs-instruments钢琴录音，裁短、单声道32k/80k MP3合计1,200,224字节；同源随站点分发，原录音仅本地暂存。采样CC BY 3.0，原编曲与播放代码MIT；来源/改动说明在采样目录、THIRD_PARTY和致谢页。用户HTML及个人Minecraft文件未复制/上传。
 
 原创32小节保留，新增乐句速度起伏、触键时间/力度变化与松键尾音，循环122.586582秒。真实采样优先，失败可重试并退回合成；校园加载期间预取，点击进入时启用AudioContext，等待采样最多2.5秒。音量放在干声/混响共同出口，音量0同时静音尾响。异步加载期间暂停/导入不再被延迟完成重新启动。
 
 实际浏览器16音符全部解码、source=sampled；130秒完整离线渲染peak .06960636/RMS .00817284，无非有限值/削波；强制断网source=generated完整130秒也通过。暂停/恢复/切曲、加载中暂停、本地导入与迟到歌单保持、音量0含混响尾部零输出通过。类型/lint/audio/58已有资产/build:pages通过，新增16MP3由浏览器解码覆盖；README统计已刷新。系统仍静音，未主观听感验收，试听文件.local-media/gulou-real-piano-v136.mp3可供用户比较。
 
-证据/tmp/gulou-sampled-piano-v136/{audio-verification.json,fallback-verification.json,build.log,assets.log}。本地验证恢复docs/validation/sampled-piano-v136/?validation=1（失败模式加&fail=1），验证页/脚本不提交。发布正在同步，正式状态以之后的线上确认及release.json为准；不冒称已部署。定时持续开发已取消，不恢复；仅完成本次用户明确请求。
+证据/tmp/gulou-sampled-piano-v136/{audio-verification.json,fallback-verification.json,build.log,assets.log}。本地验证恢复docs/validation/sampled-piano-v136/?validation=1（失败模式加&fail=1），验证页/脚本不提交。生产已部署，正式源码记录在release.json。定时持续开发已取消，不恢复；仅完成本次用户明确请求。
 
 ---
 
