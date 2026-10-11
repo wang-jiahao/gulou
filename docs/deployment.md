@@ -1,19 +1,29 @@
 # 构建与部署
 
-Gulou是静态网页项目，构建输出为 `dist/`。源码同步与网站部署是两个独立操作，推送本仓库不会自动发布网站。
+鼓楼是静态网页项目，构建输出为 `dist/`。在线地址为 [wang-jiahao.github.io/gulou/](https://wang-jiahao.github.io/gulou/)。
+
+目前由作者主页仓库 `wang-jiahao/wang-jiahao.github.io` 的 `master` 分支发布，游戏文件放在其 `gulou/` 目录，GitHub Pages 与主页一起构建。游戏源码仓库与网站发布分开，单独推送本仓库不会自动更新线上游戏。
 
 ## 构建
 
 ```bash
-npm ci
-npm run typecheck
-npm run lint
-npm run check:assets
-npm run build
-npm run preview
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm lint
+pnpm check:assets
+pnpm build
+pnpm preview
 ```
 
-`npm run build`适合域名根路径；部署到 `/gulou/` 这样的子路径时使用 `npm run build:pages`，它将Vite资源基路径设为 `/gulou/`。其他路径可运行 `npx vite build --base=/你的路径/`。这些命令只生成文件。
+`pnpm build`适合域名根路径；部署到 `/gulou/` 这样的子路径时使用 `pnpm build:pages`，它将Vite资源基路径设为 `/gulou/`。其他路径可运行 `pnpm exec vite build --base=/你的路径/`。这些命令只生成文件。
+
+## 更新线上版本
+
+1. 在游戏仓库运行 `pnpm build:pages`，确认 `dist/index.html` 的脚本和样式路径以 `/gulou/` 开头。
+2. 将 `dist/` 内容同步到主页仓库的 `gulou/`，一并保留 `LICENSE`、`THIRD_PARTY.md`；记录 `release.json` 中的版本和源码提交。不要覆盖主页其它目录。
+3. 提交并推送主页仓库的 `master`，等待 `pages build and deployment` 成功，再核对线上 `gulou/release.json`、入口和关键模型。
+
+首次发布版本为 v0.132.0；宣传片保存在独立文件中，不是游戏首屏的加载依赖。
 
 ## 部署内容
 
