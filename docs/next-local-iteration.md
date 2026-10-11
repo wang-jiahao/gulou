@@ -1,3 +1,11 @@
+# v135 后续：顶视树冠双基底投影预检（2026-10-11）
+
+新候选保留侧视/顶视独立取样基底，用一个覆盖二者的平面和逆UV投影混合，避免旧slerp/up向量方案的180°接缝。142659数学机位覆盖3种宽高比：回投影误差6.66e-16、范围越界5.33e-15，绕周接缝3.14e-16。真实图集隔离shader36端点对照A/C/A恢复全0；候选端点仍有最多430个叶缘像素差、最大通道53，不称像素等价。9机位联系表已看，未见这些样本中的180°翻转；中段混合两种冠形，尚未做全游戏外观/批次/CPU/GPU验收，未采用。
+
+生产与线上仍8fabaa3/v135，配乐/影片不动。证据/tmp/gulou-canopy-projection-v135/{README.md,preflight.json,render.json,contact.png}；数学恢复node .tools/canopy-projection-v135/check.mjs；图像恢复docs/validation/canopy-projection-v135/?validation=1。生成联系表dataURL下载事件超时重置CUA，JSON已先保存、PNG从页面现有链接恢复；未丢实验。真实inventory现IAB3，tab40用完关闭，别硬用旧6。此轮无生产版本/部署变更。
+
+---
+
 # v135 更完整的原创钢琴配乐（2026-10-11）
 
 正式上线确认：源码8fabaa3、主页abe0af2；Pages构建成功，线上release.json及5个变化文件SHA全部匹配v0.135.0。证据/tmp/gulou-release-20261011/live-assets-v135.json，代理页已关。
