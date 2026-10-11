@@ -1,3 +1,12 @@
+# 最新用户优先：v132/cut7正在制作（2026-10-11）
+
+- 下午发布前优先完成这版宣传片。当前worktree不是已验收成品，package仍v131。礼堂按四新照重建山墙、红门、窗、禮堂轮廓题字/团花、侧藤；指定两树通过post-filter删除；健忠楼踏步渲染并集/覆盖顶面剔除，33物理/相机不变；外卖柜恢复灰黑美团标40格、保留正确新址，无棚。
+- fixtures `.tools/v132/check-fixes.mjs`已过：健忠/西南物理/入口/metadata同旧、另一楼渲染属性相同；新柜6物理/相机与600公共路点无阻、旧新frontage同；礼堂23solid、6阶，东西大楼solids同旧。类型lintbuild58资产过。礼堂GLB已更新，最终机位待完整实看。原相机31已不存在。
+- 新录制页`docs/validation/promotion-cut7-20261011/?validation=1`，IAB6 tab32已markHandoff。选4镜hall/dadaoping/lockers/flight-high共375帧12.5s待补，去中山/拉贝后26镜59.5s；其它22镜从cut6c保留。旧master不改。flight首次/第二首帧已看，第二仍偏高，最新已改原生起飞后Control下降预备，start[-113,.05,178],yaw-.48,pitch.18,75–98preRoll按Control，总114后开始W/Shift，最新尚未看/未录。不得把未验设置当最终。用户截图左侧存在`references/user-review-20261011/flight-start-left.png`，两树及四礼堂照也在此目录。
+- 备份`.tools/v132/*.before.ts`与landmarks-collision.before.json；礼堂glyph轮廓来自新照，不提交原图。根目录README用户去在线体验粗体改动保留。不能运行update-hall/prepare-cut7覆盖后续调整。新片另存cut7、保留旧片，rain仍56.5–59.5s要重做结尾音轨淡出。0亮度/静音/caffeinate75604/4173继续。私有同步允许，禁止公开/部署。
+
+---
+
 # v131 后续：67.5°顶视新证据（2026-10-11）
 
 - 生产仍7b1afca/v131，无新源码／影片修改。当前合批版本641升降采样(20–100m/.125m)、45°俯视相机发现2次屏内4..7→8；最大事件instance214在39.5→39.625m发生4→8，同时upY→upZ导致同相机平面roll125.6571°。同after相机仅旧图集改变40099RGB像素，仅旧朝向61198，二者56547，恢复0差/0GLerror。计数重叠不相加，部分冠位于画面下缘，不称全冠完整可见。

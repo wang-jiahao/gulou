@@ -43,7 +43,7 @@ export function buildWestHeritage(f:MapFeature,b:Builder,meshes:CollisionMesh[],
   }
  }
  const boxes:{kind:string;u:number;y:number;v:number;w:number;h:number;d:number}[]=[];
- const box=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material,kind?:string)=>{const[x,z]=point(u,v);b.box(w,h,d,x,y,z,m,false,e.yaw);if(kind){solid(new T.BoxGeometry(w,h,d),x,y,z,e.yaw);boxes.push({kind,u,y,v,w,h,d});}};
+ const box=(u:number,y:number,v:number,w:number,h:number,d:number,m:T.Material,kind?:string,coveredTop=false)=>{const[x,z]=point(u,v);if(coveredTop){const g=new T.BoxGeometry(w,h,d),index=Array.from(g.index!.array),normal=g.getAttribute('normal'),kept:number[]=[];for(let i=0;i<index.length;i+=3)if(normal.getY(index[i])<.9)kept.push(...index.slice(i,i+3));g.setIndex(kept);g.clearGroups();b.add(g,m,x,y,z,new T.Euler(0,e.yaw,0));}else b.box(w,h,d,x,y,z,m,false,e.yaw);if(kind){solid(new T.BoxGeometry(w,h,d),x,y,z,e.yaw);boxes.push({kind,u,y,v,w,h,d});}};
  const cylinder=(u:number,y:number,v:number,r:number,h:number,m:T.Material,kind?:string)=>{const[x,z]=point(u,v);b.add(new T.CylinderGeometry(r,r,h,16),m,x,y,z);if(kind){solid(new T.CylinderGeometry(r,r,h,16),x,y,z);boxes.push({kind,u,y,v,w:r*2,h,d:r*2});}};
  const baluster=(u:number,y:number,v:number)=>{const[x,z]=point(u,v);const profile=[[.065,0],[.08,.06],[.075,.13],[.13,.26],[.12,.34],[.055,.48],[.07,.59],[.085,.65]].map(([r,h])=>new T.Vector2(r,h));b.add(new T.LatheGeometry(profile,8),stone,x,y,z);};
  const title=(text:string,u:number,y:number,v:number,w:number,h:number,dark=false)=>{const c=document.createElement('canvas');c.width=1024;c.height=256;const t=c.getContext('2d')!;t.fillStyle=dark?'#41433d':'#cbc7b7';t.fillRect(0,0,1024,256);t.fillStyle=dark?'#c7ab64':'#514736';t.font='146px "Kaiti SC","STKaiti",serif';t.textAlign='center';t.textBaseline='middle';t.fillText(text,512,131,940);const tx=new T.CanvasTexture(c);tx.colorSpace=T.SRGBColorSpace;const m=new T.MeshStandardMaterial({name:`${f.id}-title`,map:tx,roughness:.9});const[x,z]=point(u,v);b.add(new T.PlaneGeometry(w,h),m,x,y,z,new T.Euler(0,e.yaw,0));};
@@ -77,8 +77,17 @@ export function buildWestHeritage(f:MapFeature,b:Builder,meshes:CollisionMesh[],
   for(let i=0;i<20;i++){const u=-4.25+i*.425,v=u+.425,y=9.27+.31*(Math.abs(u)/4.25)**6,yy=9.27+.31*(Math.abs(v)/4.25)**6;roofPos.push(...q(u,y,1.48),...q(v,yy,1.48),...q(v,9.9,-.03),...q(u,y,1.48),...q(v,9.9,-.03),...q(u,9.9,-.03));b.cylinder(new T.Vector3(...q(u,y+.04,1.49)),new T.Vector3(...q(u,9.94,-.03)),.052,.052,tile);}
   const cg=new T.BufferGeometry().setAttribute('position',new T.Float32BufferAttribute(roofPos,3));cg.computeVertexNormals();solid(cg.clone());b.add(cg,tile);
  }else{
-  box(0,landing/2,1.51,8.55,landing,3.02,base,'landing');box(0,landing-.06,1.51,8.78,.12,3.17,stone);
-  for(let i=0;i<7;i++){const h=landing*(7-i)/8;box(0,h/2,3.18+i*.29,3.25,h,.31,stone,'step');}
+  // The stone cap already covers the base's top plane; drawing both at the
+  // same height made the pale landing flicker against its dark inner box.
+  box(0,landing/2,1.51,8.55,landing,3.02,base,'landing',true);box(0,landing-.06,1.51,8.78,.12,3.17,stone);
+  const treads=Array.from({length:7},(_,i)=>({v:3.18+i*.29,h:landing*(7-i)/8}));
+  // Keep the original seven collision boxes, but draw their outer union once.
+  // Adjacent boxes overlap by 2cm, previously duplicating coplanar side faces.
+  for(const {v,h} of treads){const[x,z]=point(0,v);solid(new T.BoxGeometry(3.25,h,.31),x,h/2,z,e.yaw);boxes.push({kind:'step',u:0,y:h/2,v,w:3.25,h,d:.31});}
+  const last=treads[6],outline=[new T.Vector2(treads[0].v-.155,0),new T.Vector2(last.v+.155,0),new T.Vector2(last.v+.155,last.h)];
+  for(let i=5;i>=0;i--)outline.push(new T.Vector2(treads[i].v+.155,treads[i+1].h),new T.Vector2(treads[i].v+.155,treads[i].h));
+  outline.push(new T.Vector2(treads[0].v-.155,treads[0].h));
+  const stair=new T.ExtrudeGeometry(new T.Shape(outline),{depth:3.25,bevelEnabled:false,steps:1}).rotateY(-Math.PI/2),[sx,sz]=point(1.625,0);b.add(stair,stone,sx,0,sz,new T.Euler(0,e.yaw,0));
   for(const s of[-1,1]){
    // Solid sloping cheeks frame the seven central treads.
    const shape=new T.Shape([new T.Vector2(2.98,0),new T.Vector2(5.24,0),new T.Vector2(5.24,.30),new T.Vector2(2.98,1.57)]);

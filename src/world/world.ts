@@ -1,5 +1,6 @@
 import {batchParkedBicycles} from './bicycle-batching.ts';
 import * as T from 'three';
+import {createAuditoriumIvy} from './auditorium-ivy.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
@@ -308,19 +309,21 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
       if(index===0)asset.scene.position.y+=eastTerraceHeight;
       asset.scene.traverse(o=>{if(!(o instanceof T.Mesh))return;const mat=o.material as T.MeshStandardMaterial;
         if(mat.name==='historic-brick')o.material=mats.brick;
+        if(mat.name==='auditorium-brick'){const brick=mats.brick.clone();brick.name='auditorium-brick';brick.color.set(0xe1e0db);o.material=brick;}
         if(mat.name==='limestone'){mat.map=mats.textures.get('stone-grain.webp')!;mat.color.set(0xb7b5a6);}
         if(mat.name==='arts-limestone')mat.map=mats.textures.get('stone-grain.webp')!;
         if(mat.name.startsWith('window-glass'))mat.envMapIntensity=1.7;
         o.castShadow=o.receiveShadow=true;cameraSolids.push(o);
       });root.add(asset.scene);asset.scene.updateMatrixWorld(true);asset.scene.traverse(o=>{if(o instanceof T.Mesh&&(o.material as T.Material).name==='roof')fixedMeshes.push(collisionMesh(o,true));});
     }
-    for(const place of [{name:'南京大学艺术学院',x:39.47,y:3.82+eastTerraceHeight,z:48.1,a:-Math.PI/2,w:3.35,h:.40,letters:true},{name:'西大楼',x:-40.57,y:2.1,z:43.2,a:Math.PI/2,w:.65,h:.38},{name:'大礼堂',x:-33.76,y:7.46,z:98.9,a:Math.PI/2,w:1.8,h:.48}]){
+    for(const place of [{name:'南京大学艺术学院',x:39.47,y:3.82+eastTerraceHeight,z:48.1,a:-Math.PI/2,w:3.35,h:.40,letters:true},{name:'西大楼',x:-40.57,y:2.1,z:43.2,a:Math.PI/2,w:.65,h:.38}]){
       const canvas=document.createElement('canvas');canvas.width=place.letters?1536:512;canvas.height=160;const ctx=canvas.getContext('2d')!;
       if(!place.letters){ctx.fillStyle='#86784f';ctx.fillRect(0,0,512,160);ctx.strokeStyle='#b3a374';ctx.lineWidth=6;ctx.strokeRect(8,8,496,144);}
       ctx.fillStyle=place.letters?'#756044':'#2a2419';ctx.font=`${place.letters?126:72}px "Songti SC", "SimSun", serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(place.name,canvas.width/2,85);
       const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;const plaque=new T.Mesh(new T.PlaneGeometry(place.w,place.h),new T.MeshStandardMaterial({map:texture,transparent:!!place.letters,alphaTest: place.letters ? .15 : 0,roughness:.65,metalness:.22}));plaque.position.set(place.x,place.y,place.z);plaque.rotation.y=place.a;plaque.receiveShadow=true;root.add(plaque);
     }
     root.add(createWestWingIvy(mats,quality));
+    root.add(createAuditoriumIvy(mats,quality));
     afterSector();
     sectors++;
     await new Promise<void>(resolve => setTimeout(resolve, 50));
@@ -357,6 +360,9 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     // so removing these misplaced procedural trees preserves all other trees.
     const lawDoor=ordinary.doors.find(d=>d.name==='西南楼（法学院）')!;
     const keepOutsidePhysics=(tree:TreeSpot)=>{
+      // User-reviewed film frames identify these two trunks inside adjacent facades.
+      // Keep filtering after sampling so all other tree random sequences survive.
+      if(Math.hypot(tree.x-(-35.948415762977675),tree.z-(123.66585686802864))<.02||Math.hypot(tree.x-(-234.0286218689289),tree.z-(130.08100524544716))<.02)return false;
       if(insidePolygon(tree.x,tree.z,physicsCourt.outline))return false;
       if(tree.x>-35.9&&tree.x<-17.3&&Math.abs(tree.z-98.9)<10.1)return false;
       const dx=tree.x-lawDoor.x,dz=tree.z-lawDoor.z,nx=Math.sin(lawDoor.yaw),nz=Math.cos(lawDoor.yaw);
