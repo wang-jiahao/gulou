@@ -1,3 +1,13 @@
+# v0.130 最新：画布透明通道白边修正（2026-10-11）
+
+- 生产game.ts增加scene.onAfterRender：默认buffer且getClearAlpha()==1时，仅清alpha通道并恢复colorMask。Three r180即使alpha:false仍创建alpha上下文，叶缘alphaToCoverage留下半透明目标像素被网页/PNG再次合成。只清alpha前后RGB零差、132491半透明像素归零；不是改树形/纹理/雾/深度/分辨率。A02仍未全关。
+- 24候选同帧对照（8日/暮/夜/雨+16移动）、6正式日雨机位RGB零差及A/C/A恢复；正式雨飞/博物馆/大纛坪实看。候选low机位在冠层内部，不冒称步行近景；正式museum/dadaoping无遮挡。离屏9216与透明画布2073600部分alpha像素RGBA完全保持，0GL/页面error。/tmp/gulou-alpha-production-v130/{production,final-review}.json。
+- 8ABBA/256GPU/0disjoint，主draw1409/3999236tris相同，GPU中位比1.00739、CPU1.01122，约1%成本，不称提速或全游戏FPS结论。另直接opaque context方案同RGB但GPU1.16372/CPU1.19652，已拒绝，不再重复。证据/tmp/gulou-alpha-resolve-v129/README.md及/tmp/gulou-opaque-canvas-v129。
+- 首次生产guard假设scene.background是Color，实际Atmosphere改null，验证失败已修为getClearAlpha检查。旧图/JSON在invalid-background-guard，不是通过证据。类型/lint/build/58资产过。恢复docs/validation/alpha-production-v130/?validation=1；旧v129实验页门禁/源已过期，勿直接重跑作新证据。
+- cut6c仍最新未重录；promo_review_fresh最终编码报告仍未出现，不冒称独立通过。其它A02、苏浙牌/字体/柜花纹待办按下方。0亮度/静音/caffeinate75604/4173保持；代理tab21/22/23/24已关。私有同步以Git为准。
+
+---
+
 # v0.129 最新：南园一至三舍朝向／侧牌（2026-10-11）
 
 - 已完成同朝向要求：plan-90/94/101统一选择与二舍一致的南侧长立面，各自原墙角／轮廓／层数保持；一、三舍门厅及碰撞从北侧移到南侧，侧牌移到二舍同一西侧墙。不是把楼体旋转到完全相同角度。原侧牌并非缺模型，而是此前选到了另一面。三舍入口原照与gl-1-06/24已实看；精确安装高度／尺寸仍近似。

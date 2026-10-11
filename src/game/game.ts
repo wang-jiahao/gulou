@@ -72,6 +72,18 @@ export class Game {
     this.timerExtension = this.gl.getExtension('EXT_disjoint_timer_query_webgl2');
     this.scene.fog = new T.Fog(0xc5d3d6, 140, 400);
     this.scene.background=new T.Color(0xa9c8df);
+    // Three r180 keeps a canvas alpha channel even with alpha:false.
+    // Leaf alpha-to-coverage must not leave translucent canvas pixels that
+    // the browser (or PNG export) composites a second time into pale edges.
+    // The sky fills an opaque canvas cleared with alpha 1. Retain all rendered
+    // RGB samples and depth, then restore alpha only on the default buffer.
+    this.scene.onAfterRender = renderer => {
+      if (renderer.getRenderTarget() !== null || renderer.getClearAlpha() !== 1) return;
+      const gl = renderer.getContext();
+      gl.colorMask(false, false, false, true);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.colorMask(true, true, true, true);
+    };
     this.csm=new CSM({camera:this.camera,parent:this.scene,cascades:2,maxFar:130,mode:'custom',shadowMapSize:2048,lightIntensity:4.1,lightMargin:65,customSplitsCallback:(_c,_n,_f,target)=>{target.push(.22,1);}});
     this.csm.fade=true;
     this.csm.lights.forEach(light=>{light.color.set(0xfff0d9);light.shadow.normalBias=.025;light.shadow.bias=-.00003;});
