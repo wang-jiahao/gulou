@@ -13,5 +13,5 @@ for(let i=0;i<150;i++){music.next();played.push(music.index);}
 for(let i=0;i<played.length;i+=5)assert.equal(new Set(played.slice(i,i+5)).size,5,'every shuffle round plays each track once');
 for(let i=1;i<played.length;i++)assert.notEqual(played[i],played[i-1],'avoid immediate repeats, including across shuffle rounds');
 const single = new Music(); single.tracks=[{title:'one',url:'one'}];single.next();single.next();assert.equal(single.index,0);
-const empty = new Music();empty.next();assert.equal(empty.audio.src,'');
+const empty = new Music();empty.tracks=[];empty.next();assert.equal(empty.audio.src,'');
 console.log('PASS: 30 shuffle rounds, no immediate repeats, one-track and empty playlists.');

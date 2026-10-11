@@ -209,11 +209,11 @@ async function boot() {
     game.music.tracks.forEach((track, i) => select.add(new Option(`${track.title}${track.artist ? ' · ' + track.artist : ''}`, String(i))));
     if (!game.music.tracks.length) select.add(new Option('导入你喜欢的音乐', ''));
     select.value = String(game.music.index); select.disabled = !game.music.tracks.length;
-    el('music-toggle').textContent = game.music.enabled && !game.music.audio.paused ? '暂停' : '播放';
+    el('music-toggle').textContent = game.music.enabled && !game.music.paused ? '暂停' : '播放';
     el<HTMLInputElement>('music-volume').value = String(game.music.volume * 100);
   };
   game.music.onChange = syncMusic; syncMusic();
-  el('music-toggle').onclick = () => { if (game.music.enabled && game.music.audio.paused) game.music.start(); else game.music.toggle(); saveSettings(); };
+  el('music-toggle').onclick = () => { if (game.music.enabled && game.music.paused) game.music.start(); else game.music.toggle(); saveSettings(); };
   el('music-next').onclick = () => game.music.next();
   el<HTMLSelectElement>('music-track').onchange = e => game.music.select(Number((e.target as HTMLSelectElement).value));
   el<HTMLInputElement>('music-volume').oninput = e => { game.music.setVolume(Number((e.target as HTMLInputElement).value) / 100); saveSettings(); };
