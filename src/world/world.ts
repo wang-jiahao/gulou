@@ -7,6 +7,7 @@ import { Builder, rng, type Solid } from './geometry.ts';
 import { createGroundPlants, createIvy, createJunipers, createWestWingIvy, type TreeSpot } from './vegetation.ts';
 import type { Materials } from './materials.ts';
 import { createModelTrees } from './model-trees.ts';
+import {createCanopyBatch} from './canopy-batch.ts';
 import { collisionMesh, type CollisionMesh } from './collision-mesh.ts';
 import { buildOrdinaryBuildings } from './ordinary-buildings.ts';
 import {memorialPlantingClearance} from './pearl-memorial.ts';
@@ -97,6 +98,7 @@ export type CampusWorld = Awaited<ReturnType<typeof createWorld>>;
 export async function createWorld(scene: T.Scene, mats: Materials, quality = 'medium') {
   const bicycles:CampusBicycle[]=[];
   const root = new T.Group(); root.name = 'core-campus'; scene.add(root);
+  let canopyBatch:ReturnType<typeof createCanopyBatch>;
   const solids: Solid[] = [], cameraSolids: T.Object3D[] = [], fixedMeshes: CollisionMesh[] = [], lampPositions:T.Vector3[]=[], vegetationUpdates: ((position: T.Vector3, quality: string, flying: boolean, camera?:T.Vector3, dt?:number) => void)[] = [];
   const mapResponse = await fetch(`${import.meta.env.BASE_URL}data/campus-layout.json`);
   if (!mapResponse.ok) throw new Error('校园地图加载失败');
@@ -413,8 +415,12 @@ export async function createWorld(scene: T.Scene, mats: Materials, quality = 'me
     const forecourt=await createSportsHallForecourts(map,mats);root.add(forecourt.group);moreSolids.push(...forecourt.solids);cameraSolids.push(...forecourt.cameraSolids);vegetationUpdates.push(forecourt.updateVisibility);
     afterSector();
     sectors++;
+    canopyBatch=createCanopyBatch(root);
     return moreSolids;
   }
-  const updateVegetation = (position: T.Vector3, quality: string, flying: boolean, camera=position,dt?:number) => vegetationUpdates.forEach(update => update(position, quality, flying,camera,dt));
+  const updateVegetation = (position: T.Vector3, quality: string, flying: boolean, camera=position,dt?:number) => {
+    vegetationUpdates.forEach(update => update(position, quality, flying,camera,dt));
+    canopyBatch?.sync();
+  };
   return { root, map, doors:ordinary.doors, bicycles, dadaoping, access, directory, garden, sports, pitch: field.pitch, updateVegetation, solids, fixedMeshes,lampPositions,cameraSolids, expand, get sectors() { return sectors; } };
 }

@@ -1,3 +1,16 @@
+# v0.131 最新：树冠合批（2026-10-11）
+
+- 已采用 `canopy-batch.ts`：73组244实例合成一批，原树近模/LOD/碰撞/裁剪/阴影/分辨率保持，原分区fade/可见性与图集数据逐实例传递。root-relative变换在expand结束后固定；buffer version脏检查保持静止缓存，初始batch隐藏避免未同步平面。此前20m密集树拆批是相反方案，不混淆。
+- 最终证据 `/tmp/gulou-crown-batch-final-v130/corrected/{visual,paced,summary,fixture}.json`。18环境/范围/LOD组合A/C/A全还原0，近景0差、flight4/edge16叶缘像素、移动16帧max5；北楼实际fade.47456。是运行时植被LOD，不冒称低画质启动/手机通过。原生微差prototype已看，修正后的天空跟随及4生产视图已看。
+- 8ABBA/256GPU/0disjoint，逐帧读完GPU query再下帧；场景更新+渲染CPU比.94871388（8周期均较低），提交.94323529，GPU.987383双向，保守称CPU约5%改善，不称全游戏FPS/GPU提升。计时update含pose/CSM，不是纯植被耗时。主draw少56，正式配对1409→1353/3999236→3999316tris；生产因原LOD历史不同为1354/4110147，不跨场景比较。
+- root目录初版图天空未随大范围移机，黑缺口为fixture错误；`corrected`才是最终。初版连续计时baseline约7→24ms，夸大.3903收益不用、不猜因。第二次追加paced页面回到初始且未保存，原因未知，不计又一轮通过。原prototype8ABBA total.92189仅辅助。无需重试已完成方案。
+- 正式4机位73/244及静止缓存/无重复可见源/0GLerror过， `/tmp/gulou-crown-batch-production-v131`；恢复 `docs/validation/crown-batch-production-v131/?validation=1`。旧final页有v130本地world/game副本和门禁；prototype会叠加第二batch，勿直接重跑。types/lint/build/58资产通过，README统计随提交刷新。tabs25/26/27关闭。
+- cut6c仍最新，未重录；本轮补看苏浙38–40s(1140–1199)全部60场地裁片、首末全景和native39/40，无大片场地消失，细线仍有像素变化，证据 `/tmp/gulou-cut6-suzhe-review`。不称完全无闪。promo_review_fresh仍运行/曾断线，最终encoded-agent-review.md未出现，只等实际范围，不反复催收。
+- 苏浙捐建牌已复看原照、4官方VR面与体育地图。牌在西侧门外左/北、后方是看台玻璃，当前地图门标约[-242.005,9.617]与看台西缘x-255/南端z5关系尚不能确定精确落点；不照门标盲放。`/tmp/gulou-suzhe-plaque-v130`。原字体/柜花纹及A02余项仍待。
+- 0亮度/静音/caffeinate75604/4173保持，不动Chrome。仅私有同步，未公开/部署。生产提交以Git为准，v130白边及旧已验项不重做。
+
+---
+
 # v0.130 最新：画布透明通道白边修正（2026-10-11）
 
 - 生产game.ts增加scene.onAfterRender：默认buffer且getClearAlpha()==1时，仅清alpha通道并恢复colorMask。Three r180即使alpha:false仍创建alpha上下文，叶缘alphaToCoverage留下半透明目标像素被网页/PNG再次合成。只清alpha前后RGB零差、132491半透明像素归零；不是改树形/纹理/雾/深度/分辨率。A02仍未全关。

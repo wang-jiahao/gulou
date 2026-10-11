@@ -2,6 +2,7 @@ import * as T from 'three';
 import type {TreeSpot} from './vegetation.ts';
 
 type CrownAssets={map:T.Texture;center:T.Vector3;extent:number;height:number;frames:number};
+export const canopyCoverFades = new WeakMap<T.Object3D,{value:number}>();
 let assets:Promise<CrownAssets>|undefined;
 export function loadCanopyCoverAssets(){
  return assets??=(async()=>{const[map,response]=await Promise.all([new T.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}assets/vegetation/canopy-impostor.webp`),fetch(`${import.meta.env.BASE_URL}assets/vegetation/canopy-impostor.json`)]);if(!response.ok)throw new Error('远景树冠资料加载失败');const data=await response.json();map.colorSpace=T.SRGBColorSpace;map.anisotropy=8;return{map,center:new T.Vector3(...data.center as [number,number,number]),extent:data.extent,height:data.size[1],frames:data.frames??5};})();
@@ -54,5 +55,6 @@ export function createCanopyCover(trees:TreeSpot[],light:{value:number},transfor
   });mesh.instanceMatrix.needsUpdate=true;views.needsUpdate=true;nextViews.needsUpdate=true;mixes.needsUpdate=true;lastCamera.copy(camera);
  };
  update(new T.Vector3(0,10,100));mesh.computeBoundingSphere();mesh.name='complete crown coverage across LOD transitions';mesh.castShadow=false;
+ canopyCoverFades.set(mesh,fade);
  return{mesh,fade,update};
 }
