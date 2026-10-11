@@ -9,7 +9,7 @@ const state=()=>page.evaluate(()=>window.__GULOU__.stats());
 const touch=async(type,points)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([id,x,y])=>({id,x,y,radiusX:8,radiusY:8,force:1}))});
 try{
  await page.goto((process.env.TEST_URL??'http://localhost:4173/')+'?debug=1');await page.waitForFunction(()=>window.__GULOU__&&!document.querySelector('#enter').disabled,{}, {timeout:60000});await page.tap('#enter');await page.waitForFunction(()=>window.__GULOU__.stats().sectors===3);await page.waitForTimeout(800);
- assert.equal((await state()).quality,'low');assert.ok(await page.locator('#touch-controls').isVisible());assert.equal(await page.evaluate(()=>document.pointerLockElement),null);checks.push('touch layout, low preset, no pointer lock');
+ assert.equal((await state()).quality,'medium');assert.ok(await page.locator('#touch-controls').isVisible());assert.equal(await page.evaluate(()=>document.pointerLockElement),null);checks.push('touch layout, medium preset, no pointer lock');
  const box=await page.locator('#touch-stick').boundingBox(),x=box.x+box.width/2,y=box.y+box.height/2,before=(await state()).position;
  await touch('touchStart',[[1,x,y]]);await touch('touchMove',[[1,x,y-35]]);await page.waitForTimeout(1500);
  assert.ok(before[2]-(await state()).position[2]>1,'joystick moves');const yaw=await page.evaluate(()=>window.__GULOU__.game.cameraRig.yaw);

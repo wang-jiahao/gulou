@@ -88,7 +88,7 @@ export class Game {
     this.csm.fade=true;
     this.csm.lights.forEach(light=>{light.color.set(0xfff0d9);light.shadow.normalBias=.025;light.shadow.bias=-.00003;});
     this.setTime(15);
-    this.setQuality(matchMedia('(pointer: coarse)').matches ? 'low' : 'medium'); window.addEventListener('resize', () => this.resize());
+    this.setQuality('medium'); window.addEventListener('resize', () => this.resize());
     this.renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); this.mode = 'paused'; this.onNotice('图形上下文已中断，请重新加载页面。'); });
   }
   async init(progress: (p: number, label: string) => void) {
