@@ -1,7 +1,7 @@
 # v131 后续：67.5°顶视新证据（2026-10-11）
 
 - 生产仍7b1afca/v131，无新源码／影片修改。当前合批版本641升降采样(20–100m/.125m)、45°俯视相机发现2次屏内4..7→8；最大事件instance214在39.5→39.625m发生4→8，同时upY→upZ导致同相机平面roll125.6571°。同after相机仅旧图集改变40099RGB像素，仅旧朝向61198，二者56547，恢复0差/0GLerror。计数重叠不相加，部分冠位于画面下缘，不称全冠完整可见。
-- before/after800全图与native after/atlas-only/orientation-only/both裁图已看，冠形明显突变。`/tmp/gulou-canopy-top-v131/{README.md,events,isolation}.json`（README为md）为新证据；恢复`docs/validation/canopy-top-v131/?validation=1`，门禁v131。不是旧22.5°平滑候选重复计时，也不是键盘飞行验收。
+- before/after800全图与native after/atlas-only/orientation-only/both裁图已看，冠形明显突变。`/tmp/gulou-canopy-top-v131/{README.md,events.json,isolation.json}`为新证据；恢复`docs/validation/canopy-top-v131/?validation=1`，门禁v131。不是旧22.5°平滑候选重复计时，也不是键盘飞行验收。
 - 下一步候选须同时处理顶视图集与朝向连续性；不能简单删upZ（会变顶视对齐且接近垂直有奇点），不能仅混图忽略125°roll。先数学／原生连续帧，再同条件配对性能；未实现、未采用、无性能结论。tab28已关，0亮度静音/caffeinate75604/4173保持；独立编码报告仍未出现，cut6c保持。
 
 ---
