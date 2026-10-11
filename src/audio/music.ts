@@ -31,6 +31,7 @@ export class Music {
     } catch { /* Music is optional; local file import remains available. */ }
     if (this.objectUrls.length) return;
     if (!this.tracks.length) this.tracks = [{ ...defaultTrack }];
+    if (this.isDefault) void this.defaultMusic.prepare();
     this.onChange();
     this.shuffleBag = []; this.lastPlayed = null;
     if (this.started) this.next();
@@ -80,5 +81,5 @@ export class Music {
     this.shuffleBag = []; this.lastPlayed = null;
     this.enabled = this.started = true; this.next();
   }
-  get snapshot() { return { order: 'shuffle', tracks: this.tracks.length, title: this.tracks[this.index]?.title ?? '', enabled: this.enabled, paused: this.paused, volume: this.volume, currentTime: this.isDefault ? this.defaultMusic.currentTime : this.audio.currentTime, source: this.isDefault ? 'generated' : 'file' }; }
+  get snapshot() { return { order: 'shuffle', tracks: this.tracks.length, title: this.tracks[this.index]?.title ?? '', enabled: this.enabled, paused: this.paused, volume: this.volume, currentTime: this.isDefault ? this.defaultMusic.currentTime : this.audio.currentTime, source: this.isDefault ? this.defaultMusic.source : 'file' }; }
 }

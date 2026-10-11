@@ -1,7 +1,11 @@
+import { loadPianoSamples, pianoPitches, playPianoNote, preloadPianoSamples, type MusicVoices, type PianoSamples } from './piano.ts';
+
 /** Original piano miniature: introduction, two themes, reprise and a quiet coda. */
 export const musicBarSeconds = 4 * 60 / 66;
 export const musicBars = 32;
-const beat = musicBarSeconds / 4;
+const tempos = [64, 65, 64, 60, 65, 66, 67, 63, 65, 66, 64, 59, 66, 68, 67, 63, 66, 65, 64, 58, 64, 65, 66, 62, 64, 63, 61, 57, 60, 57, 54, 54];
+export const musicBarDuration = (bar: number) => 240 / tempos[bar % musicBars];
+export const musicDuration = tempos.reduce((seconds, tempo) => seconds + 240 / tempo, 0);
 const pianoWaves = new WeakMap<BaseAudioContext, [PeriodicWave, PeriodicWave]>();
 const voicings = [[53, 60, 64, 69], [50, 57, 60, 65], [58, 62, 65, 69], [48, 55, 62, 67], [57, 60, 64, 67], [55, 58, 62, 65]];
 const harmony = [0, 0, 1, 3, 0, 4, 1, 2, 5, 0, 2, 3, 1, 4, 2, 0, 5, 1, 2, 3, 0, 4, 1, 2, 5, 0, 2, 3, 1, 2, 0, 0];
@@ -23,9 +27,15 @@ const phrases: [number, number][][] = [
   [[.75, 65], [2.5, 69]], [[1.5, 70]], [[.5, 69], [2, 65]], [],
 ];
 
-export function scheduleMusicBar(ctx: BaseAudioContext, output: AudioNode, time: number, bar: number, voices?: Set<OscillatorNode>) {
+export function scheduleMusicBar(ctx: BaseAudioContext, output: AudioNode, time: number, bar: number, voices?: MusicVoices, samples?: PianoSamples) {
   const section = bar % musicBars;
+  const beat = musicBarDuration(bar) / 4;
+  let noteIndex = 0;
   const note = (midi: number, offset: number, duration: number, level: number) => {
+    const variation = Math.sin((section * 13 + noteIndex++ * 7 + midi) * 1.37);
+    const start = time + Math.max(0, offset * beat + variation * .009);
+    level *= 1 + variation * .035;
+    if (samples && playPianoNote(ctx, output, samples, midi, start, duration * beat, level, voices)) return;
     let waves = pianoWaves.get(ctx);
     if (!waves) {
       waves = [
@@ -34,7 +44,7 @@ export function scheduleMusicBar(ctx: BaseAudioContext, output: AudioNode, time:
       ];
       pianoWaves.set(ctx, waves);
     }
-    const start = time + offset * beat, end = start + duration * beat;
+    const end = start + duration * beat;
     const pan = ctx.createStereoPanner(); pan.pan.value = Math.max(-.3, Math.min(.3, (midi - 65) / 65)); pan.connect(output);
     let remaining = 2;
     // The brighter hammer/string component decays before the warm sustained tone.
@@ -54,18 +64,26 @@ export function scheduleMusicBar(ctx: BaseAudioContext, output: AudioNode, time:
   const chord = voicings[harmony[section]], intro = section < 4, coda = section >= 28;
   const dynamics = intro ? .7 : coda ? .72 - (section - 28) * .12 : section >= 12 && section < 20 ? 1 : .86;
   if (section === 31) return;
-  note(chord[0] - 12, 0, 4.8, .072 * dynamics);
-  note(chord[1], .07, 3.5, .036 * dynamics);
-  note(chord[2], intro || coda ? 1.4 : .8, 3.1, .032 * dynamics);
-  if (!coda) note(chord[3], 2.15, 3.5, .03 * dynamics);
-  if (!intro && !coda && section % 4 !== 3) note(chord[1] + 12, 3.1, 2.4, .024 * dynamics);
-  phrases[section].forEach(([offset, pitch], i) => note(pitch, offset + (i % 2 ? .025 : 0), 3.1, .145 * dynamics * (1 - i * .065)));
+  note(chord[0] - 12, 0, coda ? 4.3 : 3.85, .058 * dynamics);
+  note(chord[1], .07, intro || coda ? 3.5 : 2.7, .032 * dynamics);
+  note(chord[2], intro || coda ? 1.4 : .8, 2.8, .03 * dynamics);
+  if (!coda) note(chord[3], 2.15, 1.9, .028 * dynamics);
+  if (!intro && !coda && section % 4 !== 3) note(chord[1] + 12, 3.1, 1.3, .019 * dynamics);
+  // Hold the melody into the next touch, then let the damper release its tail.
+  phrases[section].forEach(([offset, pitch], i, line) => {
+    const next = line[i + 1]?.[0] ?? 4.2;
+    note(pitch, offset + (i % 2 ? .025 : 0), Math.min(3.2, next - offset + .18), .15 * dynamics * (1 - i * .045));
+  });
 }
 
 export function createMusicOutput(ctx: BaseAudioContext, volume: number) {
-  const master = ctx.createGain(); master.gain.value = volume;
-  const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 3200;
-  master.connect(filter); filter.connect(ctx.destination);
+  const input = ctx.createGain(), master = ctx.createGain(); master.gain.value = volume;
+  const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 6800;
+  const room = ctx.createGain(), highpass = ctx.createBiquadFilter(), compressor = ctx.createDynamicsCompressor();
+  highpass.type = 'highpass'; highpass.frequency.value = 45;
+  compressor.threshold.value = -16; compressor.knee.value = 12; compressor.ratio.value = 1.5;
+  compressor.attack.value = .03; compressor.release.value = .35;
+  input.connect(filter); filter.connect(room); room.connect(highpass); highpass.connect(compressor); compressor.connect(master); master.connect(ctx.destination);
   const reverb = ctx.createConvolver(), wet = ctx.createGain();
   const impulse = ctx.createBuffer(2, Math.ceil(ctx.sampleRate * 3.2), ctx.sampleRate);
   let seed = 1337;
@@ -77,44 +95,58 @@ export function createMusicOutput(ctx: BaseAudioContext, volume: number) {
       data[i] = t < .032 ? 0 : (seed / 2147483648 - 1) * Math.exp(-t * 2.3);
     }
   }
-  reverb.buffer = impulse; wet.gain.value = .28;
-  filter.connect(reverb); reverb.connect(wet); wet.connect(ctx.destination);
-  return master;
+  reverb.buffer = impulse; wet.gain.value = .2;
+  filter.connect(reverb); reverb.connect(wet); wet.connect(room);
+  return { input, master };
 }
 
 export class DefaultMusic {
   private context?: AudioContext;
   private master?: GainNode;
+  private input?: GainNode;
   private timer?: ReturnType<typeof setInterval>;
-  private voices = new Set<OscillatorNode>();
+  private voices: MusicVoices = new Set();
+  private samples: PianoSamples = new Map();
+  private generation = 0;
   private nextAt = 0;
   private bar = 0;
   private playing = false;
   private volume = .28;
   get paused() { return !this.playing || this.context?.state !== 'running'; }
   get currentTime() { return this.context?.currentTime ?? 0; }
+  get source() { return this.samples.size === pianoPitches.length ? 'sampled' : this.samples.size ? 'hybrid' : 'generated'; }
+  prepare() { return preloadPianoSamples(); }
 
   async play() {
     if (!this.context) {
       this.context = new AudioContext({ latencyHint: 'playback' });
-      this.master = createMusicOutput(this.context, this.volume);
+      const output = createMusicOutput(this.context, this.volume);
+      this.master = output.master; this.input = output.input;
     }
     this.playing = true;
+    const generation = this.generation;
     await this.context.resume();
-    if (!this.playing || this.timer !== undefined) return;
+    if (this.samples.size < pianoPitches.length) {
+      const loading = loadPianoSamples(this.context).then(samples => { this.samples = samples; });
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      await Promise.race([loading, new Promise<void>(resolve => { timer = setTimeout(resolve, 2500); })]);
+      clearTimeout(timer);
+    }
+    if (!this.playing || generation !== this.generation || this.timer !== undefined) return;
     const schedule = () => {
       const ctx = this.context!;
       if (ctx.state !== 'running') return;
       // Background-tab timer throttling must not accumulate a backlog of notes.
       if (this.nextAt < ctx.currentTime) this.nextAt = ctx.currentTime + .04;
       while (this.nextAt < ctx.currentTime + .3) {
-        scheduleMusicBar(ctx, this.master!, this.nextAt, this.bar++, this.voices);
-        this.nextAt += musicBarSeconds;
+        scheduleMusicBar(ctx, this.input!, this.nextAt, this.bar, this.voices, this.samples);
+        this.nextAt += musicBarDuration(this.bar++);
       }
     };
     schedule(); this.timer = setInterval(schedule, 150);
   }
   pause(reset = false) {
+    this.generation++;
     this.playing = false; clearInterval(this.timer); this.timer = undefined;
     if (reset) {
       this.voices.forEach(osc => { try { osc.stop(); } catch { /* Already ended. */ } });

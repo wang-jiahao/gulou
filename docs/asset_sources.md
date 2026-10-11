@@ -17,7 +17,7 @@
 | 人物基础 | [MakeHuman 图形资产](https://github.com/makehumancommunity/makehuman/blob/master/LICENSE.md)，CC0 | 基础网格与辅助关节数据；服装、骨骼、动作和脚部 IK 在本项目制作，不使用 MakeHuman 应用源码 |
 | 公开建筑照片 | Wikimedia Commons：Yumeto、zhanyoun、Soufate 等作者 | 仅作建模参考，原图不随仓库和网站分发 |
 | 合成环境声、道具等 | 本项目生成制作 | 脚步、鸟鸣、长椅、路灯、足球、球门、部分纹理与几何；雨声实录另列 |
-| 默认配乐《鼓楼漫步》 | 本项目原创旋律与 Web Audio 合成，MIT | 轻钢琴及程序生成回响；无音频文件下载、无第三方录音采样 |
+| 默认配乐《鼓楼漫步》 | 原创编曲/代码 MIT；VSCO 2 / tonejs-instruments 钢琴录音 CC BY 3.0 | 16 个实际钢琴采样，约 1.2 MB；裁短/重编码并随站点分发，[来源与许可](../public/assets/audio/piano/LICENSE.md)，加载失败时回退合成 |
 | C418 / Minecraft 音乐 | Minecraft Java 官方资源索引与资源服务器 | 五首曲目仅保存为本机个人播放文件，未包含在公开仓库与网站中 |
 
 [配准记录](sources/plan-registration.json)保留控制点与拟合方法；拟合残差不等于真实测绘精度。普通建筑位置、尺寸、楼层和植物仍有近似值。
