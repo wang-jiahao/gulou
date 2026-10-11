@@ -1,5 +1,7 @@
 # v135 更完整的原创钢琴配乐（2026-10-11）
 
+正式上线确认：源码8fabaa3、主页abe0af2；Pages构建成功，线上release.json及5个变化文件SHA全部匹配v0.135.0。证据/tmp/gulou-release-20261011/live-assets-v135.json，代理页已关。
+
 用户反馈八小节循环太简单，希望更接近Minecraft的安静钢琴氛围。扩为32小节、约116秒的前奏/双主题/回归/尾声，加入错落分解和弦、力度和留白；明亮敲击泛音先衰减、温暖主体持续，轻微分音偏差、左右琴区与3.2秒程序混响。原创音符与合成音色，不使用原曲录音或复制曲谱。
 
 123秒离线合成覆盖全曲及尾音，peak .05095/RMS .00727、无非有限值或削波；真实AudioContext播放/暂停/恢复、切曲和本地文件导入切换通过。类型/lint/audio/build:pages通过；JS gzip较v134增加452字节，无音频下载。系统仍静音，未主观试听。证据/tmp/gulou-piano-v135；试听.local-media/gulou-default-piano-v135-preview.wav。README宣传片保持。正式部署提交以release.json为准。
