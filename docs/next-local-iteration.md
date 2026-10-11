@@ -1,3 +1,14 @@
+# 最新：v132 / cut7已完成，待用户看新版（2026-10-11）
+
+- 源码d50f1ed私有同步，礼堂按四新照提高山墙/取消正面假窗，三门三窗/禮堂字和团花轮廓/屋顶/阶边/侧藤重建；两指定树post-filter移除，其余随机序列不变。健忠台面剔除内层共面顶、七阶外表并集，33物理/相机不变；西南49保持。柜恢复灰黑40格美团标，但新址[-36.91375,376.30525]保持，无棚，6物理/相机和600公共道路点通过。礼堂23solid六阶，东西大楼碰撞保持。类型lintbuild58资产metrics过。
+- 最新影片 `.local-media/promotion/v132-cut7-motion/gulou-cut7-61s.mp4`，26镜61s1080p30。去中山/拉贝，柜只叫外卖柜，补hall/dadaoping/lockers各60帧和flight240共420；22旧镜1410解码帧同cut6c。全1830帧AV解码，root看全420联系表、60白阶原生crop、flight21/22原生crop及选定全景。音轨雨58–61s、音乐压低、尾60–61淡出，峰-1.2dB，听感未验。
+- Flight起点是教学楼左侧，实际[-105.0597,23.2224,162.7482]到[-25.5664,22.9698,10.0559]，全240gliding、高度22.9467–23.2224，第三人称。原生起飞+预备Control降高，拍摄W/Shift且每11帧Space一次维持高度；不是camera伪造。录制near4/4K缩1080仅影片，不搬普通游戏。不能用原旧preRoll带W流程还原。
+- 恢复 `docs/validation/promotion-cut7-20261011/?validation=1`，master26approved且每镜reuse指本片正确时间。别直接重录全套或覆盖旧片。原片Downloads/gulou-cut7-14s.ivf和review(1).json；证据/tmp/gulou-cut7-20261011/{README.md,final-review.json,encoding-report.json}。首次assembly后验证旧timeline缺duration报错，已改frames，verify-resume重用现有片完成验证，不重编码。
+- promo_review_fresh旧任务被新cut7小范围复用；正看6张全图+60阶裁图，报告/tmp/gulou-cut7-20261011/independent-review.md尚待。按实际文件取结论，勿假称独立全片通过。旧cut6报告不用再催。
+- 0亮度静音保持，caffeinate75604/4173复用，tab32关。用户准备下午发布但还未授权公开/部署，只有私有源码及必要资产同步授权。先接用户对cut7意见；普通A02与待办仍开放，勿盲重复旧试验。6个既有untracked脚本不动，原图音乐验证/录制脚本不提交；README赞赏绝对末尾。
+
+---
+
 # 最新用户优先：v132/cut7正在制作（2026-10-11）
 
 - 下午发布前优先完成这版宣传片。当前worktree不是已验收成品，package仍v131。礼堂按四新照重建山墙、红门、窗、禮堂轮廓题字/团花、侧藤；指定两树通过post-filter删除；健忠楼踏步渲染并集/覆盖顶面剔除，33物理/相机不变；外卖柜恢复灰黑美团标40格、保留正确新址，无棚。
