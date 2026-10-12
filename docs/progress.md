@@ -1,8 +1,8 @@
 # v141 新版小人发布与校门俯冲（2026-10-12）
 
-用户认可v140成人比例小人并要求同步网站。将其设为新访客默认，设置初始化同步；原男/女选项与已有角色/画质偏好保留，6m/s跑速保持。无新模型资产。实际浏览器fresh默认explorer/medium且108096头部索引、20身体网格；已有female/high恢复通过，无pageerror。types/lint/build:pages/59资产通过；先前npm命令不可用未执行，已改用bundled pnpm完成。发布证据/tmp/gulou-release-v141，最终上线状态待后续记录。
+用户认可v140成人比例小人并要求同步网站。将其设为新访客默认，设置初始化同步；原男/女选项与已有角色/画质偏好保留，6m/s跑速保持。无新模型资产。实际浏览器fresh默认explorer/medium且108096头部索引、20身体网格；已有female/high恢复通过，无pageerror。types/lint/build:pages/59资产通过；先前npm命令不可用未执行，已改用bundled pnpm完成。源码7451eee与主页0eb9539已发布，Pages run38235119077成功；线上release.json为v0.141.0，7个变化文件+男生模型共8项SHA全匹配，正式网页再次验证新默认explorer/medium及已有female/high，无pageerror。发布证据/tmp/gulou-release-v141。
 
-用户指出上一版俯冲沿汉口路横向经过位置不对，本轮按汉口路校门→中大路→教学楼制作，采用既有登记地图校门[-91.0546,351.0486]、中大路道路边线、教学楼南立面。只调整开场，不重录其余镜头；最终影片和实看范围待后续记录。定时开发维持取消。
+用户指出上一版俯冲沿汉口路横向经过位置不对，本轮按汉口路校门→中大路→教学楼制作，采用既有登记地图校门[-91.0546,351.0486]、中大路道路边线、教学楼南立面。新片.local-media/promotion/x-cut3-20261012/gulou-x-cut3-32s.mp4，32秒1080p30共960帧。开场在门外上空95m、z430起，沿路向北至教学楼前z173、24m；5m低终点候选近树冠过密已拒，保存在/tmp/gulou-x-cut3-20261012/low-end，最终仅60帧12取样/帧、4K缩1080补录。根实看全部60编码帧联系表、11选定全景；相机路径无建筑碰撞射线命中，未宣称全局零闪。完整AV解码通过，后900帧与X第二版逐帧MD5一致、音频包SHA相同，旧配乐/雨声/英文尾卡保持，无新听感验收。证据/tmp/gulou-x-cut3-20261012/{record.json,identity.json,review.json}；恢复.tools/promo-x-cut3-20261012/{opening.mjs --record,assemble.py,review.py}，组片拒覆盖。线上恢复验证GULOU_URL=https://wang-jiahao.github.io/gulou/ node .tools/release-v141/verify.mjs。代理浏览器已关，4173复用；定时开发维持取消。
 
 ---
 
