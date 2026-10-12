@@ -2,13 +2,14 @@ import * as T from 'three';
 import {bicycleFit} from '../world/bicycle.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { addStickman } from './stickman.ts';
 
-export type CharacterKind = 'male' | 'female';
+export type CharacterKind = 'male' | 'female' | 'stickman';
 export type OutfitStyle = 'campus' | 'forest' | 'warm';
 
 /** CC0 MakeHuman base, original clothing and rig; meter-scale articulated student. */
 export async function createAvatar(kind: CharacterKind = 'male') {
-  const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(`${import.meta.env.BASE_URL}assets/characters/student-${kind}.glb`);
+  const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(`${import.meta.env.BASE_URL}assets/characters/student-${kind === 'stickman' ? 'male' : kind}.glb`);
   const cloth=await new T.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}assets/textures/fabric-bump.webp`);cloth.wrapS=cloth.wrapT=T.RepeatWrapping;cloth.repeat.set(16,16);
   const materials = new Set<T.Material>(), geometries = new Set<T.BufferGeometry>(), skeletons = new Set<T.Skeleton>();
   const root = new T.Group(); root.name = 'student'; const model = gltf.scene; root.add(model);
@@ -81,6 +82,18 @@ export async function createAvatar(kind: CharacterKind = 'male') {
     handBasis[side]=new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(x.applyQuaternion(inverse),normal.applyQuaternion(inverse),forward.applyQuaternion(inverse)));
   }
   const hipsRest=bones.Hips.position.clone();
+  if (kind === 'stickman') {
+    const oldMeshes: T.Mesh[] = [];
+    model.traverse(node => { if (node instanceof T.Mesh) oldMeshes.push(node); });
+    for (const mesh of oldMeshes) mesh.removeFromParent();
+    geometries.forEach(g => g.dispose()); geometries.clear();
+    const textures = new Set<T.Texture>();
+    for (const material of materials) for (const value of Object.values(material)) if (value instanceof T.Texture && value !== cloth) textures.add(value);
+    materials.forEach(m => m.dispose()); materials.clear(); textures.forEach(t => t.dispose());
+    const figure = addStickman(root, bones, height);
+    figure.geometries.forEach(g => geometries.add(g));
+    figure.materials.forEach(m => materials.add(m));
+  }
   const hipRestHeight=root.worldToLocal(bones.Hips.getWorldPosition(new T.Vector3())).y;
   let moving = 0,phase=0,kickTime=0,groundSampler:((x:number,z:number)=>number)|undefined;
   const align=(bone:T.Bone,child:T.Bone,target:T.Vector3)=>{
@@ -94,6 +107,7 @@ export async function createAvatar(kind: CharacterKind = 'male') {
       const palette = style === 'forest' ? [0x627b69, 0xd9d4c6, 0x525f65, 0x887456] : style === 'warm' ? [0xa5856b, 0xe0d7c7, 0x626d77, 0x595e54] : kind === 'female' ? [0x899682, 0xf0eee6, 0x8b9fac, 0xd6d1c3] : [0x253549, 0xf0eee6, 0x545557, 0x292c2b];
       for (const material of materials) {
         if (!(material instanceof T.MeshStandardMaterial)) continue;
+        if (material.name === 'stickman-ink') material.color.setHex(style === 'forest' ? 0x30483d : style === 'warm' ? 0x68473b : 0x242b35);
         const index = ['student-cotton', 'student-tee', 'student-denim', 'student-backpack'].indexOf(material.name);
         if (index >= 0) material.color.setHex(palette[index]);
         if (material.name === 'jacket-trim') material.color.setHex(palette[0]).multiplyScalar(.82);

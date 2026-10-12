@@ -178,7 +178,7 @@ export class Player {
     const right = active ? T.MathUtils.clamp(Number(this.keys.has('KeyD') || this.keys.has('ArrowRight')) - Number(this.keys.has('KeyA') || this.keys.has('ArrowLeft')) + this.moveInput.x, -1, 1) : 0;
     this.direction.set(right * Math.cos(yaw) - forward * Math.sin(yaw), 0, -forward * Math.cos(yaw) - right * Math.sin(yaw));
     if (this.direction.lengthSq() > 1) this.direction.normalize();
-    let desired = (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) ? 4.2 : 1.65;
+    let desired = (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) ? 6 : 1.65;
     this.rideCameraTurn=0;
     if(this.riding){
       const boost=this.keys.has('ShiftLeft')||this.keys.has('ShiftRight'),braking=this.keys.has('Space');

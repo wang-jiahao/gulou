@@ -126,7 +126,7 @@ async function boot() {
   el<HTMLSelectElement>('quality').value = game.quality;
   try {
     const s = JSON.parse(localStorage.getItem('gulou-settings-v1') ?? '{}');
-    if (s.character === 'male' || s.character === 'female') { game.character = s.character; el<HTMLSelectElement>('character-style').value = s.character; }
+    if (s.character === 'male' || s.character === 'female' || s.character === 'stickman') { game.character = s.character; el<HTMLSelectElement>('character-style').value = s.character; }
     if (['campus', 'forest', 'warm'].includes(s.outfit)) { game.outfit = s.outfit; el<HTMLSelectElement>('outfit-style').value = s.outfit; }
     if (['high', 'medium', 'low'].includes(s.quality)) { game.setQuality(s.quality); el<HTMLSelectElement>('quality').value = s.quality; }
     if (typeof s.musicVolume === 'number') game.music.setVolume(s.musicVolume);
@@ -192,7 +192,7 @@ async function boot() {
   el('reset').onclick = () => { game.basketball.cancel(); game.player.reset(); game.cameraRig.reset(); toast('已回到北大楼前。'); };
   el('view-toggle').onclick = () => { game.cameraRig.toggle(); el('view-toggle').textContent = game.cameraRig.firstPerson ? '第一人称 ⇄' : '第三人称 ⇄'; };
   el<HTMLSelectElement>('character-style').onchange = async e => {
-    const select = e.target as HTMLSelectElement, kind = select.value === 'female' ? 'female' : 'male'; select.disabled = true;
+    const select = e.target as HTMLSelectElement, kind = select.value === 'stickman' ? 'stickman' : select.value === 'female' ? 'female' : 'male'; select.disabled = true;
     try { await game.setCharacter(kind); saveSettings(); } catch { select.value = game.character; toast('角色暂时没有加载成功，请稍后重试。'); } finally { select.disabled = false; }
   };
   el<HTMLSelectElement>('quality').onchange = e => { game.setQuality((e.target as HTMLSelectElement).value as Quality); saveSettings(); };
