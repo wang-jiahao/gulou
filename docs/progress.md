@@ -1,3 +1,19 @@
+# v137 访问人次已实现待账号部署；X短片完成（2026-10-12）
+
+用户最新定义：主指标为传播范围的累计访问人次，打开网页即可计入，同一人第一天/第二天各来一次应算2次。已实现30分钟短会话、北京时间自然日切换；不宣称独立玩家人数。src/analytics在正式页面启动时异步POST，不绑进入校园按钮；localhost/开发/debug/validation排除，统计网络故障不影响游戏。欢迎页只在有效计数返回后显示；没有用占位数字或补造历史访问。
+
+Cloudflare Worker + SQLite Durable Object服务在workers/visit-counter，GET只读total/today/day，POST用随机短期会话标记按日幂等；事务保持并发累加。只持久保存每日汇总与总量，短期标记定时清理，不存IP/UA/referrer/账号/游戏行为。配置public/data/visits.json仍为空：未获得用户Cloudflare发布授权，线上生产仍v136，没有部署空壳统计。下一步通过标准Wrangler登录获得用户授权，部署独立计数Worker，填实际endpoint，再发布网站。禁止寻找/复制浏览器cookies或令牌。
+
+本地真实workerd/SQLite测试通过：24并发同会话不重计、48并发不同访问不丢失、读请求/错误请求不增加、服务重启后总数与幂等标记保持；会话函数验证同日刷新/30分钟/跨北京时间午夜/时钟回退。types/lint/build:pages/58已有资产和Worker dry-run通过；最初lint因第二条命令未继承Node PATH失败，已用完整PATH重跑成功。证据/tmp/gulou-x-cut-20261012/{counter-test.log,worker-build.log,site-build.log,assets.log}。无浏览器布局验收声明。
+
+X短片.local-media/promotion/x-cut1-20261012/gulou-x-cut1-30s.mp4完成，30秒1080p30共900帧；飞行从第0秒开始（复用cut7 52–58s），再接北大楼/礼堂/教学/校门/图书馆/操场、黄昏/夜晚/雨、3秒英文试玩卡。原61秒保持；新原创采样钢琴混音，雨声24–27s。完整AV解码，13选定帧联系表已看，AAC解码peak .51782无满刻度样本；系统静音未主观听感。证据/tmp/gulou-x-cut-20261012/final-review.json；发布说明含采样署名。SF用户参考只作节奏分析，没有复用对方画面。
+
+X主页公开HTML可读：@wjh929，动漫头像，现有Bio/个人主页链接，0帖/0关注/0粉丝；无需养号后才发布。相关原帖https://x.com/Xian0063/status/2101024527266591159已读；回复和首帖草稿在.local-media/promotion/x-launch-20261012.md。浏览器runtime返回Codex auth token is unavailable，不能用账号发送；没有发表、点赞或关注。公开发帖仍需工具要求的具体发送确认。定时持续开发维持取消。
+
+用户把昨天导出的鼓楼宣传图-9张文件夹移动到了游戏仓库根（新untracked）；不要删/提交。旧6个untracked scripts同样不动。用户已授权正常源码同步和网站部署；当前统计仅缺账号授权，不重建任何定时任务。
+
+---
+
 # v136 真实钢琴采样配乐（2026-10-11）
 
 正式上线确认：源码1013c70、主页77a17dc；Pages成功，24个变化文件（含16MP3）的线上SHA全部一致。实际进入校园，资源清单观察到全部16个同源MP3请求，设置显示默认曲目与“暂停”，暂停→播放→暂停操作正常，无控制台error。证据/tmp/gulou-release-20261011/live-assets-v136.json及/tmp/gulou-sampled-piano-v136/{pages-run.json,online-observed-assets.json,online-settings.png}。最初Pages未完成时的旧文件/404报告留在live-assets-v136-before-deploy.json，不是最终验收。IAB3代理tabs41–43已关。

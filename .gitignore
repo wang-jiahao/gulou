@@ -43,3 +43,8 @@ AGENTS.md
 /codex/
 # Curated game-derived promotional video; original media remain excluded.
 !docs/media/
+
+# Local Cloudflare emulator state and credentials.
+workers/visit-counter/.wrangler/
+workers/visit-counter/.dev.vars*
+workers/visit-counter/.env*

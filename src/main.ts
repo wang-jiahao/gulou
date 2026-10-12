@@ -6,6 +6,9 @@ import { findNearbyPlace } from './world/nearby-place.ts';
 import { CampusMapView } from './ui/campus-map.ts';
 import { TouchControls, touchDevice } from './ui/touch-controls.ts';
 import { DEFAULT_CYCLE_MINUTES, restoreCycleMinutes, type WeatherMode } from './game/environment-state.ts';
+import { initVisits } from './analytics/visits.ts';
+
+void initVisits();
 
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let game: Game;

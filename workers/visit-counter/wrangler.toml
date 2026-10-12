@@ -1,0 +1,15 @@
+name = "gulou-visit-counter"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://wang-jiahao.github.io"
+
+[[durable_objects.bindings]]
+name = "VISITS"
+class_name = "VisitCounter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["VisitCounter"]

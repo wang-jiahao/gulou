@@ -1,0 +1,14 @@
+{
+  "name": "gulou-visit-counter",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --experimental-strip-types test.mjs"
+  },
+  "devDependencies": {
+    "miniflare": "4.20260730.0",
+    "wrangler": "4.149.0"
+  }
+}
