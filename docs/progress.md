@@ -1,3 +1,11 @@
+# v144 作者指定历史访问估算（2026-10-12）
+
+用户要求访问数加2000，说明校园集市4000多浏览、小红书约1万浏览。帖子曝光不能换算为已测进站，按用户指定的历史估算基数处理：public/data/visits.json的historicalEstimate=2000；主数字“累计访问约”展示估算+实测，下行可见“含历史估算2,000；启用后实测N”。README/Worker说明明确历史基数未经访问日志验证。Worker数据库、total/today及去重不改，不伪造POST，不把平台浏览数写入实测值。
+
+1280×800和390×844完整构建页面实看、无横向溢出/pageerror；隔离后端实测27时显示约2027，两部分清晰，无估算配置恢复27。类型/build:pages/lint通过；资源未变。证据/tmp/gulou-visits-estimate-v144/{verification.json,desktop.png,mobile.png}，验证不向生产POST。源码/Pages发布接续以Git与线上校验为准。原untracked、电影、音乐、定时任务均保持。
+
+---
+
 # v143正式验证与34秒游玩宣传片完成（2026-10-12）
 
 源码41982de、主页cd043a5已上线，Pages run38261410334成功；5个变化文件线上SHA全部匹配。正式无debug/validation页面实际显示累计4人次，刷新仍4、匿名会话标记相同，成功POST均200；live-counter.json、online-hashes-v143.json在/tmp/gulou-visits-release-20261012。早期v142未保存会话/总数相等断言与4秒超时报告不是最终结果；新慢网重试已验，历史访问不补造。首批计数包含验证访问，不称已有独立玩家数。不同网络仍可能不可达，失败不阻断游戏。不要重复生产POST测试或恢复任何定时任务。

@@ -15,6 +15,7 @@ export async function initVisits() {
     || location.protocol === 'file:' || new URLSearchParams(location.search).has('validation')
     || new URLSearchParams(location.search).has('debug')) return;
   let endpoint: string;
+  let historicalEstimate = 0;
   const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
   try {
     const loadConfig = async () => {
@@ -30,11 +31,14 @@ export async function initVisits() {
       }
     };
     const response = await loadConfig();
-    const config = await response.json() as { endpoint?: unknown };
+    const config = await response.json() as { endpoint?: unknown; historicalEstimate?: unknown };
     if (!response.ok || typeof config.endpoint !== 'string' || !config.endpoint) return;
     const url = new URL(config.endpoint);
     if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) return;
     endpoint = url.href;
+    if (typeof config.historicalEstimate === 'number' && Number.isSafeInteger(config.historicalEstimate) && config.historicalEstimate > 0) {
+      historicalEstimate = config.historicalEstimate;
+    }
   } catch { return; }
   let inFlight = false;
   let memory: string | null = null;
@@ -62,8 +66,14 @@ export async function initVisits() {
       succeeded = true;
       const counter = document.getElementById('visit-counter');
       if (counter) {
-        counter.textContent = `累计访问 ${counts.total.toLocaleString('zh-CN')} 人次`;
-        counter.title = `今日 ${counts.today.toLocaleString('zh-CN')} 人次。同一天30分钟内刷新合并；第二天再来重新计次。不是独立玩家人数。`;
+        const estimate = Number.isSafeInteger(counts.total + historicalEstimate) ? historicalEstimate : 0;
+        counter.textContent = `累计访问${estimate ? '约' : ''} ${(counts.total + estimate).toLocaleString('zh-CN')} 人次`;
+        if (estimate) {
+          const note = document.createElement('small');
+          note.textContent = `含历史估算 ${estimate.toLocaleString('zh-CN')}；启用后实测 ${counts.total.toLocaleString('zh-CN')}`;
+          counter.append(note);
+        }
+        counter.title = `今日实测 ${counts.today.toLocaleString('zh-CN')} 人次。同一天30分钟内刷新合并；第二天再来重新计次。不是独立玩家人数。${estimate ? '历史基数为作者估算，帖子浏览量不等于网站访问量。' : ''}`;
         counter.hidden = false;
       }
     } catch { /* A counter outage must not interrupt the game. */ }

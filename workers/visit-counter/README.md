@@ -33,6 +33,8 @@ pnpm deploy
 
 `wrangler.toml`创建一个名为`gulou-visit-counter`的Worker和一个SQLite Durable Object，允许的网页来源为`https://wang-jiahao.github.io`。按Wrangler输出的实际地址，把游戏`public/data/visits.json`的`endpoint`填为该Worker的`/api/visits`地址，然后按游戏部署文档发布到GitHub Pages。
 
+可选配置`historicalEstimate`只影响网页展示：主数字带“约”，下方同时显示历史估算和启用后实测值。当前作者指定历史估算2,000；该基数未经访问日志验证，不能用帖子浏览量证明。Worker的`total`、`today`保持实测数据，不写入估算基数。
+
 空endpoint表示尚未启用，网页不会请求外部计数服务，也不会显示虚构数字。调试/验证页面和localhost不计数。网络故障时不显示错误数字且不会阻止游戏加载。
 
 `GET /api/visits`只读返回`{total,today,day}`，可查看真实累计量而不增加计数。`POST /api/visits`接收`{"session":"32位随机十六进制标记"}`。不要在生产环境反复POST做测试。
