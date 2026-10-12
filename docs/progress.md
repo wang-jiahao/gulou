@@ -1,5 +1,7 @@
 # v144 作者指定历史访问估算（2026-10-12）
 
+正式上线确认：源码f7e54d8、主页0a80182，Pages run38268293365成功；v0.144.0及7个变化文件线上SHA全部匹配。只读GET当时实测total9/today9，未向生产添加验证访问；页面加估算后约2009（随真实访问增长）。证据/tmp/gulou-visits-estimate-v144/{online-hashes.json,online-release.json,pages-final.json}。
+
 用户要求访问数加2000，说明校园集市4000多浏览、小红书约1万浏览。帖子曝光不能换算为已测进站，按用户指定的历史估算基数处理：public/data/visits.json的historicalEstimate=2000；主数字“累计访问约”展示估算+实测，下行可见“含历史估算2,000；启用后实测N”。README/Worker说明明确历史基数未经访问日志验证。Worker数据库、total/today及去重不改，不伪造POST，不把平台浏览数写入实测值。
 
 1280×800和390×844完整构建页面实看、无横向溢出/pageerror；隔离后端实测27时显示约2027，两部分清晰，无估算配置恢复27。类型/build:pages/lint通过；资源未变。证据/tmp/gulou-visits-estimate-v144/{verification.json,desktop.png,mobile.png}，验证不向生产POST。源码/Pages发布接续以Git与线上校验为准。原untracked、电影、音乐、定时任务均保持。
