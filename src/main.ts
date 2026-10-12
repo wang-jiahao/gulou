@@ -124,6 +124,7 @@ async function boot() {
   const { Game } = await import('./game/game.ts');
   game = new Game(el('viewport')); game.onNotice = toast; game.music.onError = toast;
   el<HTMLSelectElement>('quality').value = game.quality;
+  el<HTMLSelectElement>('character-style').value = game.character;
   try {
     const s = JSON.parse(localStorage.getItem('gulou-settings-v1') ?? '{}');
     if (s.character === 'stickman') s.character = 'explorer';

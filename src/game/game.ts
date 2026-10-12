@@ -33,7 +33,7 @@ export class Game {
   traffic!:StreetTraffic;
   mode: Mode = 'loading';
   quality: Quality = 'medium';
-  character: CharacterKind = 'male';
+  character: CharacterKind = 'explorer';
   outfit: OutfitStyle = 'campus';
   private characterRequest = 0;
   photoFov = 58;
