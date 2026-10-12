@@ -1,3 +1,13 @@
+# v142 访问统计服务已接通（2026-10-12）
+
+用户明确授权代点Cloudflare批准后，标准OAuth localhost回调登录成功，account/user read及workers_scripts:write权限验证完成。Worker gulou-visit-counter已部署，版本ff6064c1-bc63-4f08-a496-de375c0d1240，实际接口https://gulou-visit-counter.2328796228-d88.workers.dev/api/visits；代理GET返回total0/today0/day2026-10-12，OPTIONS允许正式网站Origin。先前device超时及旧workers:write不足是历史状态，勿继续要求授权。命令沿用系统现有127.0.0.1:7897代理，未修改系统代理；直接网络GET曾超时，不宣称所有网络可达。
+
+public/data/visits.json填实际接口，配置fetch加no-cache以重验旧空配置；页面启动即可计入，30分钟同浏览器去重，北京自然日重置会话。无历史补数，不存IP/UA/referrer/账号。跨日/并发24同会话与48不同会话/CORS/GET只读/SQLite重启测试通过；types(build)/lint/59资产/build:pages通过。部署与验证日志/tmp/gulou-visits-release-20261012。网站发布及正式页面计数验收接续记录在下方。
+
+新影片按最新反馈待录：建筑密集区俯冲、第二镜转向飞行，增加俯冲/飞行/骑行，减少定点建筑，以人在道路行走结束；沿用cut7配乐、取消片头英文。旧x-cut3树多被用户否决但保留，不重启定时任务。
+
+---
+
 # v141 新版小人发布与校门俯冲（2026-10-12）
 
 用户认可v140成人比例小人并要求同步网站。将其设为新访客默认，设置初始化同步；原男/女选项与已有角色/画质偏好保留，6m/s跑速保持。无新模型资产。实际浏览器fresh默认explorer/medium且108096头部索引、20身体网格；已有female/high恢复通过，无pageerror。types/lint/build:pages/59资产通过；先前npm命令不可用未执行，已改用bundled pnpm完成。源码7451eee与主页0eb9539已发布，Pages run38235119077成功；线上release.json为v0.141.0，7个变化文件+男生模型共8项SHA全匹配，正式网页再次验证新默认explorer/medium及已有female/high，无pageerror。发布证据/tmp/gulou-release-v141。

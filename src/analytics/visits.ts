@@ -16,7 +16,7 @@ export async function initVisits() {
     || new URLSearchParams(location.search).has('debug')) return;
   let endpoint: string;
   try {
-    const response = await fetch(`${import.meta.env.BASE_URL}data/visits.json`, { signal: AbortSignal.timeout(3000) });
+    const response = await fetch(`${import.meta.env.BASE_URL}data/visits.json`, { cache: 'no-cache', signal: AbortSignal.timeout(3000) });
     const config = await response.json() as { endpoint?: unknown };
     if (!response.ok || typeof config.endpoint !== 'string' || !config.endpoint) return;
     const url = new URL(config.endpoint);
