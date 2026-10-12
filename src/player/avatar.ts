@@ -85,12 +85,42 @@ export async function createAvatar(kind: CharacterKind = 'male') {
   if (kind === 'explorer') {
     const oldMeshes: T.Mesh[] = [];
     model.traverse(node => { if (node instanceof T.Mesh) oldMeshes.push(node); });
-    for (const mesh of oldMeshes) mesh.removeFromParent();
-    geometries.forEach(g => g.dispose()); geometries.clear();
+    // Keep the existing adult head, hair and facial surfaces instead of a large
+    // spherical cartoon head. The skin source also contains hands; trim them out.
+    const retained = oldMeshes.filter(mesh => {
+      const name = (mesh.material as T.Material).name;
+      if (name === 'student-skin') {
+        const geometry = mesh.geometry.clone(), positions = geometry.getAttribute('position');
+        const joints = geometry.getAttribute('skinIndex'), weights = geometry.getAttribute('skinWeight');
+        const skeleton = (mesh as T.SkinnedMesh).skeleton;
+        const headJoints = new Set([skeleton.bones.indexOf(bones.Head), skeleton.bones.indexOf(bones.Neck)]);
+        const isHead = (index: number) => {
+          let weight = 0;
+          for (let component = 0; component < 4; component++) if (headJoints.has(joints.getComponent(index, component))) weight += weights.getComponent(index, component);
+          return weight > .05;
+        };
+        const source = geometry.index, selected: number[] = [];
+        for (let i = 0; i < (source?.count ?? positions.count); i += 3) {
+          const tri = [0, 1, 2].map(j => source ? source.getX(i + j) : i + j);
+          if (tri.every(isHead)) selected.push(...tri);
+        }
+        geometry.setIndex(selected); geometry.computeBoundingSphere(); mesh.geometry = geometry;
+        return true;
+      }
+      return name === 'student-sculpted-hair' || name === 'student-eyebrow' || name.startsWith('eye-');
+    });
+    const keptGeometries = new Set(retained.map(mesh => mesh.geometry));
+    const keptMaterials = new Set(retained.flatMap(mesh => Array.isArray(mesh.material) ? mesh.material : [mesh.material]));
+    for (const mesh of oldMeshes) if (!retained.includes(mesh)) mesh.removeFromParent();
+    geometries.forEach(g => { if (!keptGeometries.has(g)) g.dispose(); }); geometries.clear();
+    keptGeometries.forEach(g => geometries.add(g));
     const textures = new Set<T.Texture>();
-    for (const material of materials) for (const value of Object.values(material)) if (value instanceof T.Texture && value !== cloth) textures.add(value);
-    materials.forEach(m => m.dispose()); materials.clear(); textures.forEach(t => t.dispose());
-    const figure = addExplorer(root, bones, height);
+    const keptTextures = new Set<T.Texture>([cloth]);
+    for (const material of keptMaterials) for (const value of Object.values(material)) if (value instanceof T.Texture) keptTextures.add(value);
+    for (const material of materials) for (const value of Object.values(material)) if (value instanceof T.Texture && !keptTextures.has(value)) textures.add(value);
+    materials.forEach(m => { if (!keptMaterials.has(m)) m.dispose(); }); materials.clear(); textures.forEach(t => t.dispose());
+    keptMaterials.forEach(m => materials.add(m));
+    const figure = addExplorer(root, bones);
     figure.geometries.forEach(g => geometries.add(g));
     figure.materials.forEach(m => materials.add(m));
   }

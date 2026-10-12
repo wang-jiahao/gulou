@@ -3,13 +3,12 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /** Original simple clothed figure; shares the student's contact and movement rig. */
-export function addExplorer(root: T.Group, bones: Record<string, T.Bone>, height: number) {
+export function addExplorer(root: T.Group, bones: Record<string, T.Bone>) {
   root.updateMatrixWorld(true);
   const material = (name: string, color: number) => new T.MeshStandardMaterial({ name, color, roughness: .88 });
   const shirt = material('explorer-shirt', 0x24272c), shorts = material('explorer-shorts', 0xb6ad96);
-  const skin = material('explorer-skin', 0xc98e66), hair = material('explorer-hair', 0x211b18);
+  const skin = material('explorer-skin', 0xe2baa7);
   const shoes = material('explorer-shoes', 0x22242a), sole = material('explorer-sole', 0xdedcd2);
-  const eyes = material('explorer-eyes', 0x292323);
   const geometries = new Set<T.BufferGeometry>();
   const point = (name: string) => root.worldToLocal(bones[name].getWorldPosition(new T.Vector3()));
   const attach = (parent: T.Bone, geometry: T.BufferGeometry, mat: T.Material, center: T.Vector3) => {
@@ -47,7 +46,6 @@ export function addExplorer(root: T.Group, bones: Record<string, T.Bone>, height
   const hem = hips.y - .065, collar = neck.y - .025;
   box(bones.Spine, new T.Vector3(0, (hem + collar) / 2, -.005), new T.Vector3(.405, collar - hem, .245), .07, shirt);
   box(bones.Hips, new T.Vector3(0, hips.y + .015, 0), new T.Vector3(.29, .1, .20), .025, shorts);
-  rod(bones.Neck, neck.clone().add(new T.Vector3(0, -.04, 0)), neck.clone().add(new T.Vector3(0, .12, 0)), .053, skin);
 
   for (const side of ['Left', 'Right']) {
     const shoulder = point(side + 'Arm'), elbow = point(side + 'ForeArm'), hand = point(side + 'Hand');
@@ -67,18 +65,5 @@ export function addExplorer(root: T.Group, bones: Record<string, T.Bone>, height
     box(foot, center.clone().setY(.025), new T.Vector3(.126, .033, .266), .011, sole);
   }
 
-  const head = bones.Head, center = point('Head');
-  center.y = height - .19;
-  ball(head, center, .147, skin, new T.Vector3(.92, 1.04, .94));
-  const cap = new T.SphereGeometry(.165, 18, 12, 0, Math.PI * 2, 0, Math.PI * .48).scale(.96, 1.02, 1);
-  attach(head, cap, hair, center.clone().add(new T.Vector3(0, .012, .012)));
-  // Close-cropped sides and back leave the small facial features unobstructed.
-  const back = new T.SphereGeometry(.154, 16, 10, 0, Math.PI, Math.PI * .35, Math.PI * .36);
-  attach(head, back, hair, center.clone().add(new T.Vector3(0, .005, .016)));
-  for (const side of [-1, 1]) {
-    ball(head, center.clone().add(new T.Vector3(side * .133, -.026, 0)), .026, skin, new T.Vector3(.65, 1, .8));
-    ball(head, center.clone().add(new T.Vector3(side * .046, .002, -.129)), .009, eyes, new T.Vector3(.85, 1, .55));
-  }
-  ball(head, center.clone().add(new T.Vector3(0, -.028, -.139)), .017, skin, new T.Vector3(.72, .9, 1));
-  return { geometries, materials: new Set<T.Material>([shirt, shorts, skin, hair, shoes, sole, eyes]) };
+  return { geometries, materials: new Set<T.Material>([shirt, shorts, skin, shoes, sole]) };
 }
