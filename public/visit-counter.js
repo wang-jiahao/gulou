@@ -1,0 +1,81 @@
+// Independent entry: visit reporting does not wait for map or game modules.
+(() => {
+const scriptUrl = document.currentScript.src;
+const validCounts = value => value && typeof value === 'object'
+  && Number.isSafeInteger(value.total) && value.total >= 0
+  && Number.isSafeInteger(value.today) && value.today >= 0 && value.today <= value.total
+  && typeof value.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.day);
+
+/** Optional anonymous visit counter. All failures stay outside the game's boot path. */
+async function initVisits() {
+  if (['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)
+    || location.protocol === 'file:' || new URLSearchParams(location.search).has('validation')
+    || new URLSearchParams(location.search).has('debug')) return;
+  const counter = document.getElementById('visit-counter');
+  if (counter) { counter.textContent = '累计访问加载中…'; counter.hidden = false; }
+  let endpoint;
+  let historicalEstimate = 0;
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  try {
+    const loadConfig = async () => {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const response = await fetch(new URL('data/visits.json', scriptUrl), { cache: 'no-cache', signal: AbortSignal.timeout(10000) });
+          if (!response.ok) throw new Error('Visit configuration unavailable');
+          return response;
+        } catch (error) {
+          if (attempt >= 2) throw error;
+          await delay((attempt + 1) * 2000);
+        }
+      }
+    };
+    const response = await loadConfig();
+    const config = await response.json();
+    if (!response.ok || typeof config.endpoint !== 'string' || !config.endpoint) { if (counter) counter.hidden = true; return; }
+    const url = new URL(config.endpoint);
+    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) { if (counter) counter.hidden = true; return; }
+    endpoint = url.href;
+    if (typeof config.historicalEstimate === 'number' && Number.isSafeInteger(config.historicalEstimate) && config.historicalEstimate > 0) {
+      historicalEstimate = config.historicalEstimate;
+    }
+  } catch { if (counter) counter.hidden = true; return; }
+  let inFlight = false;
+  const session = crypto.randomUUID().replaceAll('-', ''); // One token per page load; retries reuse it.
+  let failures = 0;
+  let retry;
+  const update = async () => {
+    if (inFlight || document.visibilityState !== 'visible') return;
+    clearTimeout(retry);
+    inFlight = true;
+    let succeeded = false;
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session }), credentials: 'omit', referrerPolicy: 'no-referrer',
+        cache: 'no-store', signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) return;
+      const counts = await response.json();
+      if (!validCounts(counts)) return;
+      succeeded = true;
+      const counter = document.getElementById('visit-counter');
+      if (counter) {
+        const estimate = Number.isSafeInteger(counts.total + historicalEstimate) ? historicalEstimate : 0;
+        counter.textContent = `累计访问 ${(counts.total + estimate).toLocaleString('zh-CN')} 人次`;
+        counter.title = `今日实测 ${counts.today.toLocaleString('zh-CN')} 人次。每次打开或刷新页面计一次；网络重试不重复计次。不是独立玩家人数。${estimate ? `包含作者估算的历史基数 ${estimate.toLocaleString('zh-CN')}，启用后实测 ${counts.total.toLocaleString('zh-CN')}。` : ''}`;
+        counter.hidden = false;
+      }
+    } catch { /* A counter outage must not interrupt the game. */ }
+    finally {
+      inFlight = false;
+      if (succeeded) failures = 0;
+      else if (failures < 3) retry = setTimeout(() => { void update(); }, [2000, 5000, 15000][failures++]);
+      else if (counter?.textContent === '累计访问加载中…') counter.hidden = true;
+    }
+  };
+  await update();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void update(); });
+}
+
+void initVisits();
+})();

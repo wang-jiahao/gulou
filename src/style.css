@@ -80,5 +80,5 @@ html:-webkit-full-screen{width:100%;height:100%}
 
 /* Optional aggregate count keeps the welcome footer clear at phone widths. */
 .welcome-footer{flex-wrap:wrap;gap:8px 18px}
-#visit-counter{font-variant-numeric:tabular-nums;white-space:nowrap}
-@media(max-width:700px){#visit-counter{order:3;flex-basis:100%}}
+#visit-counter{font-size:16px;font-weight:500;letter-spacing:.04em;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media(max-width:700px){#visit-counter{order:3;flex-basis:100%;font-size:15px}}
