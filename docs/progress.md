@@ -1,3 +1,9 @@
+# v145 简化访问计数展示（2026-10-12）
+
+按用户要求删除页面下方“含历史估算2,000；启用后实测N”整行，保留主数字“累计访问约N人次”。鼠标提示与README保留估算口径，历史基数2000/实测接口/数据库均不变。删除不用的small样式。1280×800及390×844构建页面实看、无溢出或pageerror；有估算显示单行约2027，无估算恢复实测27，生产0次测试写入。types/build:pages/lint通过。证据/tmp/gulou-counter-label-v145；定时任务、影片、音乐和既有untracked保持。
+
+---
+
 # v144 作者指定历史访问估算（2026-10-12）
 
 正式上线确认：源码f7e54d8、主页0a80182，Pages run38268293365成功；v0.144.0及7个变化文件线上SHA全部匹配。只读GET当时实测total9/today9，未向生产添加验证访问；页面加估算后约2009（随真实访问增长）。证据/tmp/gulou-visits-estimate-v144/{online-hashes.json,online-release.json,pages-final.json}。

@@ -68,12 +68,7 @@ export async function initVisits() {
       if (counter) {
         const estimate = Number.isSafeInteger(counts.total + historicalEstimate) ? historicalEstimate : 0;
         counter.textContent = `累计访问${estimate ? '约' : ''} ${(counts.total + estimate).toLocaleString('zh-CN')} 人次`;
-        if (estimate) {
-          const note = document.createElement('small');
-          note.textContent = `含历史估算 ${estimate.toLocaleString('zh-CN')}；启用后实测 ${counts.total.toLocaleString('zh-CN')}`;
-          counter.append(note);
-        }
-        counter.title = `今日实测 ${counts.today.toLocaleString('zh-CN')} 人次。同一天30分钟内刷新合并；第二天再来重新计次。不是独立玩家人数。${estimate ? '历史基数为作者估算，帖子浏览量不等于网站访问量。' : ''}`;
+        counter.title = `今日实测 ${counts.today.toLocaleString('zh-CN')} 人次。同一天30分钟内刷新合并；第二天再来重新计次。不是独立玩家人数。${estimate ? `包含作者估算的历史基数 ${estimate.toLocaleString('zh-CN')}，启用后实测 ${counts.total.toLocaleString('zh-CN')}。` : ''}`;
         counter.hidden = false;
       }
     } catch { /* A counter outage must not interrupt the game. */ }
