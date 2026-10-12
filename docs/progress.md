@@ -1,5 +1,7 @@
 # v147 全身统一简化人物（2026-10-13）
 
+正式上线确认：源码e8a95c7、主页8291689，Pages run38279528403成功；线上release.json为0.147.0，5个变化文件SHA全部匹配。证据/tmp/gulou-explorer-whole-v147/{pages-final.json,online-release.json,online-hashes.json}。本轮仅完成访问计数与全身人物请求，不恢复持续开发定时任务。
+
 用户指出腿符合预期但头仍是旧样子。本轮explorer不再保留旧写实头脸/头发/眉眼，改为原创小比例下颌、短发、耳鼻和五官，与身体同材质风格；上衣从盒体改成有肩腰轮廓的曲面，袖口/前臂/手掌衔接修整。短裤腰部连接修复，隐藏衣下多余大腿段避免穿出衣服；可见腿长/膝踝位置保留，小腿/鞋6网格顶点完全相同。原男女选项及动作骨架/碰撞/6m/s跑速保持，未新增资源。整个人物11980三角，约1.76m；仅几何数据，不作FPS声明。
 
 角色/三配色切换和刷新、第一人称隐藏/恢复、八姿态矩阵通过，原写实遗留网格为0、Head挂10新网格。实际Game行走/跑步8秒240帧录制，无pageerror；静止鞋底相对路面约-2mm。姿态表是动作外观检验，不冒称所有姿态的地面通行实测。初期腰部曲面/衣下遮盖未好版本不作最终；最终geometry.json、motion.json与编码为准。types/lint/build:pages/59资产通过。预览.local-media/explorer-v147/gulou-explorer-fullbody-preview.mp4，1280×720/30fps，无配乐；完整解码与选帧检查，旧影片保持。证据/tmp/gulou-explorer-whole-v147，原参考/验证脚本不提交。
