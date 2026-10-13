@@ -4,6 +4,12 @@ const response = (data, status = 200, headers = {}) => new Response(JSON.stringi
   status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers },
 });
 
+export function displayCounts(counts, baseline) {
+  const parsed = typeof baseline === 'string' && /^\d+$/.test(baseline) ? Number(baseline) : 0;
+  const estimate = Number.isSafeInteger(parsed) && Number.isSafeInteger(counts.total + parsed) ? parsed : 0;
+  return { ...counts, displayTotal: counts.total + estimate, includesHistoricalEstimate: estimate > 0 };
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -25,6 +31,7 @@ export default {
     }
     const id = env.VISITS.idFromName('gulou-total');
     const result = await env.VISITS.get(id).fetch(request);
+    if (result.ok) return response(displayCounts(await result.json(), env.VISIT_DISPLAY_BASELINE), result.status, cors);
     const headers = new Headers(result.headers);
     for (const [key, value] of Object.entries(cors)) headers.set(key, value);
     return new Response(result.body, { status: result.status, headers });

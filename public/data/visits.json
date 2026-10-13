@@ -1,4 +1,3 @@
 {
-  "endpoint": "https://gulou-visit-counter.2328796228-d88.workers.dev/api/visits",
-  "historicalEstimate": 2000
+  "endpoint": "https://gulou-visit-counter.2328796228-d88.workers.dev/api/visits"
 }

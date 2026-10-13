@@ -4,8 +4,14 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Miniflare } from 'miniflare';
-import { dayAt } from './worker.js';
+import { dayAt, displayCounts } from './worker.js';
 const a='a'.repeat(32), b='b'.repeat(32);
+const sample = { total: 11, today: 2, day: '2026-10-13' };
+assert.deepEqual(displayCounts(sample, '73'), { ...sample, displayTotal: 84, includesHistoricalEstimate: true });
+for (const invalid of [undefined, '', '-1', '1.5', 'abc', '9007199254740992', String(Number.MAX_SAFE_INTEGER)]) {
+  assert.deepEqual(displayCounts(sample, invalid), { ...sample, displayTotal: 11, includesHistoricalEstimate: false });
+}
+assert.deepEqual(sample, { total: 11, today: 2, day: '2026-10-13' }, 'display baseline never mutates measured counts');
 
 const directory = await mkdtemp(path.join(tmpdir(), 'gulou-counter-test-'));
 const origin = 'https://wang-jiahao.github.io';
@@ -19,7 +25,7 @@ let mf = new Miniflare(options);
 const url = 'https://counter.example/api/visits';
 const post = session => mf.dispatchFetch(url, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ session }) });
 try {
-  assert.deepEqual(await (await mf.dispatchFetch(url)).json(), { total: 0, today: 0, day: dayAt(Date.now()) });
+  assert.deepEqual(await (await mf.dispatchFetch(url)).json(), { total: 0, today: 0, day: dayAt(Date.now()), displayTotal: 0, includesHistoricalEstimate: false });
   const first = await post(a); assert.equal(first.status, 200); assert.equal(first.headers.get('Access-Control-Allow-Origin'), origin);
   assert.equal((await first.json()).total, 1);
   const retries = await Promise.all(Array.from({ length: 24 }, () => post(a).then(r => r.json())));
@@ -38,5 +44,13 @@ try {
   await mf.dispose(); mf = new Miniflare(options);
   assert.equal((await (await mf.dispatchFetch(url)).json()).total, 50, 'counts survive worker restart');
   assert.equal((await (await post(a)).json()).total, 50, 'deduplication survives restart');
+  await mf.dispose(); mf = new Miniflare({ ...options, bindings: { ...options.bindings, VISIT_DISPLAY_BASELINE: '73' } });
+  const adjusted = await (await mf.dispatchFetch(url)).json();
+  assert.equal(adjusted.total, 50); assert.equal(adjusted.today, 50);
+  assert.equal(adjusted.displayTotal, 123); assert.equal(adjusted.includesHistoricalEstimate, true);
+  const repeated = await (await post(a)).json(); assert.equal(repeated.displayTotal, 123);
+  await mf.dispose(); mf = new Miniflare(options);
+  const removed = await (await mf.dispatchFetch(url)).json();
+  assert.equal(removed.total, 50); assert.equal(removed.displayTotal, 50, 'baseline never enters persistent measured total');
   console.log('PASS: page tokens and retry deduplication, 24 concurrent retries, 48 concurrent visitors, CORS, validation, read-only totals, SQLite persistence.');
 } finally { await mf.dispose(); await rm(directory, { recursive: true, force: true }); }

@@ -1,3 +1,13 @@
+# v151 访问展示基数移到服务端配置（2026-10-13）
+
+按用户新要求，public/data/visits.json只保留接口地址，public/visit-counter.js不再读取历史基数或执行加法，只展示服务端displayTotal。Cloudflare Secret VISIT_DISPLAY_BASELINE保存部署配置；Worker的通用可选基数处理不包含部署者具体值，实测total/today和SQLite数据库保持独立。网页提示保留历史估算说明。README及发布元数据移除具体部署值；已明确告知旧Git提交和历史文档不会自动消失，不重写Git历史。
+
+Worker覆盖缺省/有效/无效及溢出配置、并发重试、重启和基数撤除后实测不变；1280/390/320宽度页面、提前加载和重试/刷新检查通过，生产测试POST为0。types/build:pages/lint通过。证据/tmp/gulou-counter-server-v151，恢复node .tools/counter-server-v151/visits-verify.mjs。Cloudflare首次直连失败，使用本地代理恢复授权检查；发布后补记线上状态。
+
+标签“累计访问人次”已随v150源码28c04b2/主页83cff64推送；此次继续保留。定时开发不恢复，影片、人物、画质不改。
+
+---
+
 # v150 明确访问计数标签（2026-10-13）
 
 欢迎页标签按用户要求改为“累计访问人次”，保留深绿主题与既有字体。1280×800、390×844、320×568布局与字体通过，桌面计数和320手机完整页实看；阻塞主游戏脚本时提前显示、网络重试去重及刷新新增访问仍通过，测试未向生产写入。types/build:pages/lint通过。证据/tmp/gulou-visit-label-v150；恢复node .tools/visit-label-v150/visits-verify.mjs。

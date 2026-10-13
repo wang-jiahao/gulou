@@ -4,6 +4,7 @@ const scriptUrl = document.currentScript.src;
 const validCounts = value => value && typeof value === 'object'
   && Number.isSafeInteger(value.total) && value.total >= 0
   && Number.isSafeInteger(value.today) && value.today >= 0 && value.today <= value.total
+  && (value.displayTotal === undefined || (Number.isSafeInteger(value.displayTotal) && value.displayTotal >= value.total))
   && typeof value.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.day);
 
 /** Optional anonymous visit counter. All failures stay outside the game's boot path. */
@@ -19,7 +20,6 @@ async function initVisits() {
     counter.hidden = false;
   }
   let endpoint;
-  let historicalEstimate = 0;
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
   try {
     const loadConfig = async () => {
@@ -40,9 +40,6 @@ async function initVisits() {
     const url = new URL(config.endpoint);
     if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) { if (counter) counter.hidden = true; return; }
     endpoint = url.href;
-    if (typeof config.historicalEstimate === 'number' && Number.isSafeInteger(config.historicalEstimate) && config.historicalEstimate > 0) {
-      historicalEstimate = config.historicalEstimate;
-    }
   } catch { if (counter) counter.hidden = true; return; }
   let inFlight = false;
   const session = crypto.randomUUID().replaceAll('-', ''); // One token per page load; retries reuse it.
@@ -65,12 +62,11 @@ async function initVisits() {
       succeeded = true;
       const counter = document.getElementById('visit-counter');
       if (counter) {
-        const estimate = Number.isSafeInteger(counts.total + historicalEstimate) ? historicalEstimate : 0;
-        const formatted = (counts.total + estimate).toLocaleString('zh-CN');
+        const formatted = (counts.displayTotal ?? counts.total).toLocaleString('zh-CN');
         if (value) value.textContent = formatted;
         counter.setAttribute('aria-label', `累计访问 ${formatted} 人次`);
         counter.setAttribute('aria-busy', 'false');
-        counter.title = `今日实测 ${counts.today.toLocaleString('zh-CN')} 人次。每次打开或刷新页面计一次；网络重试不重复计次。不是独立玩家人数。${estimate ? `包含作者估算的历史基数 ${estimate.toLocaleString('zh-CN')}，启用后实测 ${counts.total.toLocaleString('zh-CN')}。` : ''}`;
+        counter.title = `今日实测 ${counts.today.toLocaleString('zh-CN')} 人次。每次打开或刷新页面计一次；网络重试不重复计次。不是独立玩家人数。${counts.includesHistoricalEstimate ? '合计包含作者估算的历史访问基数。' : ''}`;
         counter.hidden = false;
       }
     } catch { /* A counter outage must not interrupt the game. */ }
