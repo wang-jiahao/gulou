@@ -1,3 +1,11 @@
+# v149 计数融入首页主题、恢复小头人物（2026-10-13）
+
+按用户新反馈，计数保留宋体标签/衬线数字，浅米色实底改成与首页一致的深绿半透明底、暖白文字、细边框与4px圆角。人物精确恢复v147/e8a95c7的小头版本，src/player/avatar.ts及explorer.ts与该版diff为空；没有回退计数功能或其它世界修改。
+
+1280×800、390×844、320×568构建页面与边界检查通过，完整首页实看；字体、提前显示、网络重试去重和刷新计数保持，隔离验证生产写入0次。types/lint/build:pages/资产检查通过，证据/tmp/gulou-explorer-theme-v149，恢复node .tools/explorer-theme-v149/visits-verify.mjs。用户随后追加宣传片：恢复上一版片尾、加快步行、重选两条建筑密集且外形有变化的俯冲路线；旧34秒片保留，待定点补录，不重启定时开发。
+
+---
+
 # v148 人物头部比例与访问计数字体（2026-10-13）
 
 正式上线确认：源码de2b082、主页8eba800，Pages run38345515065成功；线上0.148.0及10个变化文件SHA全部匹配，包括字体/许可、计数脚本与人物资源。证据online-release.json、online-hashes.json、pages-final.json在/tmp/gulou-explorer-proportion-v148。

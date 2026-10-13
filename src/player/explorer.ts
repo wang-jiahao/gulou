@@ -11,23 +11,14 @@ export function addExplorer(root: T.Group, bones: Record<string, T.Bone>) {
   const shoes = material('explorer-shoes', 0x22242a), sole = material('explorer-sole', 0xdedcd2);
   const hair = material('explorer-hair', 0x24221f), features = material('explorer-features', 0x39302b), lip = material('explorer-lip', 0x9b6f61);
   const geometries = new Set<T.BufferGeometry>();
-  const headCenter = new T.Vector3(0, 1.635, -.006);
-  const headBase = headCenter.clone().add(new T.Vector3(0, -.118, 0));
-  const headScale = new T.Vector3(1.25, 1.12, 1.18);
   const point = (name: string) => root.worldToLocal(bones[name].getWorldPosition(new T.Vector3()));
   const attach = (parent: T.Bone, geometry: T.BufferGeometry, mat: T.Material, center: T.Vector3) => {
-    const position = center.clone();
-    if (parent === bones.Head) {
-      // Enlarge the face, hair and features together, keeping the chin on the neck.
-      geometry.scale(headScale.x, headScale.y, headScale.z);
-      position.sub(headBase).multiply(headScale).add(headBase);
-    }
     geometries.add(geometry);
     const mesh = new T.Mesh(geometry, mat);
     mesh.name = `${mat.name}-${parent.name}`;
     mesh.castShadow = mesh.receiveShadow = true;
     parent.add(mesh);
-    mesh.position.copy(parent.worldToLocal(root.localToWorld(position)));
+    mesh.position.copy(parent.worldToLocal(root.localToWorld(center.clone())));
     mesh.quaternion.copy(parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(root.getWorldQuaternion(new T.Quaternion())));
     mesh.scale.setScalar(1 / parent.getWorldScale(new T.Vector3()).x);
     return mesh;
@@ -84,6 +75,7 @@ export function addExplorer(root: T.Group, bones: Record<string, T.Bone>) {
     [collar - .13, .192, .116], [collar - .06, .198, .111], [collar, .142, .086]];
   attach(bones.Spine, surface(shirtRings, .62), shirt, new T.Vector3(0, 0, -.005));
   attach(bones.Hips, surface([[hips.y - .125, .165, .095], [hips.y - .09, .166, .096], [hips.y + .035, .158, .091]], .62), shorts, new T.Vector3());
+  const headCenter = new T.Vector3(0, 1.635, -.006);
   rod(bones.Neck, new T.Vector3(0, collar - .015, 0), new T.Vector3(0, 1.539, -.006), .037, skin, .033);
   attach(bones.Head, surface([
     [-.118, .024, .032, -.015], [-.10, .044, .048, -.014], [-.055, .066, .069, -.004],
