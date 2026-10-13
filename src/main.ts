@@ -165,6 +165,7 @@ async function boot() {
     if (e.code === 'KeyV') { game.cameraRig.toggle(); toast(game.cameraRig.firstPerson ? '第一人称' : '第三人称'); }
     if (e.code === 'KeyP') togglePhoto();
     if(e.code==='KeyF'&&game.mode==='playing')game.toggleFlight();
+    if(e.code==='KeyG'&&game.mode==='playing')game.toggleDrive();
     if (e.code === 'KeyH') { uiHidden = !uiHidden; if (game.mode !== 'photo') el('hud').hidden = uiHidden; if (uiHidden) toast('界面已隐藏，按 H 恢复。'); }
     if (e.code === 'KeyE') interact();
     if (e.code === 'KeyR' && game.mode === 'playing') { if (game.basketball.nearby) game.basketball.resetBall(); else if (game.football.nearby) game.football.resetBall(); }
@@ -174,6 +175,7 @@ async function boot() {
   el('resume').onclick = resume; el('settings-open').onclick = openSettings; el('photo-open').onclick = togglePhoto; el('photo-close').onclick = togglePhoto;
   el('settings-resume').onclick = resume;
   el('return-welcome').onclick = returnToWelcome;
+  el('drive-toggle').onclick=el('touch-drive').onclick=()=>{if(game.mode==='paused')resume();game.toggleDrive();};
   el('flight-toggle').onclick=()=>{if(game.mode==='paused')resume();if(game.mode==='playing')game.toggleFlight();};
   const syncWorld=()=>{
     const a=game.atmosphere.state;el('time-value').textContent=a.clock;el<HTMLInputElement>('time-slider').value=String(a.hour);el<HTMLInputElement>('auto-time').checked=a.autoTime;el<HTMLSelectElement>('cycle-speed').value=String(a.cycleMinutes);el('weather-value').textContent=a.weatherLabel;
@@ -263,6 +265,8 @@ async function boot() {
   function interact() {
     if(game.mode !== 'playing' || game.player.flying)return;
     if(game.player.riding){if(!game.player.dismount())toast('两侧空间不足，请移到开阔处再下车。');return;}
+    const car=game.driveableCars.filter(c=>c.group.position.distanceTo(game.player.position)<3.2).sort((a,b)=>a.group.position.distanceTo(game.player.position)-b.group.position.distanceTo(game.player.position))[0];
+    if(car&&!game.player.seated){game.basketball.cancel();if(!game.enterCar(car))toast('车旁空间不足，请从另一侧靠近。');return;}
     if (game.basketball.held || game.basketball.inReach) { game.basketball.interact(); return; }
     let bicycle:typeof game.world.bicycles[number]|undefined,nearestDistance=2.3;
     for(const candidate of game.world.bicycles){const distance=candidate.group.position.distanceTo(game.player.position);if(distance<nearestDistance){bicycle=candidate;nearestDistance=distance;}}
@@ -295,14 +299,17 @@ async function boot() {
     if (++tick % 15) return;
     const pos = game.player.position, onBench = game.player.seated || (game.world.sectors >= 3 && (benchLocations.some(p => p.distanceTo(pos) < 2.4)||Boolean(game.world.garden.nearby(pos))));
     const nearBuilding = nearbyPlace('interact');
+    const nearCar=game.driveableCars.some(c=>c.group.position.distanceTo(pos)<3.2);
     const nearBicycle=game.world.bicycles.some(b=>b.group.position.distanceTo(pos)<2.3);
     const nearFlag=game.world.dadaoping.nearby(pos);
     const about=nearbyPlace();el('place-about').hidden=!about||game.mode!=='playing'||game.player.flying;el('place-about').textContent=about?`了解${about.name}${touchDevice?'':' · I'}`:'';
     const flagState=game.world.dadaoping.snapshot();
     const nearDirectory = game.world.directory.nearby(pos);
-    el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!nearFlag && !game.player.riding && !nearBicycle && !onBench && !nearBuilding && !nearDirectory && !game.football.canKick && !basketball.held && !basketball.inReach);
-    el('interact').querySelector('span')!.textContent = game.player.riding ? '下自行车' : basketball.held ? '投篮' : basketball.inReach ? '拿起篮球' : nearBicycle&&!game.player.seated ? '骑自行车' : nearFlag ? (flagState.state==='raising'?`升旗中 ${Math.round(flagState.progress*100)}% · 点击降旗`:flagState.state==='lowering'?'降旗中 · 点击升旗':flagState.state==='raised'?'降下国旗':'升起国旗') : game.football.canKick ? '踢球' : game.player.seated ? '起身' : onBench ? '坐一会儿' : nearDirectory ? '查看校园地图' : `认识${nearBuilding?.name??'校园'}`;
-    el('movement-label').textContent=game.player.riding?`骑行 ${Math.round(game.player.speed*3.6)} km/h · 空格刹车 · E 下车`:'行走';
+    el('interact').hidden = game.player.flying||game.mode !== 'playing' || (!nearCar && !nearFlag && !game.player.riding && !nearBicycle && !onBench && !nearBuilding && !nearDirectory && !game.football.canKick && !basketball.held && !basketball.inReach);
+    el('interact').querySelector('span')!.textContent = game.player.driving ? '下汽车' : game.player.riding ? '下自行车' : nearCar&&!game.player.seated ? '开汽车' : basketball.held ? '投篮' : basketball.inReach ? '拿起篮球' : nearBicycle&&!game.player.seated ? '骑自行车' : nearFlag ? (flagState.state==='raising'?`升旗中 ${Math.round(flagState.progress*100)}% · 点击降旗`:flagState.state==='lowering'?'降旗中 · 点击升旗':flagState.state==='raised'?'降下国旗':'升起国旗') : game.football.canKick ? '踢球' : game.player.seated ? '起身' : onBench ? '坐一会儿' : nearDirectory ? '查看校园地图' : `认识${nearBuilding?.name??'校园'}`;
+    el('drive-label').textContent=game.player.driving?'下车 G':'开车 G';
+    el('touch-drive').textContent=game.player.driving?'下车':'开车';
+    el('movement-label').textContent=game.player.riding?`${game.player.driving?'驾驶':'骑行'} ${Math.round(game.player.speed*3.6)} km/h · 空格刹车 · E 下车`:'行走';
     const nearEntrance=!game.player.riding&&!game.player.seated&&nearBuilding&&game.world.doors.some(door=>door===nearBuilding)?nearBuilding:undefined;
     el('location-name').textContent = locationName(game.world.map,pos.x,pos.z,game.player.flying,nearEntrance);
     el('football-hud').hidden = Boolean(game.player.riding) || basketball.nearby || !game.football.nearby || game.mode !== 'playing'; el('football-score').textContent = String(game.football.goals);

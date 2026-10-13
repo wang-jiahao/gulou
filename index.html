@@ -28,7 +28,7 @@
       </section>
       <div id="hud" hidden>
         <div class="location"><span class="location-line"></span><div><span id="location-name">北大楼</span><small>南京大学 · 鼓楼校区</small></div></div>
-        <nav class="hud-actions" aria-label="游戏操作"><button id="map-open" aria-label="校园地图">⌖<span>地图 M</span></button><button id="flight-toggle" aria-label="起飞或降落">↗<span id="flight-label">起飞 F</span></button><button id="world-open" aria-label="时间与天气" title="时间与天气 T">◷<span id="clock-chip">15:00 · 晴</span></button><button id="photo-open" title="拍照模式 P" aria-label="拍照模式">▣<span>拍照</span></button><button id="fullscreen-hud" aria-label="全屏显示" title="全屏显示" aria-pressed="false">⛶<span id="fullscreen-hud-label">全屏</span></button><button id="settings-open" aria-label="打开设置">☷<span>设置</span></button></nav>
+        <nav class="hud-actions" aria-label="游戏操作"><button id="map-open" aria-label="校园地图">⌖<span>地图 M</span></button><button id="drive-toggle" aria-label="开车或下车" title="开车或下车 G">▱<span id="drive-label">开车 G</span></button><button id="flight-toggle" aria-label="起飞或降落">↗<span id="flight-label">起飞 F</span></button><button id="world-open" aria-label="时间与天气" title="时间与天气 T">◷<span id="clock-chip">15:00 · 晴</span></button><button id="photo-open" title="拍照模式 P" aria-label="拍照模式">▣<span>拍照</span></button><button id="fullscreen-hud" aria-label="全屏显示" title="全屏显示" aria-pressed="false">⛶<span id="fullscreen-hud-label">全屏</span></button><button id="settings-open" aria-label="打开设置">☷<span>设置</span></button></nav>
         <div class="compass" aria-label="方向"><span id="compass-arrow">↑</span><small>N</small></div>
         <div id="hint" class="hint"><kbd>W A S D</kbd> <span id="movement-label">行走</span> <span>·</span> <kbd>Shift</kbd> 加速 <span>·</span> <kbd>Space</kbd> <span id="space-label">跳跃</span> <span>·</span> <kbd>V</kbd> 视角 <span>·</span> <kbd>P</kbd> 拍照</div>
         <div id="flight-hud" class="flight-hud" hidden><span id="flight-state">滑翔中</span><strong id="flight-altitude">26 m</strong><small>空格上升 · Ctrl 下降 · F 降落</small></div>
@@ -48,7 +48,7 @@
       <div id="touch-controls" hidden aria-label="触屏游戏操作">
         <div id="touch-stick" role="application" aria-label="移动摇杆"><div id="touch-knob"></div><span>移动</span></div>
         <span class="touch-look-hint">拖动画面环顾校园</span>
-        <div class="touch-buttons"><button id="touch-view" aria-label="切换第一第三人称">视角</button><button id="touch-run" aria-pressed="false">快走</button><button id="touch-fly">起飞</button><button id="touch-jump">跳跃</button></div>
+        <div class="touch-buttons"><button id="touch-view" aria-label="切换第一第三人称">视角</button><button id="touch-run" aria-pressed="false">快走</button><button id="touch-fly">起飞</button><button id="touch-drive">开车</button><button id="touch-jump">跳跃</button></div>
         <div id="touch-altitude" hidden><button data-hold-key="Space" aria-label="上升">↑</button><button data-hold-key="ControlLeft" aria-label="下降">↓</button></div>
       </div>
       <dialog id="sponsor" aria-labelledby="sponsor-title" aria-describedby="sponsor-description">

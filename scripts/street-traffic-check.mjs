@@ -8,13 +8,15 @@ import {StreetTraffic} from '../src/game/street-traffic.ts';
 // Exercise the production traffic class with real Rapier steps, without tying
 // stopping-distance and wrap checks to browser frame timing.
 await RAPIER.init();
-const world=new RAPIER.World({x:0,y:0,z:0}),player={physics:world,position:new T.Vector3(0,100,0),flying:false};
+const registrations=[];
+const world=new RAPIER.World({x:0,y:0,z:0}),player={physics:world,position:new T.Vector3(0,100,0),flying:false,registerVehicle:(solid,collider)=>registrations.push({solid,collider})};
 world.timestep=1/60;
 const traffic=new StreetTraffic(new T.Scene(),player),report={bends:[],yielding:[],wrapping:[],collision:[]};
+assert.equal(registrations.length,4,'all road cars can transfer their collider to the driver');
 const tick=(active=true)=>{traffic.prepare(1/60,active);world.step();traffic.sync();};
 const run=(seconds,active=true)=>{for(let i=0;i<seconds*60;i++)tick(active);};
 function place(car,u,speed=4.5){
- car.u=u;car.speed=speed;const p=streetPoint(car.road,u,car.lane),yaw=p.angle+(car.direction<0?Math.PI:0),q={x:0,y:Math.sin(yaw/2),z:0,w:Math.cos(yaw/2)},v={x:p.x,y:.86,z:p.z};
+ car.u=u;car.speed=speed;const p=streetPoint(car.road,u,car.lane),yaw=p.angle-Math.PI/2+(car.direction<0?Math.PI:0),q={x:0,y:Math.sin(yaw/2),z:0,w:Math.cos(yaw/2)},v={x:p.x,y:.86,z:p.z};
  car.body.setTranslation(v,true);car.body.setNextKinematicTranslation(v);car.body.setRotation(q,true);car.body.setNextKinematicRotation(q);world.step();traffic.sync();
 }
 function checkSync(car){
@@ -43,9 +45,9 @@ for(const road of publicStreets)for(const direction of[-1,1]){
   report.yielding.push({road:road.name,direction,kind,gap,resumedSpeed:car.speed});
  }
  // A solid front face must rotate with the model, tested against the actual collider.
- place(car,65);const forward=new T.Vector3(1,0,0).applyQuaternion(car.group.quaternion),dx=forward.x,dz=forward.z,cp=car.body.translation();
+ place(car,65);const forward=new T.Vector3(0,0,-1).applyQuaternion(car.group.quaternion),dx=forward.x,dz=forward.z,cp=car.body.translation();
  const hit=world.castRay(new RAPIER.Ray({x:cp.x+dx*5,y:cp.y,z:cp.z+dz*5},{x:-dx,y:0,z:-dz}),6,true,undefined,undefined,undefined,undefined,c=>c.parent()?.handle===car.body.handle);
- assert.ok(hit&&Math.abs(hit.timeOfImpact-2.84)<.001,'front collision surface matches the rotated car');report.collision.push({id:car.id,distance:hit.timeOfImpact});
+ assert.ok(hit&&Math.abs(hit.timeOfImpact-2.88)<.001,'front collision surface matches the rotated car');report.collision.push({id:car.id,distance:hit.timeOfImpact});
  // Wrapping is a teleport: the next physics step must not sweep 700m.
  place(car,349.99*direction);player.position.set(0,100,0);tick();checkSync(car);assert.ok(car.u*direction< -349);assert.ok(Math.hypot(car.body.linvel().x,car.body.linvel().z)<.01);
  const wrapped=car.u;tick();assert.ok(Math.abs(car.u-wrapped)<.08);assert.ok(Math.hypot(car.body.linvel().x,car.body.linvel().z)<4.6);

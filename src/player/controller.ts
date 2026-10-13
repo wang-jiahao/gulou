@@ -7,6 +7,8 @@ import type { CollisionMesh } from '../world/collision-mesh.ts';
 import { createGlider } from './glider.ts';
 import {terrainHeight} from '../world/courtyard-terrain.ts';
 import type {CampusBicycle} from '../world/bicycle.ts';
+import {carFit, type CampusCar} from '../world/car.ts';
+import {movementSpeeds as speeds} from './movement.ts';
 
 // About three storeys in this metre-scaled game, not a medical injury boundary.
 export const FATAL_FALL_HEIGHT = 10;
@@ -35,7 +37,9 @@ export class Player {
   lastRespawn: FallRespawnEvent | null = null;
   onRespawn: (event: FallRespawnEvent) => void = () => {};
   private fallPeak: number | null = null;
-  riding:CampusBicycle|null=null;
+  riding:CampusBicycle|CampusCar|null=null;
+  get driving(){return this.riding!=null && 'kind' in this.riding && this.riding.kind==='car';}
+  registerVehicle(solid:Solid,collider:RAPIER.Collider){this.solidColliders.set(solid,collider);}
   rideYaw=0;
   rideSpeed=0;
   pedalPhase=0;
@@ -87,20 +91,22 @@ export class Player {
   }
   addMeshes(meshes:CollisionMesh[]){for(const mesh of meshes)this.physics.createCollider(RAPIER.ColliderDesc.trimesh(mesh.vertices,mesh.indices));this.physics.step();}
   get flying(){return this.flightState!=='walking';}
-  mount(bike:CampusBicycle){
-    if(this.riding||this.flying||this.seated||this.position.distanceTo(bike.group.position)>2.3)return false;
+  mount(bike:CampusBicycle|CampusCar){
+    const car='kind' in bike && bike.kind==='car';
+    if(this.riding||this.flying||this.seated||this.position.distanceTo(bike.group.position)>(car?3.2:2.3))return false;
     const parked=this.solidColliders.get(bike.solid);if(!parked)return false;
     parked.setEnabled(false);this.physics.step();
-    const shape=new RAPIER.Cuboid(.34,.84,.95),p=bike.group.position;
+    const shape=car?new RAPIER.Cuboid(carFit.halfWidth,.84,carFit.halfLength):new RAPIER.Cuboid(.34,.84,.95),p=bike.group.position;
     const rotation={x:0,y:Math.sin(bike.angle/2),z:0,w:Math.cos(bike.angle/2)};
-    if(this.physics.intersectionWithShape({x:p.x,y:p.y+.90,z:p.z},rotation,shape,undefined,undefined,this.collider,this.body)){parked.setEnabled(true);return false;}
+    if(this.physics.intersectionWithShape({x:p.x,y:p.y+.90,z:p.z},rotation,shape,undefined,undefined,this.collider,this.body,c=>c.handle!==parked.handle&&c.isEnabled())){parked.setEnabled(true);return false;}
     this.placeOnSupport(p.x,p.y+.045,p.z);this.collider.setShape(shape);this.collider.setRotationWrtParent(rotation);
     this.riding=bike;bike.setParked?.(false);this.rideYaw=bike.angle;this.rideViewYaw=bike.angle;this.rideSteering=0;this.rideSpeed=0;this.pedalPhase=0;this.clearInput();this.motor.enableAutostep(.16,.2,false);this.motor.enableSnapToGround(.4);return true;
   }
   dismount(){
     const bike=this.riding;if(!bike)return true;
+    const exits=this.driving?[[1.45,0],[-1.45,0],[1.8,0],[-1.8,0],[0,2.7]]:[[1.1,0],[-1.1,0],[1.5,0],[-1.5,0],[0,1.8]];
     // Try both sides and rear before changing either the rider or parked collider.
-    for(const[u,v]of[[1.1,0],[-1.1,0],[1.5,0],[-1.5,0],[0,1.8]]){
+    for(const[u,v]of exits){
       const x=this.position.x+u*Math.cos(this.rideYaw)+v*Math.sin(this.rideYaw),z=this.position.z-u*Math.sin(this.rideYaw)+v*Math.cos(this.rideYaw);
       const origin={x,y:this.position.y+.5,z},hit=this.physics.castRayAndGetNormal(new RAPIER.Ray(origin,{x:0,y:-1,z:0}),1,true,undefined,undefined,this.collider,this.body);
       if(!hit||hit.normal.y<.7)continue;
@@ -114,10 +120,25 @@ export class Player {
   private parkBicycle(){
     const bike=this.riding;if(!bike)return;
     bike.group.position.copy(this.position);bike.group.rotation.y=this.rideYaw;bike.angle=this.rideYaw;
+    if(this.driving)Object.assign(bike.solid,{x:this.position.x,y:this.position.y+carFit.centerY,z:this.position.z,angle:this.rideYaw});
     bike.setParked?.(true);
     const collider=this.solidColliders.get(bike.solid)!;
-    collider.setTranslation({x:this.position.x,y:this.position.y+.52,z:this.position.z});collider.setRotation({x:0,y:Math.sin(this.rideYaw/2),z:0,w:Math.cos(this.rideYaw/2)});collider.setEnabled(true);
+    collider.setTranslation({x:this.position.x,y:this.position.y+(this.driving?carFit.centerY:.52),z:this.position.z});collider.setRotation({x:0,y:Math.sin(this.rideYaw/2),z:0,w:Math.cos(this.rideYaw/2)});collider.setEnabled(true);
     this.riding=null;this.rideSpeed=0;this.collider.setShape(new RAPIER.Capsule(.57,.27));this.collider.setRotationWrtParent({x:0,y:0,z:0,w:1});this.motor.enableAutostep(.3,.2,false);this.clearInput();this.physics.step();
+  }
+  relocateCar(car:CampusCar,x:number,z:number,yaw:number){
+    if(this.riding===car)return false;
+    const collider=this.solidColliders.get(car.solid);if(!collider)return false;
+    const enabled=collider.isEnabled();collider.setEnabled(false);this.physics.step();
+    const top=terrainHeight(x,z)+2.5;
+    const sample=(px:number,pz:number)=>this.physics.castRayAndGetNormal(new RAPIER.Ray({x:px,y:top,z:pz},{x:0,y:-1,z:0}),4,true,undefined,undefined,this.collider,this.body);
+    const hit=sample(x,z);let y=0,valid=Boolean(hit&&hit.normal.y>.9);
+    if(hit){y=top-hit.timeOfImpact+.035;for(const u of[-.9,0,.9])for(const v of[-1.9,0,1.9]){const h=sample(x+u*Math.cos(yaw)+v*Math.sin(yaw),z-u*Math.sin(yaw)+v*Math.cos(yaw));if(!h||h.normal.y<.9||Math.abs(top-h.timeOfImpact-y)>.18)valid=false;}}
+    const rotation={x:0,y:Math.sin(yaw/2),z:0,w:Math.cos(yaw/2)};
+    if(valid&&this.physics.intersectionWithShape({x,y:y+.86,z},rotation,new RAPIER.Cuboid(.96,.84,2.12),undefined,undefined,this.collider,this.body))valid=false;
+    if(!valid){collider.setEnabled(enabled);this.physics.step();return false;}
+    car.group.position.set(x,y,z);car.group.rotation.y=yaw;car.angle=yaw;car.setParked(true);car.group.visible=true;
+    Object.assign(car.solid,{x,y:y+.84,z,angle:yaw});collider.setTranslation({x,y:y+.84,z});collider.setRotation(rotation);collider.setEnabled(true);this.physics.step();return true;
   }
   groundHeightAt(x:number,z:number){const hit=this.physics.castRay(new RAPIER.Ray({x,y:160,z},{x:0,y:-1,z:0}),200,true,undefined,undefined,this.collider,this.body);return hit?160-hit.timeOfImpact:0;}
   travelTo(x: number, z: number, surface: 'highest' | 'ground' = 'highest') {
@@ -178,15 +199,19 @@ export class Player {
     const right = active ? T.MathUtils.clamp(Number(this.keys.has('KeyD') || this.keys.has('ArrowRight')) - Number(this.keys.has('KeyA') || this.keys.has('ArrowLeft')) + this.moveInput.x, -1, 1) : 0;
     this.direction.set(right * Math.cos(yaw) - forward * Math.sin(yaw), 0, -forward * Math.cos(yaw) - right * Math.sin(yaw));
     if (this.direction.lengthSq() > 1) this.direction.normalize();
-    let desired = (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) ? 6 : 1.65;
+    let desired: number = (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')) ? speeds.run : speeds.walk;
     this.rideCameraTurn=0;
     if(this.riding){
       const boost=this.keys.has('ShiftLeft')||this.keys.has('ShiftRight'),braking=this.keys.has('Space');
-      const target=braking?0:forward<0?-1.5:forward>0||boost?(boost?9:4.5)*Math.max(forward,boost?1:0):0;
+      const target=braking?0:forward<0?(this.driving?-speeds.carReverse:-2.5):forward>0||boost?(this.driving?(boost?speeds.carBoost:speeds.car):(boost?speeds.bicycleBoost:speeds.bicycle))*Math.max(forward,boost?1:0):0;
       this.rideSpeed=active?T.MathUtils.damp(this.rideSpeed,target,braking?10:target<0?3:2.4,dt):0;
-      const look=Math.atan2(Math.sin(yaw-this.rideViewYaw),Math.cos(yaw-this.rideViewYaw));
+      const look=Math.atan2(Math.sin(yaw-(this.driving?this.rideYaw:this.rideViewYaw)),Math.cos(yaw-(this.driving?this.rideYaw:this.rideViewYaw)));
       this.rideCameraTurn=active?-right*(Math.abs(this.rideSpeed)>6?1.7:2.4)*dt*(this.rideSpeed<-.15?-1:1):0;
-      this.rideYaw+=(active?look:0)+this.rideCameraTurn;
+      const turn=(active?(this.driving?T.MathUtils.clamp(look,-1.8*dt,1.8*dt):look):0)+this.rideCameraTurn;
+      const nextYaw=this.rideYaw+turn;
+      const rotation={x:0,y:Math.sin(nextYaw/2),z:0,w:Math.cos(nextYaw/2)};
+      if(!this.driving||!this.physics.intersectionWithShape(this.body.translation(),rotation,this.collider.shape,undefined,undefined,this.collider,this.body))this.rideYaw=nextYaw;
+      else this.rideCameraTurn=0;
       this.rideViewYaw=yaw+this.rideCameraTurn;
       this.rideSteering=T.MathUtils.damp(this.rideSteering,active?T.MathUtils.clamp(-right*.42+look*3,-.55,.55):0,10,dt);
       this.collider.setRotationWrtParent({x:0,y:Math.sin(this.rideYaw/2),z:0,w:Math.cos(this.rideYaw/2)});
@@ -195,11 +220,11 @@ export class Player {
     if (this.seated) this.direction.set(0, 0, 0);
     if(this.flying&&active){
       const boost=this.keys.has('ShiftLeft')||this.keys.has('ShiftRight');
-      const cruising=this.flightState==='landing'?0:this.flightState==='launching'?2:forward<0?3:boost?22:forward>0?14:9;
+      const cruising=this.flightState==='landing'?0:this.flightState==='launching'?2:forward<0?3:boost?speeds.flightBoost:forward>0?speeds.flight:speeds.flightIdle;
       let vertical=-.7;
       if(this.flightState==='launching'){this.launchTime+=dt;vertical=14;if(this.position.y>=this.launchTarget||this.launchTime>3)this.flightState='gliding';}
       else if(this.flightState==='landing')vertical=-7;
-      else vertical=this.keys.has('Space')?7:(this.keys.has('ControlLeft')||this.keys.has('ControlRight'))?-8:-.7;
+      else vertical=this.keys.has('Space')?speeds.flightUp:(this.keys.has('ControlLeft')||this.keys.has('ControlRight'))?-speeds.flightDown:-.7;
       const lateral=right*4,landing=this.flightState==='landing';
       // Use the same normalized camera-relative direction as the walking/touch input.
       const vx=landing?this.direction.x*2.5:-Math.sin(yaw)*cruising+Math.cos(yaw)*lateral;
@@ -221,7 +246,7 @@ export class Player {
       const movement = !active?{x:0,y:0,z:0}:this.flying?{x:this.flightVelocity.x*step,y:this.flightVelocity.y*step,z:this.flightVelocity.z*step}:{ x: this.direction.x * desired * step, y: this.velocityY * step, z: this.direction.z * desired * step };
       if (this.noclip) { movement.y = (Number(this.keys.has('Space')) - Number(this.keys.has('ControlLeft'))) * desired * step; this.velocityY = 0; }
       let move = movement;
-      if (!this.noclip && !this.seated) { this.motor.computeColliderMovement(this.collider, movement); move = this.motor.computedMovement(); if(active)this.grounded=this.motor.computedGrounded();if(this.grounded&&movement.y<=0&&active) {this.velocityY = -.5;if(this.flying&&movement.y<0)this.finishFlight();}if(active&&movement.y>0&&move.y<movement.y*.25)this.velocityY=Math.min(0,this.velocityY); }
+      if (!this.noclip && !this.seated) { this.motor.computeColliderMovement(this.collider, movement,undefined,undefined,this.driving?c=>c.isEnabled()&&c!==this.solidColliders.get(this.riding!.solid):undefined); move = this.motor.computedMovement(); if(active)this.grounded=this.motor.computedGrounded();if(this.grounded&&movement.y<=0&&active) {this.velocityY = -.5;if(this.flying&&movement.y<0)this.finishFlight();}if(active&&movement.y>0&&move.y<movement.y*.25)this.velocityY=Math.min(0,this.velocityY); }
       if (this.seated) move = { x: 0, y: 0, z: 0 };
       const current = this.body.translation();
       const next = { x: T.MathUtils.clamp(current.x + move.x, bounds.minX + .75, bounds.maxX - .75), y: Math.min(current.y + move.y,maxFlightAltitude+.86), z: T.MathUtils.clamp(current.z + move.z, bounds.minZ + .75, bounds.maxZ - .75) };

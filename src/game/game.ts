@@ -8,6 +8,8 @@ import { Player, type FallRespawnEvent } from '../player/controller.ts';
 import { createAvatar, type CharacterKind, type OutfitStyle } from '../player/avatar.ts';
 import { WalkCamera } from '../player/camera.ts';
 import {StreetTraffic} from './street-traffic.ts';
+import {CampusCars} from './campus-cars.ts';
+import type {CampusCar} from '../world/car.ts';
 import { Football } from './football.ts';
 import { Basketball } from './basketball.ts';
 import { Music } from '../audio/music.ts';
@@ -31,6 +33,16 @@ export class Game {
   football!: Football;
   basketball!: Basketball;
   traffic!:StreetTraffic;
+  cars!:CampusCars;
+  get driveableCars(){return [...this.traffic.cars.map(c=>c.vehicle),...this.cars.all];}
+  enterCar(car:CampusCar){if(!this.player.mount(car))return false;this.cameraRig.yaw=this.player.rideYaw;this.onNotice('W 开车 · A/D 或鼠标转向 · Shift 加速 · 空格刹车 · E/G 下车');return true;}
+  toggleDrive(){
+    if(this.mode!=='playing')return;
+    if(this.player.driving){if(!this.player.dismount())this.onNotice('两侧空间不足，请移到开阔处再下车。');return;}
+    this.basketball.cancel();
+    if(this.cars.summon(this.cameraRig.yaw)){this.cameraRig.firstPerson=false;this.cameraRig.yaw=this.player.rideYaw;this.onNotice('已进入汽车 · W 前进 · Shift 加速 · 空格刹车 · E/G 下车');}
+    else this.onNotice('附近没有足够平坦的停车空间，请到开阔道路再按 G。');
+  }
   mode: Mode = 'loading';
   quality: Quality = 'medium';
   character: CharacterKind = 'explorer';
@@ -132,6 +144,8 @@ export class Game {
       progress(completedSectors === 1 ? .82 : .89, completedSectors === 1 ? '准备林荫道与校园设施' : '准备校园碰撞与雨天遮挡');
     });
     this.player.addSolids(solids);this.player.addMeshes(this.world.fixedMeshes.slice(initialMeshes));
+    this.cars=new CampusCars(this.scene,this.player,this.world.cameraSolids);
+    this.world.cameraSolids.push(...this.traffic.cars.map(c=>c.vehicle.cameraHull));
     this.cameraRig.prepareObstacles(this.world.cameraSolids);
     this.atmosphere.setLamps(this.world.lampPositions);
     this.setupShadowMaterials();
@@ -227,7 +241,7 @@ export class Game {
     this.football.update(dt);
     this.basketball.update(dt);
     const cameraStart = sampling ? performance.now() : 0;
-    this.cameraRig.update(this.player.position, dt, this.world.cameraSolids, this.player.seated,this.player.flying,this.player.avatar.height,Boolean(this.player.riding));
+    this.cameraRig.update(this.player.position, dt, this.world.cameraSolids, this.player.seated,this.player.flying,this.player.avatar.height,Boolean(this.player.riding),this.player.driving);
     const environmentStart = sampling ? performance.now() : 0;
     this.atmosphere.update(dt,this.mode==='playing',this.camera.position);
     if(this.foliageLight)this.foliageLight.value=this.atmosphere.daylight;
@@ -236,7 +250,8 @@ export class Game {
     this.world.dadaoping.update(dt,this.mode==='playing');
     this.csm!.lightDirection.copy(this.atmosphere.sunDirection).negate();this.csm!.lights.forEach(light=>{light.intensity=this.atmosphere.sunIntensity;light.color.copy(this.atmosphere.lightColor);});
     this.renderer.toneMappingExposure=1.05+this.atmosphere.night*.12;
-    this.player.avatar.root.visible = !this.cameraRig.firstPerson && !(this.mode === 'photo' && this.photoHideAvatar);
+    for(const car of this.driveableCars)car.group.visible=!(this.player.riding===car&&this.cameraRig.firstPerson&&this.mode!=='photo');
+    this.player.avatar.root.visible = !this.player.driving && !this.cameraRig.firstPerson && !(this.mode === 'photo' && this.photoHideAvatar);
     if (this.mode === 'photo') { this.camera.fov = this.photoFov; this.camera.updateProjectionMatrix(); }
     this.shadow.position.copy(this.player.position); this.shadow.position.y += .013; this.shadow.visible = this.player.avatar.root.visible&&!this.player.flying;
     if(this.shadowFov!==this.camera.fov){this.shadowFov=this.camera.fov;this.csm?.updateFrustums();}
@@ -274,7 +289,7 @@ export class Game {
     this.onTick();
   }
   stats() {
-    return { mode: this.mode, renderSize: [this.renderer.domElement.width, this.renderer.domElement.height], pixelRatio: this.renderer.getPixelRatio(), fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, outfit: this.outfit, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,grounded:this.player.grounded,verticalSpeed:this.player.velocityY,bicycle:this.player.riding?.id??null,rideSpeed:this.player.rideSpeed,flag:this.world.dadaoping.snapshot(),traffic:this.traffic.snapshot(),environment:this.atmosphere.snapshot,music:this.music.snapshot,audio:this.audio.snapshot,football:this.football.snapshot,basketball:this.basketball.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
+    return { mode: this.mode, renderSize: [this.renderer.domElement.width, this.renderer.domElement.height], pixelRatio: this.renderer.getPixelRatio(), fps: Math.round(1000 / this.frameMs), frameMs: +this.frameMs.toFixed(2), cpuMs: +this.cpuMs.toFixed(2), gpuMs: this.gpuMs == null ? null : +this.gpuMs.toFixed(2), triangles: this.renderer.info.render.triangles, drawCalls: this.renderer.info.render.calls, textures: this.renderer.info.memory.textures, geometries: this.renderer.info.memory.geometries, position: this.player.position.toArray(), sectors: this.world.sectors, quality: this.quality, character: this.character, outfit: this.outfit, firstPerson: this.cameraRig.firstPerson, readyMs: Math.round(this.readyMs),flight:this.player.flightState,grounded:this.player.grounded,verticalSpeed:this.player.velocityY,bicycle:!this.player.driving?this.player.riding?.id??null:null,car:this.player.driving?this.player.riding?.id:null,rideSpeed:this.player.rideSpeed,flag:this.world.dadaoping.snapshot(),traffic:this.traffic.snapshot(),environment:this.atmosphere.snapshot,music:this.music.snapshot,audio:this.audio.snapshot,football:this.football.snapshot,basketball:this.basketball.snapshot,map:{buildings:this.world.map.features.filter(f=>f.tags.building).length,roads:this.world.map.roads.length} };
   }
   async savePhoto() {
     if (this.photoSaving) throw new Error('照片正在生成，请稍候。');

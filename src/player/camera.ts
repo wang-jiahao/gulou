@@ -31,16 +31,16 @@ export class WalkCamera {
     if (this.camera.fov === fov) return;
     this.camera.fov = fov; this.camera.updateProjectionMatrix();
   }
-  update(position: T.Vector3, dt: number, obstacles: T.Object3D[], seated: boolean, flying = false, height = 1.77, riding = false) {
+  update(position: T.Vector3, dt: number, obstacles: T.Object3D[], seated: boolean, flying = false, height = 1.77, riding = false, driving = false) {
     if (obstacles !== this.obstacleList || obstacles.length !== this.obstacleCount) this.prepareObstacles(obstacles);
     this.flightBlend=T.MathUtils.damp(this.flightBlend,flying?1:0,4,dt);
-    this.target.copy(position); this.target.y += riding ? (this.firstPerson ? height-.15 : 1.2) : seated ? 1.4 : this.firstPerson ? height - .11 : height + .28;
+    this.target.copy(position); this.target.y += driving ? (this.firstPerson ? 1.2 : 1.05) : riding ? (this.firstPerson ? height-.15 : 1.2) : seated ? 1.4 : this.firstPerson ? height - .11 : height + .28;
     this.direction.set(Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
     if (this.firstPerson) {
       this.camera.position.copy(this.target); this.camera.lookAt(this.desired.copy(this.target).addScaledVector(this.direction, -1));
       this.setFov(72); this.initialized = false; return;
     }
-    const followDistance=this.distance+this.flightBlend*4.5;
+    const followDistance=this.distance+this.flightBlend*4.5+(driving?2.6:0);
     this.ray.set(this.target, this.direction); this.ray.far = followDistance + .4;
     this.hits.length = 0;
     const hit = this.ray.intersectObjects(obstacles, false, this.hits)[0];
@@ -48,6 +48,6 @@ export class WalkCamera {
     this.desired.copy(this.target).addScaledVector(this.direction, distance);
     if (!this.initialized || hit) { this.camera.position.copy(this.desired); this.initialized = true; }
     else this.camera.position.lerp(this.desired, 1 - Math.exp(-dt * 18));
-    this.camera.lookAt(this.target); this.setFov(64+this.flightBlend*8);
+    this.camera.lookAt(this.target); this.setFov(driving?76:64+this.flightBlend*8);
   }
 }
