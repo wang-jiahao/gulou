@@ -1,4 +1,18 @@
+# 35秒游玩宣传片第二版完成（2026-10-13）
+
+用户要求恢复旧版片尾、步行加速，并重选两段俯冲。最终片.local-media/promotion/x-gameplay-v2-20261013/gulou-gameplay-v2-35s.mp4，35秒1080p30/1050帧。第一段沿教学楼正立面[-158,34,147]→[-70,6,147]俯冲，第二段由东侧曲线接近校史博物馆[68,39,192]→[6,5,233]，中段提前降高避树冠。只补135帧；原步行无字幕180帧按1.5倍播放为4秒/120帧，游戏走速不变；恢复X cut3的3秒英文尾卡。两次飞行、骑行、天气和尾卡共795解码帧逐帧MD5保持。沿用cut7配乐，雨声25.5–28秒，尾33.3–35秒淡出；peak .87233、无削波，未新增主观听感验收。
+
+初次高清两段中段擦冠，未交付，已隔离在/tmp/gulou-gameplay-refine-20261013/canopy-pass-rejected。改按实际树位修路径，完整135帧低分辨率预演后重录；正式编码135新帧联系表、步行每3帧联系表、69/70和322/323原生裁片及片尾已看，未再见原大片树冠扑镜或地表消失，不称全片逐帧原生/全局零闪。相机133路段无建筑射线命中，录制无pageerror，1050帧AV完整解码通过。near1/2、4K缩1080、12次时间采样及植被锁定仅影片使用，不修改普通游戏体验。旧片均保留，影片仅本地交付，未替换GitHub上的旧视频。
+
+证据/tmp/gulou-gameplay-refine-20261013/{README.md,final-review.json,encoding-report.json,camera-collisions.json}；恢复.tools/promo-gameplay-refine-20261013/{plan.json,run.mjs,assemble.py,review.py}。组片拒覆盖，已有最终片只用assemble.py --verify-only继续校验，不重录或重编码。所有隔离浏览器已关闭，不恢复持续开发定时任务。
+
+网站v149主题计数和小头人物已上线：源码eb0cf28、主页1f28955，Pages38354222428成功，6线上文件SHA匹配。完整发布证据见/tmp/gulou-explorer-theme-v149。
+
+---
+
 # v149 计数融入首页主题、恢复小头人物（2026-10-13）
+
+正式上线确认：源码eb0cf28、主页1f28955，Pages run38354222428成功；线上0.149.0及6变化文件SHA完全一致。首次Actions API单次403后正常返回，不是发布失败；证据/tmp/gulou-explorer-theme-v149/{online-release.json,online-hashes.json,pages-api-response.json}。
 
 按用户新反馈，计数保留宋体标签/衬线数字，浅米色实底改成与首页一致的深绿半透明底、暖白文字、细边框与4px圆角。人物精确恢复v147/e8a95c7的小头版本，src/player/avatar.ts及explorer.ts与该版diff为空；没有回退计数功能或其它世界修改。
 
