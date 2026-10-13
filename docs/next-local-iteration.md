@@ -1,5 +1,7 @@
 # v151 访问展示基数移到服务端配置（2026-10-13）
 
+正式上线确认：源码4ea4975、主页ae4a47e，Pages38379464704成功；入口、公开配置、计数脚本与release.json四文件线上SHA一致。Worker05ace5d6-1045-4117-92d1-6b3c4c075d67已部署，Secret配置成功；部署前后只读GET实测总数相同，返回展示合计正确，未写入测试访问。线上标签为“累计访问人次”。证据/tmp/gulou-counter-server-v151/{pages-final.json,online-hashes.json,before.json,after.json}。
+
 按用户新要求，public/data/visits.json只保留接口地址，public/visit-counter.js不再读取历史基数或执行加法，只展示服务端displayTotal。Cloudflare Secret VISIT_DISPLAY_BASELINE保存部署配置；Worker的通用可选基数处理不包含部署者具体值，实测total/today和SQLite数据库保持独立。网页提示保留历史估算说明。README及发布元数据移除具体部署值；已明确告知旧Git提交和历史文档不会自动消失，不重写Git历史。
 
 Worker覆盖缺省/有效/无效及溢出配置、并发重试、重启和基数撤除后实测不变；1280/390/320宽度页面、提前加载和重试/刷新检查通过，生产测试POST为0。types/build:pages/lint通过。证据/tmp/gulou-counter-server-v151，恢复node .tools/counter-server-v151/visits-verify.mjs。Cloudflare首次直连失败，使用本地代理恢复授权检查；发布后补记线上状态。
