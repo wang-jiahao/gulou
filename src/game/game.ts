@@ -241,7 +241,7 @@ export class Game {
     this.football.update(dt);
     this.basketball.update(dt);
     const cameraStart = sampling ? performance.now() : 0;
-    this.cameraRig.update(this.player.position, dt, this.world.cameraSolids, this.player.seated,this.player.flying,this.player.avatar.height,Boolean(this.player.riding),this.player.driving);
+    this.cameraRig.update(this.player.renderPosition, dt, this.world.cameraSolids, this.player.seated,this.player.flying,this.player.avatar.height,Boolean(this.player.riding),this.player.driving);
     const environmentStart = sampling ? performance.now() : 0;
     this.atmosphere.update(dt,this.mode==='playing',this.camera.position);
     if(this.foliageLight)this.foliageLight.value=this.atmosphere.daylight;
@@ -253,7 +253,7 @@ export class Game {
     for(const car of this.driveableCars)car.group.visible=!(this.player.riding===car&&this.cameraRig.firstPerson&&this.mode!=='photo');
     this.player.avatar.root.visible = !this.player.driving && !this.cameraRig.firstPerson && !(this.mode === 'photo' && this.photoHideAvatar);
     if (this.mode === 'photo') { this.camera.fov = this.photoFov; this.camera.updateProjectionMatrix(); }
-    this.shadow.position.copy(this.player.position); this.shadow.position.y += .013; this.shadow.visible = this.player.avatar.root.visible&&!this.player.flying;
+    this.shadow.position.copy(this.player.renderPosition); this.shadow.position.y += .013; this.shadow.visible = this.player.avatar.root.visible&&!this.player.flying;
     if(this.shadowFov!==this.camera.fov){this.shadowFov=this.camera.fov;this.csm?.updateFrustums();}
     this.camera.updateMatrixWorld();this.csm?.update();
     this.audio.setEnvironment(this.atmosphere.state.rain,this.atmosphere.night,this.player.flying);

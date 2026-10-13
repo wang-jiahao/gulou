@@ -25,6 +25,8 @@ export class Player {
   readonly collider = this.physics.createCollider(RAPIER.ColliderDesc.capsule(.57, .27), this.body);
   readonly motor = this.physics.createCharacterController(.02);
   readonly position = spawn.clone();
+  // Physics stays at 60 Hz; presentation interpolates its last two poses.
+  readonly renderPosition = spawn.clone();
   keys = new Set<string>();
   readonly moveInput = new T.Vector2();
   clearInput() { this.keys.clear(); this.moveInput.set(0, 0); this.jumpRequest=0; }
@@ -59,6 +61,7 @@ export class Player {
   private launchTarget = 26;
   private flightBank = 0;
   private previous = spawn.clone();
+  private physicsPrevious = spawn.clone();
   private accumulated = 0;
   private direction = new T.Vector3();
 
@@ -79,7 +82,7 @@ export class Player {
   replaceAvatar(next: Awaited<ReturnType<typeof createAvatar>>) {
     const previous = this.avatar;
     previous.root.remove(this.glider); this.scene.remove(previous.root);
-    next.root.position.copy(this.position); next.root.rotation.copy(previous.root.rotation); next.root.add(this.glider);
+    next.root.position.copy(this.renderPosition); next.root.rotation.copy(previous.root.rotation); next.root.add(this.glider);
     this.avatar = next; this.connectGroundSampler(); this.scene.add(next.root); return previous;
   }
   addSolids(solids: Solid[]) {
@@ -191,7 +194,8 @@ export class Player {
     this.fallPeak=null;this.grounded=false;this.jumpRequest=0;
     this.position.set(T.MathUtils.clamp(x, bounds.minX + 1, bounds.maxX - 1), y, T.MathUtils.clamp(z, bounds.minZ + 1, bounds.maxZ - 1));
     this.body.setTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }, true);
-    this.body.setNextKinematicTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }); this.velocityY = 0; this.previous.copy(this.position); this.avatar.root.position.copy(this.position);
+    this.body.setNextKinematicTranslation({ x: this.position.x, y: this.position.y + .86, z: this.position.z }); this.velocityY = 0;
+    this.accumulated = 0; this.physicsPrevious.copy(this.position); this.renderPosition.copy(this.position); this.previous.copy(this.position); this.avatar.root.position.copy(this.position);
   }
   update(dt: number, yaw: number, active: boolean) {
     this.yaw = yaw;
@@ -232,9 +236,11 @@ export class Player {
       this.flightVelocity.x=T.MathUtils.damp(this.flightVelocity.x,vx,3.5,dt);this.flightVelocity.z=T.MathUtils.damp(this.flightVelocity.z,vz,3.5,dt);this.flightVelocity.y=T.MathUtils.damp(this.flightVelocity.y,vertical,4,dt);
       this.flightBank=T.MathUtils.damp(this.flightBank,-right*.2,5,dt);
     }
-    this.accumulated = Math.min(this.accumulated + dt, .1); this.previous.copy(this.position);
+    const remainder = this.accumulated;
+    this.accumulated = Math.min(this.accumulated + dt, .1); this.previous.copy(this.renderPosition);
     while (this.accumulated >= 1 / 60) {
       const step = 1 / 60; this.accumulated -= step;
+      if (active) this.physicsPrevious.copy(this.position);
       // Capture before collision handling: a controlled touchdown can call finishFlight.
       const trackFall=active&&!this.flying&&!this.noclip&&!this.seated,startHeight=this.position.y;
       if(this.flying||this.noclip||this.seated)this.fallPeak=null;
@@ -274,8 +280,10 @@ export class Player {
         }
       }
     }
-    this.speed = dt > 0 ? Math.hypot(this.position.x - this.previous.x, this.position.z - this.previous.z) / dt : 0;
-    this.avatar.root.position.copy(this.position);
+    if (active) this.renderPosition.lerpVectors(this.physicsPrevious, this.position, this.accumulated * 60);
+    else this.accumulated = remainder; // Hold the displayed pose and interpolation phase while paused.
+    this.speed = active && dt > 0 ? Math.hypot(this.renderPosition.x - this.previous.x, this.renderPosition.z - this.previous.z) / dt : 0;
+    this.avatar.root.position.copy(this.renderPosition);
     if (this.speed > .1) {
       const target = this.riding?this.rideYaw:this.flying?yaw:Math.atan2(-this.direction.x, -this.direction.z);
       const delta = Math.atan2(Math.sin(target - this.avatar.root.rotation.y), Math.cos(target - this.avatar.root.rotation.y));
@@ -283,8 +291,8 @@ export class Player {
     }
     this.avatar.root.rotation.z=this.flying?this.flightBank:0;
     if(this.riding){
-      this.pedalPhase+=this.speed*dt*1.6*Math.sign(this.rideSpeed);this.riding.group.position.copy(this.position);this.riding.group.rotation.y=this.rideYaw;this.avatar.root.rotation.y=this.rideYaw;this.riding.update(this.speed*dt*Math.sign(this.rideSpeed),this.pedalPhase,this.rideSteering);
+      this.pedalPhase+=this.speed*dt*1.6*Math.sign(this.rideSpeed);this.riding.group.position.copy(this.renderPosition);this.riding.group.rotation.y=this.rideYaw;this.avatar.root.rotation.y=this.rideYaw;this.riding.update(this.speed*dt*Math.sign(this.rideSpeed),this.pedalPhase,this.rideSteering);
     }
-    this.avatar.update(dt, this.speed, this.seated,this.flying,this.seatHeight-this.position.y,this.riding?this.pedalPhase:undefined,this.rideSteering,!this.grounded&&Math.abs(this.velocityY)>.6);
+    this.avatar.update(dt, this.speed, this.seated,this.flying,this.seatHeight-this.renderPosition.y,this.riding?this.pedalPhase:undefined,this.rideSteering,!this.grounded&&Math.abs(this.velocityY)>.6);
   }
 }
