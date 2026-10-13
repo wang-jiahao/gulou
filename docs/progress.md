@@ -1,3 +1,13 @@
+# v148 人物头部比例与访问计数字体（2026-10-13）
+
+用户反馈新头太小，并提供清明项目的访问计数样式。explorer头部以原下巴为锚点，横向1.25/纵向1.12/前后1.18倍统一调整头发、脸部及五官；颈部、身体、腿、骨架和物理控制保持。三视图及4秒120帧真实Game走跑已看，录制无pageerror、完整解码通过，11980三角不变。预览.local-media/explorer-v148/{full-body.jpg,gulou-explorer-proportions.mp4}。
+
+欢迎页计数改为“累计人次”宋体标签、较大衬线数字、浅米色细框。自托管Noto Serif SC所需字形子集7476字节，OFL许可随资源保留；字体不依赖访客连接Google。桌面18/29px、手机17/27px，矮屏数字25px，调整入口纵向留白使320×568计数完整显示。每次打开计数及网络重试去重不变、地图前显示保留，加载/无障碍状态与数字更新分离。文档移除旧半小时口径。
+
+1280×800、390×844、320×568实看及边界通过；字体加载、地图主JS阻塞时提前显示、配置503及计数超时重试/刷新新标记均通过，测试全用隔离接口，生产写入0次。types/lint/build:pages/资产检查通过。证据/tmp/gulou-explorer-proportion-v148，源码验证恢复node .tools/explorer-proportion-v148/{studio.mjs,record.mjs}，构建页面验证visits-verify.mjs。旧预览与影片保留，持续开发定时不恢复。
+
+---
+
 # v147 全身统一简化人物（2026-10-13）
 
 正式上线确认：源码e8a95c7、主页8291689，Pages run38279528403成功；线上release.json为0.147.0，5个变化文件SHA全部匹配。证据/tmp/gulou-explorer-whole-v147/{pages-final.json,online-release.json,online-hashes.json}。本轮仅完成访问计数与全身人物请求，不恢复持续开发定时任务。

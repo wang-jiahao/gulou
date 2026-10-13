@@ -12,7 +12,12 @@ async function initVisits() {
     || location.protocol === 'file:' || new URLSearchParams(location.search).has('validation')
     || new URLSearchParams(location.search).has('debug')) return;
   const counter = document.getElementById('visit-counter');
-  if (counter) { counter.textContent = '累计访问加载中…'; counter.hidden = false; }
+  const value = counter?.querySelector('.visit-value');
+  if (counter) {
+    counter.setAttribute('aria-label', '累计访问加载中…');
+    counter.setAttribute('aria-busy', 'true');
+    counter.hidden = false;
+  }
   let endpoint;
   let historicalEstimate = 0;
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -61,7 +66,10 @@ async function initVisits() {
       const counter = document.getElementById('visit-counter');
       if (counter) {
         const estimate = Number.isSafeInteger(counts.total + historicalEstimate) ? historicalEstimate : 0;
-        counter.textContent = `累计访问 ${(counts.total + estimate).toLocaleString('zh-CN')} 人次`;
+        const formatted = (counts.total + estimate).toLocaleString('zh-CN');
+        if (value) value.textContent = formatted;
+        counter.setAttribute('aria-label', `累计访问 ${formatted} 人次`);
+        counter.setAttribute('aria-busy', 'false');
         counter.title = `今日实测 ${counts.today.toLocaleString('zh-CN')} 人次。每次打开或刷新页面计一次；网络重试不重复计次。不是独立玩家人数。${estimate ? `包含作者估算的历史基数 ${estimate.toLocaleString('zh-CN')}，启用后实测 ${counts.total.toLocaleString('zh-CN')}。` : ''}`;
         counter.hidden = false;
       }
@@ -70,7 +78,7 @@ async function initVisits() {
       inFlight = false;
       if (succeeded) failures = 0;
       else if (failures < 3) retry = setTimeout(() => { void update(); }, [2000, 5000, 15000][failures++]);
-      else if (counter?.textContent === '累计访问加载中…') counter.hidden = true;
+      else if (counter?.getAttribute('aria-busy') === 'true') counter.hidden = true;
     }
   };
   await update();

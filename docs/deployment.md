@@ -41,4 +41,4 @@ pnpm preview
 
 ## 可选访问统计
 
-访问人次由独立Cloudflare Worker与SQLite Durable Object保存，部署方法见[计数服务说明](../workers/visit-counter/README.md)。正式启用前需要部署者的Cloudflare登录授权，并把实际接口地址写入`public/data/visits.json`；默认空地址不启用统计。打开网页就计入访问，同一天30分钟内的刷新合并，次日再来重新计次。这是访问人次，不能宣传为独立玩家人数，也不能补算启用前的历史访问。
+访问人次由独立Cloudflare Worker与SQLite Durable Object保存，部署方法见[计数服务说明](../workers/visit-counter/README.md)。正式启用前需要部署者的Cloudflare登录授权，并把实际接口地址写入`public/data/visits.json`；默认空地址不启用统计。每次打开或刷新网页计一次，同一页面的网络重试仍去重。统计独立于地图提前加载。这是访问人次，不是独立玩家人数；页面另含作者指定的历史估算基数，服务端实测数保持独立，口径见数字提示及README。
