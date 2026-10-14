@@ -4,6 +4,7 @@ import {getPlaceStory} from './world/place-stories.ts';
 import { locationName } from './world/place-index.ts';
 import { findNearbyPlace } from './world/nearby-place.ts';
 import { CampusMapView } from './ui/campus-map.ts';
+import { Minimap } from './ui/minimap.ts';
 import { TouchControls, touchDevice } from './ui/touch-controls.ts';
 import { DEFAULT_CYCLE_MINUTES, restoreCycleMinutes, type WeatherMode } from './game/environment-state.ts';
 
@@ -205,6 +206,8 @@ async function boot() {
   el<HTMLInputElement>('photo-fov').oninput = e => { game.photoFov = Number((e.target as HTMLInputElement).value); };
   el('save-photo').onclick = async () => { const button = el<HTMLButtonElement>('save-photo'); button.disabled = true; button.textContent = '正在生成照片…'; try { await game.savePhoto(); toast('高清照片已保存。'); } catch (e) { toast(e instanceof Error ? e.message : String(e)); } finally { button.disabled = false; button.textContent = '保存照片 ↓'; } };
   mapView = new CampusMapView(el<HTMLCanvasElement>('map-canvas'), game.world.map, el('map-selection'));
+  const minimap = new Minimap(el<HTMLCanvasElement>('minimap-canvas'), game.world.map);
+  el('minimap-open').onclick = () => el('map-open').click();
   mapView.onClear = () => { selectedMapPoint = null; el<HTMLButtonElement>('map-teleport').disabled = true; };
   el('map-open').onclick = () => { game.mode = 'paused'; game.player.clearInput(); document.exitPointerLock?.(); mapDialog.showModal(); mapView.update(game.player.position.x,game.player.position.z,game.cameraRig.yaw); };
   el('map-resume').onclick = resume; mapDialog.addEventListener('close', () => { if (entered && game.mode === 'paused') el('resume').hidden = false; });
@@ -296,6 +299,10 @@ async function boot() {
     el('basketball-meter').style.width = `${basketball.power * 100}%`;
     el('basketball-score').textContent = String(basketball.physics.score);
     el('basketball-shots').textContent = String(basketball.physics.shots);
+    if (entered && !uiHidden && game.mode !== 'photo' && !mapDialog.open) {
+      const position = game.player.renderPosition;
+      minimap.update(position.x, position.z, game.cameraRig.yaw, game.player.flying);
+    }
     if (++tick % 15) return;
     const pos = game.player.position, onBench = game.player.seated || (game.world.sectors >= 3 && (benchLocations.some(p => p.distanceTo(pos) < 2.4)||Boolean(game.world.garden.nearby(pos))));
     const nearBuilding = nearbyPlace('interact');

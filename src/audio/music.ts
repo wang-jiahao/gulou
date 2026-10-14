@@ -1,7 +1,7 @@
 import { DefaultMusic } from './default-music.ts';
 
 type Track = { title: string; artist?: string; url: string };
-const defaultTrack: Track = { title: '鼓楼漫步', artist: '原创轻音乐', url: 'builtin:gulou-walk' };
+const defaultTrack: Track = { title: 'Minecraft', artist: 'C418', url: 'https://resources.download.minecraft.net/50/50a59a4f56e4046701b758ddbb1c1587efa4cadf' };
 export class Music {
   readonly audio = new Audio();
   tracks: Track[] = [{ ...defaultTrack }];
@@ -16,7 +16,10 @@ export class Music {
   private shuffleBag: number[] = [];
   private lastPlayed: number | null = null;
   constructor() {
-    this.audio.preload = 'metadata';
+    // Fetch the original compressed Ogg during campus loading. The immutable
+    // official URL uses the browser HTTP cache; no soundtrack is redistributed.
+    this.audio.preload = 'auto';
+    this.audio.src = defaultTrack.url;
     this.audio.addEventListener('ended', () => this.next());
     this.audio.addEventListener('error', () => { this.onError('这首音乐暂时无法播放，可以切换下一首或导入音乐。'); this.onChange(); });
   }
@@ -31,12 +34,14 @@ export class Music {
     } catch { /* Music is optional; local file import remains available. */ }
     if (this.objectUrls.length) return;
     if (!this.tracks.length) this.tracks = [{ ...defaultTrack }];
+    const preloadUrl = this.tracks[this.index]?.url ?? this.tracks[0].url;
+    if (!this.isDefault && !this.started && this.audio.getAttribute('src') !== preloadUrl) { this.audio.src = preloadUrl; this.audio.load(); }
     if (this.isDefault) void this.defaultMusic.prepare();
     this.onChange();
     this.shuffleBag = []; this.lastPlayed = null;
     if (this.started) this.next();
   }
-  private get isDefault() { return this.tracks[this.index]?.url === defaultTrack.url; }
+  private get isDefault() { return this.tracks[this.index]?.url === 'builtin:gulou-walk'; }
   get paused() { return this.isDefault ? this.defaultMusic.paused : this.audio.paused; }
   start() { this.started = true; if (!this.isDefault && !this.audio.src && this.tracks.length) this.next(); else this.play(); }
   private play() {

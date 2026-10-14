@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 
 // Optional personal music stays outside public/ and dist/. Only loopback playback.
 function personalMusic(server) {
+  if (process.env.GULOU_PERSONAL_MUSIC !== '1') return;
   server.middlewares.use((req, res, next) => {
     const requestPath = req.url?.split('?')[0];
     const path = requestPath?.startsWith('/gulou/') ? requestPath.slice('/gulou'.length) : requestPath;

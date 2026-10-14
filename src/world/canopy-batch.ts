@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {canopyCoverFades} from './canopy-cover.ts';
+import {canopyCoverFades,canopyAttributeSizes} from './canopy-cover.ts';
 
 /** Combine the tiny camera-facing crowns; keep each cell's original visibility,
  * view selection and fade. The detailed tree LODs remain in their own cells. */
@@ -19,8 +19,8 @@ export function createCanopyBatch(root:T.Group){
  // A different atlas or shader cannot share this draw.
  if(sources.some(({mesh})=>!(mesh.material instanceof T.MeshBasicMaterial)||mesh.material.map!==seed.map||mesh.material.customProgramCacheKey()!==seed.customProgramCacheKey()))return;
  const geometry=new T.PlaneGeometry(1,1),material=seed.clone();
- const keys=['instanceView','instanceNextView','instanceViewMix'] as const;
- const attributes=Object.fromEntries(keys.map(key=>[key,new T.InstancedBufferAttribute(new Float32Array(count),1)])) as Record<typeof keys[number],T.InstancedBufferAttribute>;
+ const keys=Object.keys(canopyAttributeSizes) as (keyof typeof canopyAttributeSizes)[];
+ const attributes=Object.fromEntries(keys.map(key=>[key,new T.InstancedBufferAttribute(new Float32Array(count*canopyAttributeSizes[key]),canopyAttributeSizes[key])])) as Record<typeof keys[number],T.InstancedBufferAttribute>;
  for(const key of keys)geometry.setAttribute(key,attributes[key]);
  const fades=new T.InstancedBufferAttribute(new Float32Array(count),1);geometry.setAttribute('instanceFade',fades);
  material.onBeforeCompile=(shader,renderer)=>{
@@ -49,7 +49,7 @@ export function createCanopyBatch(root:T.Group){
     else for(let i=0;i<original.count;i++){original.getMatrixAt(i,matrix);matrix.premultiply(source.relative);mesh.setMatrixAt(source.offset+i,matrix);}
     source.versions[0]=original.instanceMatrix.version;mesh.instanceMatrix.needsUpdate=true;
    }
-   keys.forEach((key,index)=>{const input=original.geometry.getAttribute(key) as T.InstancedBufferAttribute;if(source.versions[index+1]!==input.version){(attributes[key].array as Float32Array).set(input.array,source.offset);source.versions[index+1]=input.version;attributes[key].needsUpdate=true;}});
+   keys.forEach((key,index)=>{const input=original.geometry.getAttribute(key) as T.InstancedBufferAttribute;if(source.versions[index+1]!==input.version){(attributes[key].array as Float32Array).set(input.array,source.offset*input.itemSize);source.versions[index+1]=input.version;attributes[key].needsUpdate=true;}});
    // updateVisibility sets this again on the next vegetation update.
    original.visible=false;
   }

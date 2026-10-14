@@ -1,6 +1,6 @@
 {
   "name": "gulou",
-  "version": "0.153.0",
+  "version": "0.154.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -113,7 +113,8 @@
     "test:physics-courtyard": "node scripts/physics-courtyard-check.mjs",
     "test:physics-garden-integration": "node scripts/physics-garden-integration-check.mjs",
     "test:basketball": "node scripts/basketball-check.mjs",
-    "test:motion-smoothing": "node scripts/motion-smoothing-check.mjs"
+    "test:motion-smoothing": "node scripts/motion-smoothing-check.mjs",
+    "test:canopy-transitions": "node scripts/canopy-transition-check.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

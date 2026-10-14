@@ -143,7 +143,6 @@ export function createHankouGate(point: number[], mats: Materials, font: Font) {
   // Letter centres traced from the local photograph; face dimensions are VR-checked estimates.
   const titleCentres = [551, 631, 717, 798];
   const name = lettering(font, '南京大学', 5.25, 1.04, 0xe5b452, titleCentres); name.position.set(gx, 5.56, gz + 1.351); group.add(name);
-  const rearName = lettering(font, '南京大学', 5.25, 1.04, 0xe5b452, titleCentres); rearName.position.set(gx, 5.56, gz - 1.351); rearName.rotation.y = Math.PI; group.add(rearName);
   for (const [side, text] of [[-1, '严肃活泼'], [1, '团结紧张']] as const) {
     const centres = side < 0 ? [541.5, 615, 685.5, 751.5] : [564.5, 617, 684.5, 752];
     const motto = lettering(font, text, side < 0 ? 1.42 : 1.10, 3.28, 0xa31425, centres, true); motto.position.set(gx + side * 5.1, 3.23, gz + 1.216); group.add(motto);

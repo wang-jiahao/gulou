@@ -31,8 +31,9 @@ try{
  if(stage==='after'){
   const before=JSON.parse(await readFile(`${out}/before-chrome.json`,'utf8'));
   for(const key of['colliders','colliderCount','fixed','stone'])assert.deepEqual(report.geometry[key],before.geometry[key],key+' unchanged');
-  assert.equal(report.geometry.letters.length,16);
-  for(const kind of['title-front','title-back','left','right']){
+  assert.equal(report.geometry.letters.length,12);
+  assert.equal(report.geometry.letters.filter(x=>x.kind==='title-back').length,0,'inside face has no university title');
+  for(const kind of['title-front','left','right']){
    const letters=report.geometry.letters.filter(x=>x.kind===kind);assert.equal(letters.length,4);
    const vertical=kind==='left'||kind==='right',axis=vertical?1:0;letters.sort((a,b)=>a.min[axis]-b.min[axis]);
    for(let i=1;i<letters.length;i++)assert.ok(letters[i].min[axis]>letters[i-1].max[axis]+.04,'letters do not touch');
