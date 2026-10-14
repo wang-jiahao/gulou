@@ -32,7 +32,7 @@ let selectedMapPoint: { x: number; z: number; name: string } | null = null;
 const settings = el<HTMLDialogElement>('settings'), info = el<HTMLDialogElement>('info'),worldSettings=el<HTMLDialogElement>('world-settings');
 const toast = (message: string) => { el('toast').textContent = message; el('toast').hidden = false; clearTimeout(toastTimer); toastTimer = window.setTimeout(() => { el('toast').hidden = true; }, 3500); };
 const fatal = (e: unknown) => { console.error(e); el('fatal').hidden = false; el('fatal-message').textContent = e instanceof Error ? e.message : '请检查网络或换用支持 WebGL2 的浏览器。'; };
-const saveSettings = () => { try { const a=game.atmosphere?.state;localStorage.setItem('gulou-settings-v1', JSON.stringify({ quality: game.quality, character: game.character, outfit: game.outfit, volume: game.audio.volume, musicVolume: game.music.volume, musicEnabled: game.music.enabled, sensitivity: game.cameraRig.sensitivity,world:a?{hour:a.hour,autoTime:a.autoTime,cycleMinutes:a.cycleMinutes,weatherMode:a.weatherMode}:undefined })); } catch { /* Optional preferences. */ } };
+const saveSettings = () => { try { const a=game.atmosphere?.state;localStorage.setItem('gulou-settings-v1', JSON.stringify({ quality: game.quality, character: game.character, characterDefaultsVersion: 2, outfit: game.outfit, volume: game.audio.volume, musicVolume: game.music.volume, musicEnabled: game.music.enabled, sensitivity: game.cameraRig.sensitivity,world:a?{hour:a.hour,autoTime:a.autoTime,cycleMinutes:a.cycleMinutes,weatherMode:a.weatherMode}:undefined })); } catch { /* Optional preferences. */ } };
 function lockPointer() { if (touchDevice || !game.renderer.domElement.requestPointerLock) return; const r = game.renderer.domElement.requestPointerLock(); if (r) void r.catch(() => { if(entered)toast('也可以按住鼠标拖动视角，WASD 行走。'); }); }
 function resume() { if(!entered)return; sponsor.close(); settings.close(); info.close();worldSettings.close(); mapDialog.close(); game.mode = 'playing'; el('resume').hidden = true; lockPointer(); }
 function enterCampus() {
@@ -127,6 +127,8 @@ async function boot() {
   try {
     const s = JSON.parse(localStorage.getItem('gulou-settings-v1') ?? '{}');
     if (s.character === 'stickman') s.character = 'explorer';
+    // Replace the previous default once; later explicit character choices persist.
+    if (s.character === 'explorer' && s.characterDefaultsVersion !== 2) s.character = 'male';
     if (s.character === 'male' || s.character === 'female' || s.character === 'explorer') { game.character = s.character; el<HTMLSelectElement>('character-style').value = s.character; }
     if (['campus', 'forest', 'warm'].includes(s.outfit)) { game.outfit = s.outfit; el<HTMLSelectElement>('outfit-style').value = s.outfit; }
     if (['high', 'medium', 'low'].includes(s.quality)) { game.setQuality(s.quality); el<HTMLSelectElement>('quality').value = s.quality; }
@@ -134,6 +136,7 @@ async function boot() {
     if (typeof s.musicEnabled === 'boolean') game.music.enabled = s.musicEnabled;
     if (typeof s.volume === 'number' && s.volume >= 0 && s.volume <= 1) { game.audio.setVolume(s.volume); el<HTMLInputElement>('volume').value = String(s.volume * 100); }
     if (typeof s.sensitivity === 'number' && s.sensitivity >= .0004 && s.sensitivity <= .004) { game.cameraRig.sensitivity = s.sensitivity; el<HTMLInputElement>('sensitivity').value = String(s.sensitivity / .00042); }
+    if (s.characterDefaultsVersion !== 2) localStorage.setItem('gulou-settings-v1', JSON.stringify({ ...s, character: game.character, characterDefaultsVersion: 2 }));
   } catch { /* Use defaults for unavailable or invalid storage. */ }
   await game.init((p, label) => { el('loading-bar').style.width = `${p * 100}%`; el('loading-percent').textContent = `${Math.round(p * 100)}%`; el('loading-text').textContent = label; });
   try{const saved=JSON.parse(localStorage.getItem('gulou-settings-v1')??'{}').world;game.atmosphere.state.cycleMinutes=restoreCycleMinutes(saved?.cycleMinutes);}catch{/* Use defaults. */}

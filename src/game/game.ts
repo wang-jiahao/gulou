@@ -45,7 +45,7 @@ export class Game {
   }
   mode: Mode = 'loading';
   quality: Quality = 'medium';
-  character: CharacterKind = 'explorer';
+  character: CharacterKind = 'male';
   outfit: OutfitStyle = 'campus';
   private characterRequest = 0;
   photoFov = 58;
