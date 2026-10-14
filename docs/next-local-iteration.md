@@ -10,7 +10,7 @@
 
 TypeScript、项目lint(src)、Pages构建、59项资产通过；生产构建验证fresh/旧explorer/旧stickman/female/显式explorer，手动角色选择刷新保持、音量/画质恢复与男生模型通过，无pageerror。最初误用eslint .覆盖临时/第三方文件，随后改按package.json规定的src范围通过；不修改无关文件消除误报。证据/tmp/gulou-male-promo-20261014，工具.tools/promo-male-20261014，影片目录含review-complete.json与交付说明。
 
-A02整体普通飞行性能与其它建筑闪烁仍开放；手机真机触控由用户后续测试。持续开发定时任务保持取消，参考原件、个人音乐与缓存不上传。网站发布校验待完成后补记。
+A02整体普通飞行性能与其它建筑闪烁仍开放；手机真机触控由用户后续测试。持续开发定时任务保持取消，参考原件、个人音乐与缓存不上传。网站发布已完成：源码6aabeae、主页4024114；线上release.json为0.155.0/defaultCharacter=male，入口、三JS、CSS、致谢、THIRD_PARTY与release共8个文件SHA全部匹配本地发布构建。证据/tmp/gulou-male-promo-20261014/{online-release.json,online-hashes.json}。临时4186生产预览与本轮隔离浏览器均已关闭，4173原开发服务保留。
 
 ---
 
